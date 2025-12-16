@@ -2,6 +2,7 @@ import axios from 'axios';
 
 // Hardcoded production URL to avoid environment variable issues
 // Force rebuild: This URL is ALWAYS HTTPS regardless of env vars
+// Build timestamp: 2025-12-17T04:23:00
 const API_URL = 'https://journalxbackend-production.up.railway.app';
 
 
