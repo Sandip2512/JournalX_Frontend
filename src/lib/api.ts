@@ -12,6 +12,8 @@ if (API_URL) {
     }
 }
 
+console.log('🔗 API Base URL:', API_URL);
+
 const api = axios.create({
     baseURL: API_URL,
     headers: {
