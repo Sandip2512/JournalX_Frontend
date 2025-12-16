@@ -1,18 +1,9 @@
 import axios from 'axios';
 
-// Use environment variable for API URL, fallback to Railway production URL
-let API_URL = import.meta.env.VITE_API_URL || 'https://journalxbackend-production.up.railway.app';
+// Hardcoded production URL to avoid environment variable issues
+const API_URL = 'https://journalxbackend-production.up.railway.app';
 
-// Ensure API_URL always uses https in production to prevent Mixed Content errors
-if (API_URL) {
-    if (API_URL.startsWith('http://')) {
-        API_URL = API_URL.replace('http://', 'https://');
-    } else if (!API_URL.startsWith('http')) {
-        API_URL = `https://${API_URL}`;
-    }
-}
 
-console.log('🔗 API Base URL:', API_URL);
 
 const api = axios.create({
     baseURL: API_URL,
