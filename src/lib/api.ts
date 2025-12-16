@@ -60,4 +60,3 @@ export const leaderboardApi = {
 };
 
 export default api;
-```
