@@ -30,19 +30,21 @@ const Trades = () => {
   const { user } = useAuth();
   const [trades, setTrades] = useState<any[]>([]);
 
-  useEffect(() => {
-    const fetchTrades = async () => {
-      if (user?.user_id) {
-        try {
-          const response = await api.get(`/trades/user/${user.user_id}`);
-          setTrades(response.data);
-        } catch (error) {
-          console.error("Error fetching trades:", error);
-        }
+  // Wrap fetchTrades in useCallback to allow passing it to TradeEntryForm
+  const fetchTrades = React.useCallback(async () => {
+    if (user?.user_id) {
+      try {
+        const response = await api.get(`/trades/user/${user.user_id}`);
+        setTrades(response.data);
+      } catch (error) {
+        console.error("Error fetching trades:", error);
       }
-    };
-    fetchTrades();
+    }
   }, [user?.user_id]);
+
+  useEffect(() => {
+    fetchTrades();
+  }, [fetchTrades]);
 
   // Filter trades based on search query, symbol, and type
   const filteredTrades = trades.filter((trade) => {
@@ -185,7 +187,7 @@ const Trades = () => {
           )}
         </div>
 
-        <TradeEntryForm open={showForm} onOpenChange={setShowForm} />
+        <TradeEntryForm open={showForm} onOpenChange={setShowForm} onSuccess={fetchTrades} />
       </main>
     </div>
   );

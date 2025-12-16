@@ -16,25 +16,26 @@ export function Dashboard() {
   const [mt5Status, setMt5Status] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (user?.user_id) {
-        setLoading(true);
-        try {
-          const statsRes = await api.get(`/trades/stats/user/${user.user_id}`);
-          setStats(statsRes.data);
+  const fetchData = React.useCallback(async () => {
+    if (user?.user_id) {
+      if (!stats) setLoading(true); // Only show loading spinner on initial load
+      try {
+        const statsRes = await api.get(`/trades/stats/user/${user.user_id}`);
+        setStats(statsRes.data);
 
-          const mt5Res = await api.get(`/users/${user.user_id}/mt5-status`);
-          setMt5Status(mt5Res.data);
-        } catch (error) {
-          console.error("Error fetching dashboard data:", error);
-        } finally {
-          setLoading(false);
-        }
+        const mt5Res = await api.get(`/users/${user.user_id}/mt5-status`);
+        setMt5Status(mt5Res.data);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setLoading(false);
       }
-    };
-    fetchData();
+    }
   }, [user?.user_id]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const profitFactor = (stats?.total_loss !== 0 && stats?.total_loss !== undefined) ? Math.abs((stats?.total_profit || 0) / stats?.total_loss).toFixed(2) : "∞";
 
@@ -124,7 +125,7 @@ export function Dashboard() {
       </div>
 
       {/* Trade Entry Form Modal */}
-      <TradeEntryForm open={showTradeForm} onOpenChange={setShowTradeForm} />
+      <TradeEntryForm open={showTradeForm} onOpenChange={setShowTradeForm} onSuccess={fetchData} />
     </main>
   );
 }

@@ -38,6 +38,7 @@ import { cn } from "@/lib/utils";
 interface TradeEntryFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
 const symbols = [
@@ -68,7 +69,7 @@ const predefinedMistakes = [
   "Custom" // Option to enter custom mistake
 ];
 
-export function TradeEntryForm({ open, onOpenChange }: TradeEntryFormProps) {
+export function TradeEntryForm({ open, onOpenChange, onSuccess }: TradeEntryFormProps) {
   const [formData, setFormData] = useState({
     symbol: "",
     volume: "",
@@ -187,7 +188,13 @@ export function TradeEntryForm({ open, onOpenChange }: TradeEntryFormProps) {
       setCustomMistake("");
       setSymbolOpen(false);
 
-      window.location.reload();
+      setSymbolOpen(false);
+
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        window.location.reload();
+      }
 
     } catch (error: any) {
       console.error("Error creating trade:", error);
