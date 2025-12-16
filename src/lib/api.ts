@@ -46,11 +46,18 @@ api.interceptors.response.use(
 
 // Leaderboard API functions
 export const leaderboardApi = {
-    getLeaderboard: (sortBy: string = 'net_profit', limit: number = 100, timePeriod: string = 'all_time') =>
-        api.get(`/api/leaderboard?sort_by=${sortBy}&limit=${limit}&time_period=${timePeriod}`),
-
-    getUserRanking: (userId: string, sortBy: string = 'net_profit', timePeriod: string = 'all_time') =>
-        api.get(`/api/leaderboard/user/${userId}?sort_by=${sortBy}&time_period=${timePeriod}`)
+    getLeaderboard: (sortBy: string, limit: number, timePeriod: string) => {
+        // Force HTTPS - hardcoded to prevent any HTTP requests
+        const endpoint = `/api/leaderboard/?sort_by=${sortBy}&limit=${limit}&time_period=${timePeriod}`;
+        console.log('🔗 Leaderboard API URL:', `https://journalxbackend-production.up.railway.app${endpoint}`);
+        return api.get(endpoint);
+    },
+    getUserRanking: (userId: string, sortBy: string, timePeriod: string) => {
+        const endpoint = `/api/leaderboard/user/${userId}?sort_by=${sortBy}&time_period=${timePeriod}`;
+        console.log('🔗 User Ranking API URL:', `https://journalxbackend-production.up.railway.app${endpoint}`);
+        return api.get(endpoint);
+    }
 };
 
 export default api;
+```
