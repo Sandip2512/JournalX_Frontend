@@ -3,10 +3,18 @@ import axios from 'axios';
 // Environment-based API URL configuration
 // In development, this will fallback to localhost if VITE_API_URL is not set
 // In production, this should be set via environment variables or fallback to the production URL
-const RAW_API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000' : 'https://journalxbackend-production.up.railway.app');
-// Force HTTPS for production railway URLs to avoid Mixed Content errors
-const API_URL = RAW_API_URL.includes('railway.app') ? RAW_API_URL.replace('http://', 'https://') : RAW_API_URL;
-console.log('🚀 API Configuered to:', API_URL);
+const VITE_API_URL = import.meta.env.VITE_API_URL;
+const FALLBACK_URL = import.meta.env.DEV ? 'http://localhost:8000' : 'https://journalxbackend-production.up.railway.app';
+
+// Sanitize URL: Remove any ellipses (...) that might have been pasted by mistake
+// and ensure we use HTTPS for production railway URLs
+let API_URL = VITE_API_URL && !VITE_API_URL.includes('...') ? VITE_API_URL : FALLBACK_URL;
+
+if (API_URL.includes('railway.app')) {
+    API_URL = API_URL.replace('http://', 'https://');
+}
+
+console.log('🚀 API Configured to:', API_URL);
 
 
 
