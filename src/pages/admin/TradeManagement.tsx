@@ -62,7 +62,7 @@ const TradeManagement = () => {
                 params.user_id = selectedUserId;
             }
 
-            const response = await api.get("/api/admin/trades", { params });
+            const response = await api.get("/api/admin/trades/", { params });
             setTrades(response.data.trades);
         } catch (error) {
             toast({
