@@ -1,5 +1,6 @@
+import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
-import { Settings as SettingsIcon, User, Bell, Shield, Palette, Globe, Save } from "lucide-react";
+import { Settings as SettingsIcon, User, Bell, Shield, Palette, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,16 +13,64 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { useTheme } from "@/context/ThemeContext";
+import { useAuth } from "@/context/AuthContext";
+import api from "@/lib/api";
 
 const Settings = () => {
   const { theme, setTheme } = useTheme();
-  const handleSave = () => {
-    toast({
-      title: "Settings Saved",
-      description: "Your preferences have been updated successfully.",
-    });
+  const { user } = useAuth();
+
+  // Password Change State
+  const [isPasswordOpen, setIsPasswordOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
+
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast({ title: "Error", description: "All fields are required", variant: "destructive" });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Error", description: "New passwords do not match", variant: "destructive" });
+      return;
+    }
+
+    setIsPasswordLoading(true);
+    try {
+      if (!user) return;
+
+      await api.post(`/api/users/profile/${user.user_id}/password`, {
+        current_password: currentPassword,
+        new_password: newPassword,
+        confirm_password: confirmPassword
+      });
+
+      toast({ title: "Success", description: "Password changed successfully" });
+      setIsPasswordOpen(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error: any) {
+      console.error("Password change error:", error);
+      const msg = error.response?.data?.detail || "Failed to change password";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    } finally {
+      setIsPasswordLoading(false);
+    }
   };
 
   return (
@@ -34,38 +83,12 @@ const Settings = () => {
             <SettingsIcon className="w-8 h-8 text-primary" />
             <h1 className="text-3xl lg:text-4xl font-bold text-foreground">Settings</h1>
           </div>
-          <p className="text-muted-foreground">Manage your account and preferences</p>
+          <p className="text-muted-foreground">Manage your preferences and security</p>
         </div>
 
         <div className="space-y-8">
-          {/* Profile Section */}
-          <div className="glass-card p-6 opacity-0 animate-fade-up" style={{ animationDelay: "0.1s" }}>
-            <div className="flex items-center gap-3 mb-6">
-              <User className="w-5 h-5 text-primary" />
-              <h2 className="text-lg font-semibold">Profile Information</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input id="firstName" defaultValue="Sandip" className="bg-muted/50" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input id="lastName" defaultValue="Salunkhe" className="bg-muted/50" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue="sandip@example.com" className="bg-muted/50" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" type="tel" placeholder="+1 (555) 000-0000" className="bg-muted/50" />
-              </div>
-            </div>
-          </div>
-
           {/* Notifications Section */}
-          <div className="glass-card p-6 opacity-0 animate-fade-up" style={{ animationDelay: "0.15s" }}>
+          <div className="glass-card p-6 opacity-0 animate-fade-up" style={{ animationDelay: "0.1s" }}>
             <div className="flex items-center gap-3 mb-6">
               <Bell className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Notifications</h2>
@@ -88,9 +111,8 @@ const Settings = () => {
             </div>
           </div>
 
-
           {/* Preferences Section */}
-          <div className="glass-card p-6 opacity-0 animate-fade-up" style={{ animationDelay: "0.2s" }}>
+          <div className="glass-card p-6 opacity-0 animate-fade-up" style={{ animationDelay: "0.15s" }}>
             <div className="flex items-center gap-3 mb-6">
               <Palette className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Preferences</h2>
@@ -173,7 +195,7 @@ const Settings = () => {
           </div>
 
           {/* Security Section */}
-          <div className="glass-card p-6 opacity-0 animate-fade-up" style={{ animationDelay: "0.25s" }}>
+          <div className="glass-card p-6 opacity-0 animate-fade-up" style={{ animationDelay: "0.2s" }}>
             <div className="flex items-center gap-3 mb-6">
               <Shield className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Security</h2>
@@ -192,18 +214,57 @@ const Settings = () => {
                   <p className="font-medium">Change Password</p>
                   <p className="text-sm text-muted-foreground">Update your password regularly</p>
                 </div>
-                <Button variant="outline" size="sm">Change</Button>
+
+                <Dialog open={isPasswordOpen} onOpenChange={setIsPasswordOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">Change</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Change Password</DialogTitle>
+                      <DialogDescription>
+                        Enter your current password and a new password below.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="current">Current Password</Label>
+                        <Input
+                          id="current"
+                          type="password"
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new">New Password</Label>
+                        <Input
+                          id="new"
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm">Confirm New Password</Label>
+                        <Input
+                          id="confirm"
+                          type="password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setIsPasswordOpen(false)}>Cancel</Button>
+                      <Button onClick={handleChangePassword} disabled={isPasswordLoading}>
+                        {isPasswordLoading ? "Changing..." : "Change Password"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
-          </div>
-
-          {/* Save Button */}
-          <div className="flex justify-end gap-4 opacity-0 animate-fade-up" style={{ animationDelay: "0.3s" }}>
-            <Button variant="outline">Cancel</Button>
-            <Button variant="hero" className="gap-2" onClick={handleSave}>
-              <Save className="w-4 h-4" />
-              Save Changes
-            </Button>
           </div>
         </div>
       </main >

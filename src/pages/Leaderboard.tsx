@@ -183,29 +183,29 @@ const Leaderboard = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
                   {/* 2nd Place */}
                   {topThree[1] && (
-                    <div className={`glass-card p-6 text-center transform md:translate-y-8 ${topThree[1].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
+                    <div className={`glass-card p-4 md:p-6 text-center transform md:translate-y-8 ${topThree[1].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
                       <div className="flex justify-center mb-4">
                         {getMedalIcon(2)}
                       </div>
-                      <Avatar className="w-20 h-20 mx-auto mb-4 ring-4 ring-gray-400">
+                      <Avatar className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 ring-4 ring-gray-400">
                         <AvatarFallback className="text-lg font-bold bg-gradient-to-br from-gray-300 to-gray-500 text-white">
                           {getInitials(topThree[1].username)}
                         </AvatarFallback>
                       </Avatar>
-                      <h3 className="font-bold text-lg mb-1">{topThree[1].username}</h3>
-                      <p className="text-sm text-muted-foreground mb-4">Rank #{topThree[1].rank}</p>
+                      <h3 className="font-bold text-base md:text-lg mb-1">{topThree[1].username}</h3>
+                      <p className="text-xs md:text-sm text-muted-foreground mb-4">Rank #{topThree[1].rank}</p>
                       <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-xs md:text-sm">
                           <span className="text-muted-foreground">Net Profit:</span>
                           <span className={`font-semibold ${topThree[1].net_profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                             {formatCurrency(topThree[1].net_profit)}
                           </span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-xs md:text-sm">
                           <span className="text-muted-foreground">Win Rate:</span>
                           <span className="font-semibold">{topThree[1].win_rate.toFixed(1)}%</span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-xs md:text-sm">
                           <span className="text-muted-foreground">Trades:</span>
                           <span className="font-semibold">{topThree[1].total_trades}</span>
                         </div>
@@ -215,29 +215,29 @@ const Leaderboard = () => {
 
                   {/* 1st Place */}
                   {topThree[0] && (
-                    <div className={`glass-card p-6 text-center ${topThree[0].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
+                    <div className={`glass-card p-4 md:p-6 text-center ${topThree[0].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
                       <div className="flex justify-center mb-4">
                         {getMedalIcon(1)}
                       </div>
-                      <Avatar className="w-24 h-24 mx-auto mb-4 ring-4 ring-yellow-500">
+                      <Avatar className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-4 ring-4 ring-yellow-500">
                         <AvatarFallback className="text-xl font-bold bg-gradient-to-br from-yellow-400 to-yellow-600 text-white">
                           {getInitials(topThree[0].username)}
                         </AvatarFallback>
                       </Avatar>
-                      <h3 className="font-bold text-xl mb-1">{topThree[0].username}</h3>
-                      <p className="text-sm text-muted-foreground mb-4">🏆 Champion</p>
+                      <h3 className="font-bold text-lg md:text-xl mb-1">{topThree[0].username}</h3>
+                      <p className="text-xs md:text-sm text-muted-foreground mb-4">🏆 Champion</p>
                       <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-xs md:text-sm">
                           <span className="text-muted-foreground">Net Profit:</span>
                           <span className={`font-semibold ${topThree[0].net_profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                             {formatCurrency(topThree[0].net_profit)}
                           </span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-xs md:text-sm">
                           <span className="text-muted-foreground">Win Rate:</span>
                           <span className="font-semibold">{topThree[0].win_rate.toFixed(1)}%</span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-xs md:text-sm">
                           <span className="text-muted-foreground">Trades:</span>
                           <span className="font-semibold">{topThree[0].total_trades}</span>
                         </div>
@@ -247,29 +247,29 @@ const Leaderboard = () => {
 
                   {/* 3rd Place */}
                   {topThree[2] && (
-                    <div className={`glass-card p-6 text-center transform md:translate-y-8 ${topThree[2].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
+                    <div className={`glass-card p-4 md:p-6 text-center transform md:translate-y-8 ${topThree[2].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
                       <div className="flex justify-center mb-4">
                         {getMedalIcon(3)}
                       </div>
-                      <Avatar className="w-20 h-20 mx-auto mb-4 ring-4 ring-amber-600">
+                      <Avatar className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 ring-4 ring-amber-600">
                         <AvatarFallback className="text-lg font-bold bg-gradient-to-br from-amber-500 to-amber-700 text-white">
                           {getInitials(topThree[2].username)}
                         </AvatarFallback>
                       </Avatar>
-                      <h3 className="font-bold text-lg mb-1">{topThree[2].username}</h3>
-                      <p className="text-sm text-muted-foreground mb-4">Rank #{topThree[2].rank}</p>
+                      <h3 className="font-bold text-base md:text-lg mb-1">{topThree[2].username}</h3>
+                      <p className="text-xs md:text-sm text-muted-foreground mb-4">Rank #{topThree[2].rank}</p>
                       <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-xs md:text-sm">
                           <span className="text-muted-foreground">Net Profit:</span>
                           <span className={`font-semibold ${topThree[2].net_profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                             {formatCurrency(topThree[2].net_profit)}
                           </span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-xs md:text-sm">
                           <span className="text-muted-foreground">Win Rate:</span>
                           <span className="font-semibold">{topThree[2].win_rate.toFixed(1)}%</span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-xs md:text-sm">
                           <span className="text-muted-foreground">Trades:</span>
                           <span className="font-semibold">{topThree[2].total_trades}</span>
                         </div>
@@ -286,32 +286,32 @@ const Leaderboard = () => {
                 <table className="w-full">
                   <thead className="bg-muted/50 border-b">
                     <tr>
-                      <th className="px-6 py-4 text-left text-sm font-semibold">Rank</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold">Trader</th>
-                      <th className="px-6 py-4 text-right text-sm font-semibold">Net Profit</th>
-                      <th className="px-6 py-4 text-right text-sm font-semibold">Win Rate</th>
-                      <th className="px-6 py-4 text-right text-sm font-semibold">Total Trades</th>
-                      <th className="px-6 py-4 text-right text-sm font-semibold">Profit Factor</th>
-                      <th className="px-6 py-4 text-right text-sm font-semibold">Best Trade</th>
+                      <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold">Rank</th>
+                      <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold">Trader</th>
+                      <th className="px-4 md:px-6 py-3 md:py-4 text-right text-xs md:text-sm font-semibold">Net Profit</th>
+                      <th className="px-4 md:px-6 py-3 md:py-4 text-right text-xs md:text-sm font-semibold">Win Rate</th>
+                      <th className="px-4 md:px-6 py-3 md:py-4 text-right text-xs md:text-sm font-semibold">Total Trades</th>
+                      <th className="px-4 md:px-6 py-3 md:py-4 text-right text-xs md:text-sm font-semibold">Profit Factor</th>
+                      <th className="px-4 md:px-6 py-3 md:py-4 text-right text-xs md:text-sm font-semibold">Best Trade</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y">
+                  <tbody className="divide-y text-xs md:text-sm">
                     {leaderboardData.map((entry, index) => (
                       <tr
                         key={entry.user_id}
                         className={`hover:bg-muted/30 transition-colors ${entry.user_id === user?.user_id ? 'bg-primary/10 ring-1 ring-primary' : ''
                           }`}
                       >
-                        <td className="px-6 py-4">
+                        <td className="px-4 md:px-6 py-3 md:py-4">
                           <div className="flex items-center gap-2">
                             {entry.rank <= 3 && getMedalIcon(entry.rank)}
                             <span className="font-semibold">#{entry.rank}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 md:px-6 py-3 md:py-4">
                           <div className="flex items-center gap-3">
-                            <Avatar className="w-10 h-10">
-                              <AvatarFallback className="text-sm font-semibold">
+                            <Avatar className="w-8 h-8 md:w-10 md:h-10">
+                              <AvatarFallback className="text-xs md:text-sm font-semibold">
                                 {getInitials(entry.username)}
                               </AvatarFallback>
                             </Avatar>
@@ -319,39 +319,39 @@ const Leaderboard = () => {
                               <div className="font-medium flex items-center gap-2">
                                 {entry.username}
                                 {entry.user_id === user?.user_id && (
-                                  <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                                  <span className="text-[10px] bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
                                     You
                                   </span>
                                 )}
                               </div>
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-[10px] md:text-xs text-muted-foreground whitespace-nowrap">
                                 {entry.winning_trades}W / {entry.losing_trades}L
                               </div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-4 md:px-6 py-3 md:py-4 text-right whitespace-nowrap">
                           <span className={`font-semibold ${entry.net_profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                             {formatCurrency(entry.net_profit)}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-4 md:px-6 py-3 md:py-4 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <span className="font-medium">{entry.win_rate.toFixed(1)}%</span>
                             {entry.win_rate >= 50 ? (
-                              <ArrowUp className="w-4 h-4 text-green-500" />
+                              <ArrowUp className="w-3 h-3 md:w-4 md:h-4 text-green-500" />
                             ) : (
-                              <ArrowDown className="w-4 h-4 text-red-500" />
+                              <ArrowDown className="w-3 h-3 md:w-4 md:h-4 text-red-500" />
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-right font-medium">{entry.total_trades}</td>
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-4 md:px-6 py-3 md:py-4 text-right font-medium">{entry.total_trades}</td>
+                        <td className="px-4 md:px-6 py-3 md:py-4 text-right">
                           <span className={`font-medium ${entry.profit_factor >= 1 ? 'text-green-500' : 'text-red-500'}`}>
                             {entry.profit_factor.toFixed(2)}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-4 md:px-6 py-3 md:py-4 text-right whitespace-nowrap">
                           <span className="font-medium text-green-500">
                             {formatCurrency(entry.best_trade)}
                           </span>

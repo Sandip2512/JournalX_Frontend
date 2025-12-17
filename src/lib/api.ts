@@ -1,9 +1,10 @@
 import axios from 'axios';
 
-// Hardcoded production URL to avoid environment variable issues
-// Force rebuild: This URL is ALWAYS HTTPS regardless of env vars
-// Build timestamp: 2025-12-17T04:23:00
-const API_URL = 'https://journalxbackend-production.up.railway.app';
+// Environment-based API URL configuration
+// In development, this will fallback to localhost if VITE_API_URL is not set
+// In production, this should be set via environment variables or fallback to the production URL
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000' : 'https://journalxbackend-production.up.railway.app');
+console.log('🚀 API Configuered to:', API_URL);
 
 
 
@@ -49,12 +50,12 @@ export const leaderboardApi = {
     getLeaderboard: (sortBy: string, limit: number, timePeriod: string) => {
         // Force HTTPS - hardcoded to prevent any HTTP requests
         const endpoint = `/api/leaderboard/?sort_by=${sortBy}&limit=${limit}&time_period=${timePeriod}`;
-        console.log('🔗 Leaderboard API URL:', `https://journalxbackend-production.up.railway.app${endpoint}`);
+        console.log('🔗 Leaderboard API URL:', `${API_URL}${endpoint}`);
         return api.get(endpoint);
     },
     getUserRanking: (userId: string, sortBy: string, timePeriod: string) => {
         const endpoint = `/api/leaderboard/user/${userId}?sort_by=${sortBy}&time_period=${timePeriod}`;
-        console.log('🔗 User Ranking API URL:', `https://journalxbackend-production.up.railway.app${endpoint}`);
+        console.log('🔗 User Ranking API URL:', `${API_URL}${endpoint}`);
         return api.get(endpoint);
     }
 };

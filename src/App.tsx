@@ -13,6 +13,7 @@ import Analytics from "./pages/Analytics";
 import Mistakes from "./pages/Mistakes";
 import Leaderboard from "./pages/Leaderboard";
 import Settings from "./pages/Settings";
+import Profile from "./pages/Profile";
 import Goals from "./pages/Goals";
 import TradersDiary from "./pages/TradersDiary";
 import ProtectedAdminRoute from "./components/layout/ProtectedAdminRoute";
@@ -52,6 +53,7 @@ const App = () => (
                 <Route path="/mistakes" element={<Mistakes />} />
                 <Route path="/leaderboard" element={<Leaderboard />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/profile" element={<Profile />} />
                 <Route path="/goals" element={<Goals />} />
                 <Route path="/traders-diary" element={<TradersDiary />} />
                 <Route path="/broker-connections" element={<BrokerConnections />} />

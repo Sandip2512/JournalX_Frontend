@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -33,6 +33,23 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
+    // Auto-close sidebar on mobile route change
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth < 1024) {
+                setIsSidebarOpen(false);
+            } else {
+                setIsSidebarOpen(true);
+            }
+        };
+
+        // Initial check
+        handleResize();
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const menuItems = [
         { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
         { icon: Users, label: "User Management", path: "/admin/users" },
@@ -43,11 +60,21 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     ];
 
     return (
-        <div className="min-h-screen bg-background flex">
+        <div className="min-h-screen bg-background flex flex-col lg:flex-row">
+            {/* Mobile Sidebar Backdrop */}
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+
             {/* Sidebar */}
             <aside
-                className={`${isSidebarOpen ? "w-64" : "w-16"
-                    } bg-card border-r transition-all duration-300 flex flex-col fixed h-full z-20`}
+                className={`
+                    fixed inset-y-0 left-0 z-50 h-full bg-card border-r transition-all duration-300 flex flex-col
+                    ${isSidebarOpen ? "w-64 translate-x-0" : "-translate-x-full w-64 lg:translate-x-0 lg:w-16"}
+                `}
             >
                 <div className="h-16 flex items-center justify-between px-4 border-b bg-primary/5">
                     {isSidebarOpen && (
@@ -60,7 +87,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                         variant="ghost"
                         size="icon"
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                        className={!isSidebarOpen ? "mx-auto" : ""}
+                        className="shrink-0" // Removed mx-auto to fix alignment
                     >
                         <Menu className="h-5 w-5" />
                     </Button>
@@ -73,9 +100,10 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                             <Link to={item.path} key={item.path}>
                                 <Button
                                     variant={isActive ? "default" : "ghost"}
-                                    className={`w-full justify-start ${!isSidebarOpen ? "px-0 justify-center" : ""}`}
+                                    onClick={() => window.innerWidth < 1024 && setIsSidebarOpen(false)}
+                                    className={`w-full justify-start ${!isSidebarOpen ? "lg:px-0 lg:justify-center" : ""}`}
                                 >
-                                    <item.icon className={`h-5 w-5 ${isSidebarOpen ? "mr-2" : ""}`} />
+                                    <item.icon className={`h-5 w-5 ${isSidebarOpen ? "mr-2" : "lg:mr-0"}`} />
                                     {isSidebarOpen && item.label}
                                 </Button>
                             </Link>
@@ -84,7 +112,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                 </nav>
 
                 <div className="p-4 border-t space-y-2">
-                    <div className={`flex items-center justify-between ${!isSidebarOpen && "flex-col gap-2"}`}>
+                    <div className={`flex items-center justify-between ${!isSidebarOpen && "lg:flex-col lg:gap-2"}`}>
                         <ThemeToggle />
                         {isSidebarOpen && <span className="text-xs text-muted-foreground">v1.0.0</span>}
                     </div>
@@ -93,9 +121,9 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                         <AlertDialogTrigger asChild>
                             <Button
                                 variant="destructive"
-                                className={`w-full justify-start ${!isSidebarOpen ? "px-0 justify-center" : ""}`}
+                                className={`w-full justify-start ${!isSidebarOpen ? "lg:px-0 lg:justify-center" : ""}`}
                             >
-                                <LogOut className={`h-5 w-5 ${isSidebarOpen ? "mr-2" : ""}`} />
+                                <LogOut className={`h-5 w-5 ${isSidebarOpen ? "mr-2" : "lg:mr-0"}`} />
                                 {isSidebarOpen && "Logout"}
                             </Button>
                         </AlertDialogTrigger>
@@ -117,11 +145,21 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
 
             {/* Main Content */}
             <main
-                className={`flex-1 transition-all duration-300 ${isSidebarOpen ? "ml-64" : "ml-16"
-                    }`}
+                className={`
+                    flex-1 transition-all duration-300 min-h-screen
+                    ${isSidebarOpen ? "lg:ml-64" : "lg:ml-16"}
+                    ml-0 w-full
+                `}
             >
-                <header className="h-16 border-b bg-background/50 backdrop-blur sticky top-0 z-10 flex items-center justify-between px-6">
-                    <h2 className="text-lg font-semibold capitalize">
+                <header className="h-16 border-b bg-background/50 backdrop-blur sticky top-0 z-30 flex items-center justify-between px-4 lg:px-6">
+                    <div className="flex items-center gap-2 lg:hidden">
+                        <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)}>
+                            <Menu className="h-5 w-5" />
+                        </Button>
+                        <span className="font-semibold">Admin</span>
+                    </div>
+
+                    <h2 className="text-lg font-semibold capitalize hidden lg:block">
                         {location.pathname.split("/").pop() || "Dashboard"}
                     </h2>
                     <div className="flex items-center gap-4">
@@ -134,7 +172,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                         </div>
                     </div>
                 </header>
-                <div className="p-6">
+                <div className="p-4 lg:p-6 pb-20 lg:pb-6 overflow-x-hidden">
                     {children}
                 </div>
             </main>

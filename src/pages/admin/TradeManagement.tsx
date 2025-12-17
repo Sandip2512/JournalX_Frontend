@@ -107,16 +107,16 @@ const TradeManagement = () => {
                 </div>
             </div>
 
-            <div className="rounded-md border bg-card">
+            <div className="rounded-md border bg-card overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Ticket</TableHead>
-                            <TableHead>Symbol</TableHead>
+                            <TableHead className="min-w-[80px]">Ticket</TableHead>
+                            <TableHead className="min-w-[80px]">Symbol</TableHead>
                             <TableHead>Type</TableHead>
                             <TableHead>Volume</TableHead>
                             <TableHead className="text-right">Profit</TableHead>
-                            <TableHead className="text-right">Closed</TableHead>
+                            <TableHead className="text-right whitespace-nowrap">Closed</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -129,7 +129,7 @@ const TradeManagement = () => {
                             </TableRow>
                         ) : trades.map((trade) => (
                             <TableRow key={trade.id}>
-                                <TableCell className="font-mono text-xs">{trade.ticket}</TableCell>
+                                <TableCell className="font-mono text-xs whitespace-nowrap">{trade.ticket}</TableCell>
                                 <TableCell className="font-bold">{trade.symbol}</TableCell>
                                 <TableCell>
                                     <Badge variant={trade.type === 'buy' ? "default" : "destructive"}>
@@ -140,7 +140,7 @@ const TradeManagement = () => {
                                 <TableCell className={`text-right font-medium ${trade.net_profit >= 0 ? "text-green-500" : "text-red-500"}`}>
                                     ${trade.net_profit.toFixed(2)}
                                 </TableCell>
-                                <TableCell className="text-right text-muted-foreground text-xs">
+                                <TableCell className="text-right text-muted-foreground text-xs whitespace-nowrap">
                                     {new Date(trade.close_time).toLocaleString()}
                                 </TableCell>
                                 <TableCell className="text-right">

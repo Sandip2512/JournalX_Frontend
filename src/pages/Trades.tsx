@@ -128,58 +128,60 @@ const Trades = () => {
 
         {/* Trades Table */}
         <div className="glass-card overflow-hidden opacity-0 animate-fade-up" style={{ animationDelay: "0.2s" }}>
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50 hover:bg-muted/50">
-                <TableHead className="font-semibold">
-                  <div className="flex items-center gap-1 cursor-pointer hover:text-foreground">
-                    Trade No <ArrowUpDown className="w-3 h-3" />
-                  </div>
-                </TableHead>
-                <TableHead className="font-semibold">Symbol</TableHead>
-                <TableHead className="font-semibold">Type</TableHead>
-                <TableHead className="font-semibold">Volume</TableHead>
-                <TableHead className="font-semibold">Entry</TableHead>
-                <TableHead className="font-semibold">Exit</TableHead>
-                <TableHead className="font-semibold">
-                  <div className="flex items-center gap-1 cursor-pointer hover:text-foreground">
-                    P/L <ArrowUpDown className="w-3 h-3" />
-                  </div>
-                </TableHead>
-                <TableHead className="font-semibold">Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredTrades.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-4">
-                    {trades.length === 0 ? "No trades found" : "No trades match your filters"}
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="font-semibold whitespace-nowrap">
+                    <div className="flex items-center gap-1 cursor-pointer hover:text-foreground">
+                      Trade No <ArrowUpDown className="w-3 h-3" />
+                    </div>
+                  </TableHead>
+                  <TableHead className="font-semibold">Symbol</TableHead>
+                  <TableHead className="font-semibold">Type</TableHead>
+                  <TableHead className="font-semibold">Volume</TableHead>
+                  <TableHead className="font-semibold whitespace-nowrap">Entry</TableHead>
+                  <TableHead className="font-semibold whitespace-nowrap">Exit</TableHead>
+                  <TableHead className="font-semibold">
+                    <div className="flex items-center gap-1 cursor-pointer hover:text-foreground">
+                      P/L <ArrowUpDown className="w-3 h-3" />
+                    </div>
+                  </TableHead>
+                  <TableHead className="font-semibold whitespace-nowrap">Date</TableHead>
                 </TableRow>
-              ) : (
-                filteredTrades.map((trade) => (
-                  <TableRow key={trade.trade_no} className="cursor-pointer hover:bg-muted/30 transition-colors">
-                    <TableCell className="font-mono text-sm">{trade.trade_no}</TableCell>
-                    <TableCell className="font-semibold">{trade.symbol}</TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold ${trade.type?.toString().toUpperCase().includes("BUY") ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
-                        }`}>
-                        {trade.type?.toString().toUpperCase().includes("BUY") ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                        {trade.type}
-                      </span>
+              </TableHeader>
+              <TableBody>
+                {filteredTrades.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-4">
+                      {trades.length === 0 ? "No trades found" : "No trades match your filters"}
                     </TableCell>
-                    <TableCell>{trade.volume}</TableCell>
-                    <TableCell className="font-mono text-sm">{trade.price_open}</TableCell>
-                    <TableCell className="font-mono text-sm">{trade.price_close}</TableCell>
-                    <TableCell className={`font-semibold ${trade.net_profit >= 0 ? "text-success" : "text-destructive"}`}>
-                      {trade.net_profit >= 0 ? "+" : ""}${trade.net_profit?.toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">{new Date(trade.open_time).toLocaleString()}</TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  filteredTrades.map((trade) => (
+                    <TableRow key={trade.trade_no} className="cursor-pointer hover:bg-muted/30 transition-colors">
+                      <TableCell className="font-mono text-sm whitespace-nowrap">{trade.trade_no}</TableCell>
+                      <TableCell className="font-semibold">{trade.symbol}</TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold ${trade.type?.toString().toUpperCase().includes("BUY") ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+                          }`}>
+                          {trade.type?.toString().toUpperCase().includes("BUY") ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                          {trade.type}
+                        </span>
+                      </TableCell>
+                      <TableCell>{trade.volume}</TableCell>
+                      <TableCell className="font-mono text-sm">{trade.price_open}</TableCell>
+                      <TableCell className="font-mono text-sm">{trade.price_close}</TableCell>
+                      <TableCell className={`font-semibold whitespace-nowrap ${trade.net_profit >= 0 ? "text-success" : "text-destructive"}`}>
+                        {trade.net_profit >= 0 ? "+" : ""}${trade.net_profit?.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{new Date(trade.open_time).toLocaleString()}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
           {filteredTrades.length > 0 && (
             <div className="p-4 border-t text-sm text-muted-foreground">
               Showing {filteredTrades.length} of {trades.length} trades
