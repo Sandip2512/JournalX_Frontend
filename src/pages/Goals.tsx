@@ -152,12 +152,32 @@ export default function Goals() {
                                     <span>Profit Goal</span>
                                     <span>${savedGoals.monthly_profit_target.toFixed(2)}</span>
                                 </div>
-                                <Progress value={profitProgress} className="h-3" />
+                                {/* 3D Progress Bar */}
+                                <div className="relative h-6 bg-gradient-to-b from-muted/30 to-muted/60 rounded-lg overflow-hidden shadow-inner">
+                                    <div
+                                        className="absolute inset-0 bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500 rounded-lg transition-all duration-700 ease-out"
+                                        style={{
+                                            width: `${profitProgress}%`,
+                                            boxShadow: '0 4px 14px 0 rgba(16, 185, 129, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.3), inset 0 -2px 4px rgba(0, 0, 0, 0.2)',
+                                            transform: 'translateZ(0)',
+                                            backgroundSize: '200% 100%',
+                                            animation: profitProgress > 0 ? 'shimmer 3s infinite' : 'none'
+                                        }}
+                                    >
+                                        <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+                                    </div>
+                                </div>
                                 <div className="flex justify-between text-xs text-muted-foreground pt-1">
                                     <span>Current: ${currentStats.current_profit.toFixed(2)}</span>
                                     <span>{profitProgress.toFixed(0)}%</span>
                                 </div>
                             </div>
+                            <style jsx>{`
+                                @keyframes shimmer {
+                                    0% { background-position: 200% 0; }
+                                    100% { background-position: -200% 0; }
+                                }
+                            `}</style>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
