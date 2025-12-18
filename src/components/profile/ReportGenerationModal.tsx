@@ -155,8 +155,8 @@ const ReportGenerationModal = ({ isOpen, onClose, onSuccess }: ReportGenerationM
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className={cn(
-                "transition-all duration-300",
-                showPreview ? "sm:max-w-[900px] h-[90vh] overflow-y-auto" : "sm:max-w-[425px]"
+                "transition-all duration-300 max-h-[90vh] overflow-y-auto",
+                showPreview ? "sm:max-w-[900px]" : "sm:max-w-[425px]"
             )}>
                 <DialogHeader>
                     <div className="flex items-center justify-between">
