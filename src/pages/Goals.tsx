@@ -13,7 +13,15 @@ export default function Goals() {
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    // Form state - always starts empty
     const [goals, setGoals] = useState({
+        monthly_profit_target: 0,
+        max_daily_loss: 0,
+        max_trades_per_day: 0
+    });
+
+    // Saved goals from database - for display in tracking cards
+    const [savedGoals, setSavedGoals] = useState({
         monthly_profit_target: 0,
         max_daily_loss: 0,
         max_trades_per_day: 0
@@ -30,10 +38,10 @@ export default function Goals() {
         const fetchData = async () => {
             if (user?.user_id) {
                 try {
-                    // Fetch Goals - but don't populate the form, just check if they exist
+                    // Fetch Goals - populate savedGoals for tracking display, but keep form empty
                     try {
-                        await api.get(`/api/goals/user/${user.user_id}`);
-                        // Goals exist but we don't populate the form - form stays empty
+                        const goalsRes = await api.get(`/api/goals/user/${user.user_id}`);
+                        setSavedGoals(goalsRes.data);
                     } catch (goalError: any) {
                         // If 404, user hasn't set goals yet - keep default empty state
                         if (goalError.response?.status !== 404) {
@@ -87,6 +95,9 @@ export default function Goals() {
             const response = await api.post(`/api/goals/`, goals, {
                 params: { user_id: user.user_id }
             });
+            // Update saved goals for display in tracking cards
+            setSavedGoals(response.data);
+            // Clear the form
             setGoals({
                 monthly_profit_target: 0,
                 max_daily_loss: 0,
@@ -110,9 +121,9 @@ export default function Goals() {
 
     if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
-    // Calculate progress
-    const profitProgress = goals.monthly_profit_target > 0
-        ? Math.min(100, Math.max(0, (currentStats.current_profit / goals.monthly_profit_target) * 100))
+    // Calculate progress using saved goals
+    const profitProgress = savedGoals.monthly_profit_target > 0
+        ? Math.min(100, Math.max(0, (currentStats.current_profit / savedGoals.monthly_profit_target) * 100))
         : 0;
 
     return (
@@ -139,7 +150,7 @@ export default function Goals() {
                             <div className="space-y-2 mb-2">
                                 <div className="flex justify-between text-sm font-medium">
                                     <span>Profit Goal</span>
-                                    <span>${goals.monthly_profit_target.toFixed(2)}</span>
+                                    <span>${savedGoals.monthly_profit_target.toFixed(2)}</span>
                                 </div>
                                 <Progress value={profitProgress} className="h-3" />
                                 <div className="flex justify-between text-xs text-muted-foreground pt-1">
@@ -153,9 +164,9 @@ export default function Goals() {
                             <div className="glass-card p-6 border-l-4 border-l-destructive/50">
                                 <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Daily Loss Limit</h3>
                                 <div className="text-2xl font-bold mb-1">
-                                    ${currentStats.today_loss.toFixed(2)} <span className="text-muted-foreground text-base font-normal">/ ${goals.max_daily_loss.toFixed(2)}</span>
+                                    ${currentStats.today_loss.toFixed(2)} <span className="text-muted-foreground text-base font-normal">/ ${savedGoals.max_daily_loss.toFixed(2)}</span>
                                 </div>
-                                {goals.max_daily_loss > 0 && currentStats.today_loss >= goals.max_daily_loss && (
+                                {savedGoals.max_daily_loss > 0 && currentStats.today_loss >= savedGoals.max_daily_loss && (
                                     <div className="text-destructive text-sm font-bold flex items-center gap-1 mt-2">
                                         <ShieldAlert className="w-4 h-4" /> STOP TRADING
                                     </div>
@@ -165,9 +176,9 @@ export default function Goals() {
                             <div className="glass-card p-6">
                                 <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Daily Trades</h3>
                                 <div className="text-2xl font-bold mb-1">
-                                    {currentStats.today_trades} <span className="text-muted-foreground text-base font-normal">/ {goals.max_trades_per_day}</span>
+                                    {currentStats.today_trades} <span className="text-muted-foreground text-base font-normal">/ {savedGoals.max_trades_per_day}</span>
                                 </div>
-                                {goals.max_trades_per_day > 0 && currentStats.today_trades >= goals.max_trades_per_day && (
+                                {savedGoals.max_trades_per_day > 0 && currentStats.today_trades >= savedGoals.max_trades_per_day && (
                                     <div className="text-yellow-500 text-sm font-bold flex items-center gap-1 mt-2">
                                         <ShieldAlert className="w-4 h-4" /> LIMIT REACHED
                                     </div>
