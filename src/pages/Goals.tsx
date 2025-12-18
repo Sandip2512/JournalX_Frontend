@@ -185,9 +185,10 @@ export default function Goals() {
                                 <Input
                                     id="target"
                                     type="number"
-                                    value={goals.monthly_profit_target}
+                                    value={goals.monthly_profit_target || ''}
                                     onChange={(e) => handleChange("monthly_profit_target", e.target.value)}
                                     className="bg-muted/50"
+                                    placeholder="Enter monthly profit target"
                                 />
                                 <p className="text-xs text-muted-foreground">What is your realistic profit goal for this month?</p>
                             </div>
@@ -197,9 +198,10 @@ export default function Goals() {
                                 <Input
                                     id="loss_limit"
                                     type="number"
-                                    value={goals.max_daily_loss}
+                                    value={goals.max_daily_loss || ''}
                                     onChange={(e) => handleChange("max_daily_loss", e.target.value)}
                                     className="bg-muted/50 border-destructive/20 focus:border-destructive"
+                                    placeholder="Enter max daily loss"
                                 />
                                 <p className="text-xs text-muted-foreground">At what loss amount will you stop trading for the day?</p>
                             </div>
@@ -209,9 +211,10 @@ export default function Goals() {
                                 <Input
                                     id="trade_limit"
                                     type="number"
-                                    value={goals.max_trades_per_day}
+                                    value={goals.max_trades_per_day || ''}
                                     onChange={(e) => handleChange("max_trades_per_day", e.target.value)}
                                     className="bg-muted/50"
+                                    placeholder="Enter max trades per day"
                                 />
                                 <p className="text-xs text-muted-foreground">To prevent overtrading, set a hard limit on trade count.</p>
                             </div>
