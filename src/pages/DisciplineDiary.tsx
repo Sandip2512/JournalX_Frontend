@@ -145,15 +145,18 @@ export default function DisciplineDiary() {
                         {history.slice().reverse().map((day, index) => {
                             const date = new Date(day.date);
                             const isToday = new Date().toDateString() === date.toDateString();
+                            const hasNoTrades = day.total_trades === 0;
 
                             return (
                                 <div
                                     key={index}
                                     className={`
                                         group relative aspect-square rounded cursor-pointer transition-all duration-200
-                                        ${day.all_rules_followed
-                                            ? 'bg-gradient-to-br from-success/20 to-success/10 border border-success/40 hover:border-success'
-                                            : 'bg-gradient-to-br from-destructive/20 to-destructive/10 border border-destructive/40 hover:border-destructive'
+                                        ${hasNoTrades
+                                            ? 'bg-muted/20 border border-muted/40 hover:border-muted'
+                                            : day.all_rules_followed
+                                                ? 'bg-gradient-to-br from-success/20 to-success/10 border border-success/40 hover:border-success'
+                                                : 'bg-gradient-to-br from-destructive/20 to-destructive/10 border border-destructive/40 hover:border-destructive'
                                         }
                                         ${selectedDay?.date === day.date ? 'ring-1 ring-primary scale-105' : 'hover:scale-105'}
                                         ${isToday ? 'ring-1 ring-warning' : ''}
@@ -163,15 +166,17 @@ export default function DisciplineDiary() {
                                     {/* Content */}
                                     <div className="relative h-full flex flex-col items-center justify-center gap-0.5">
                                         {/* Date */}
-                                        <div className={`text-[11px] font-bold ${isToday ? 'text-warning' : ''}`}>
+                                        <div className={`text-[11px] font-bold ${isToday ? 'text-warning' : hasNoTrades ? 'text-muted-foreground' : ''}`}>
                                             {date.getDate()}
                                         </div>
 
-                                        {/* Icon */}
-                                        {day.all_rules_followed ? (
-                                            <CheckCircle2 className="w-3.5 h-3.5 text-success" />
-                                        ) : (
-                                            <XCircle className="w-3.5 h-3.5 text-destructive" />
+                                        {/* Icon - only show if there are trades */}
+                                        {!hasNoTrades && (
+                                            day.all_rules_followed ? (
+                                                <CheckCircle2 className="w-3.5 h-3.5 text-success" />
+                                            ) : (
+                                                <XCircle className="w-3.5 h-3.5 text-destructive" />
+                                            )
                                         )}
                                     </div>
 
