@@ -172,12 +172,6 @@ export default function Goals() {
                                     <span>{profitProgress.toFixed(0)}%</span>
                                 </div>
                             </div>
-                            <style jsx>{`
-                                @keyframes shimmer {
-                                    0% { background-position: 200% 0; }
-                                    100% { background-position: -200% 0; }
-                                }
-                            `}</style>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
