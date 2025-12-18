@@ -87,7 +87,11 @@ export default function Goals() {
             const response = await api.post(`/api/goals/`, goals, {
                 params: { user_id: user.user_id }
             });
-            setGoals(response.data);
+            setGoals({
+                monthly_profit_target: 0,
+                max_daily_loss: 0,
+                max_trades_per_day: 0
+            });
             toast({
                 title: "Goals Updated",
                 description: "Your trading goals and limits have been saved."
