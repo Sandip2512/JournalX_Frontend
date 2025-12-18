@@ -152,24 +152,77 @@ export default function Goals() {
                                     <span>Profit Goal</span>
                                     <span>${savedGoals.monthly_profit_target.toFixed(2)}</span>
                                 </div>
-                                {/* 3D Progress Bar */}
-                                <div className="relative h-6 bg-gradient-to-b from-muted/30 to-muted/60 rounded-lg overflow-hidden shadow-inner">
+                                {/* Ultra 3D Progress Bar */}
+                                <div
+                                    className="relative h-8 rounded-xl overflow-visible"
+                                    style={{
+                                        perspective: '1000px',
+                                        transformStyle: 'preserve-3d'
+                                    }}
+                                >
+                                    {/* Background track with depth */}
+                                    <div className="absolute inset-0 bg-gradient-to-b from-muted/40 to-muted/70 rounded-xl shadow-inner"
+                                        style={{
+                                            boxShadow: 'inset 0 4px 8px rgba(0,0,0,0.15), inset 0 -2px 4px rgba(255,255,255,0.1)'
+                                        }}
+                                    />
+
+                                    {/* Progress bar with extreme 3D */}
                                     <div
-                                        className="absolute inset-0 bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500 rounded-lg transition-all duration-700 ease-out"
+                                        className="absolute inset-0 rounded-xl transition-all duration-1000 ease-out overflow-hidden"
                                         style={{
                                             width: `${profitProgress}%`,
-                                            boxShadow: '0 4px 14px 0 rgba(16, 185, 129, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.3), inset 0 -2px 4px rgba(0, 0, 0, 0.2)',
-                                            transform: 'translateZ(0)',
-                                            backgroundSize: '200% 100%',
-                                            animation: profitProgress > 0 ? 'shimmer 3s infinite' : 'none'
+                                            transform: 'translateZ(20px)',
+                                            transformStyle: 'preserve-3d'
                                         }}
                                     >
-                                        <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+                                        {/* Main gradient bar */}
+                                        <div
+                                            className="absolute inset-0 rounded-xl"
+                                            style={{
+                                                background: 'linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%)',
+                                                boxShadow: `
+                                                    0 8px 24px -4px rgba(16, 185, 129, 0.6),
+                                                    0 4px 12px -2px rgba(16, 185, 129, 0.4),
+                                                    inset 0 2px 6px rgba(255, 255, 255, 0.4),
+                                                    inset 0 -3px 6px rgba(0, 0, 0, 0.3),
+                                                    0 0 40px rgba(16, 185, 129, ${profitProgress > 0 ? '0.3' : '0'})
+                                                `,
+                                                animation: profitProgress > 0 ? 'pulse-progress 2s ease-in-out infinite' : 'none'
+                                            }}
+                                        >
+                                            {/* Top highlight for glass effect */}
+                                            <div
+                                                className="absolute inset-0 rounded-xl"
+                                                style={{
+                                                    background: 'linear-gradient(to bottom, rgba(255,255,255,0.3) 0%, transparent 50%, rgba(0,0,0,0.1) 100%)'
+                                                }}
+                                            />
+
+                                            {/* Animated shimmer overlay */}
+                                            <div
+                                                className="absolute inset-0 rounded-xl"
+                                                style={{
+                                                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+                                                    backgroundSize: '200% 100%',
+                                                    animation: profitProgress > 0 ? 'shimmer 3s linear infinite' : 'none'
+                                                }}
+                                            />
+
+                                            {/* Percentage text inside bar */}
+                                            {profitProgress > 15 && (
+                                                <div className="absolute inset-0 flex items-center justify-end pr-3">
+                                                    <span className="text-white font-bold text-sm drop-shadow-lg">
+                                                        {profitProgress.toFixed(0)}%
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex justify-between text-xs text-muted-foreground pt-1">
                                     <span>Current: ${currentStats.current_profit.toFixed(2)}</span>
-                                    <span>{profitProgress.toFixed(0)}%</span>
+                                    {profitProgress <= 15 && <span>{profitProgress.toFixed(0)}%</span>}
                                 </div>
                             </div>
                         </div>
