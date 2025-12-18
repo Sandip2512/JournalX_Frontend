@@ -180,32 +180,32 @@ const Leaderboard = () => {
             {topThree.length > 0 && (
               <div className="mb-12 opacity-0 animate-fade-up" style={{ animationDelay: "0.2s" }}>
                 <h2 className="text-2xl font-bold mb-6 text-center">Top Performers</h2>
-                <div className="flex overflow-x-auto pb-6 snap-x snap-mandatory gap-6 md:grid md:grid-cols-3 md:max-w-4xl md:mx-auto lg:overflow-visible">
+                <div className="flex overflow-x-auto pb-6 snap-x snap-mandatory gap-4 md:grid md:grid-cols-3 md:max-w-4xl md:mx-auto lg:overflow-visible px-4 md:px-0">
                   {/* 2nd Place */}
                   {topThree[1] && (
-                    <div className={`glass-card p-4 md:p-6 text-center shrink-0 w-[280px] md:w-auto snap-center transform md:translate-y-8 ${topThree[1].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
-                      <div className="flex justify-center mb-4">
+                    <div className={`glass-card p-3 md:p-6 text-center shrink-0 w-[220px] md:w-auto snap-center transform md:translate-y-8 ${topThree[1].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
+                      <div className="flex justify-center mb-3">
                         {getMedalIcon(2)}
                       </div>
-                      <Avatar className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 ring-4 ring-gray-400">
-                        <AvatarFallback className="text-lg font-bold bg-gradient-to-br from-gray-300 to-gray-500 text-white">
+                      <Avatar className="w-14 h-14 md:w-20 md:h-20 mx-auto mb-3 ring-4 ring-gray-400">
+                        <AvatarFallback className="text-base font-bold bg-gradient-to-br from-gray-300 to-gray-500 text-white">
                           {getInitials(topThree[1].username)}
                         </AvatarFallback>
                       </Avatar>
-                      <h3 className="font-bold text-base md:text-lg mb-1 truncate px-2">{topThree[1].username}</h3>
-                      <p className="text-xs md:text-sm text-muted-foreground mb-4">Rank #{topThree[1].rank}</p>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-xs md:text-sm">
+                      <h3 className="font-bold text-sm md:text-lg mb-0.5 truncate px-1">{topThree[1].username}</h3>
+                      <p className="text-[10px] md:text-sm text-muted-foreground mb-3">Rank #{topThree[1].rank}</p>
+                      <div className="space-y-1.5 md:space-y-2">
+                        <div className="flex justify-between text-[11px] md:text-sm">
                           <span className="text-muted-foreground">Net Profit:</span>
                           <span className={`font-semibold ${topThree[1].net_profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                             {formatCurrency(topThree[1].net_profit)}
                           </span>
                         </div>
-                        <div className="flex justify-between text-xs md:text-sm">
+                        <div className="flex justify-between text-[11px] md:text-sm">
                           <span className="text-muted-foreground">Win Rate:</span>
                           <span className="font-semibold">{topThree[1].win_rate.toFixed(1)}%</span>
                         </div>
-                        <div className="flex justify-between text-xs md:text-sm">
+                        <div className="flex justify-between text-[11px] md:text-sm">
                           <span className="text-muted-foreground">Trades:</span>
                           <span className="font-semibold">{topThree[1].total_trades}</span>
                         </div>
@@ -215,29 +215,29 @@ const Leaderboard = () => {
 
                   {/* 1st Place */}
                   {topThree[0] && (
-                    <div className={`glass-card p-4 md:p-6 text-center shrink-0 w-[280px] md:w-auto snap-center ${topThree[0].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
-                      <div className="flex justify-center mb-4">
+                    <div className={`glass-card p-3 md:p-6 text-center shrink-0 w-[240px] md:w-auto snap-center ${topThree[0].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
+                      <div className="flex justify-center mb-3">
                         {getMedalIcon(1)}
                       </div>
-                      <Avatar className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-4 ring-4 ring-yellow-500">
-                        <AvatarFallback className="text-xl font-bold bg-gradient-to-br from-yellow-400 to-yellow-600 text-white">
+                      <Avatar className="w-18 h-18 md:w-24 md:h-24 mx-auto mb-3 ring-4 ring-yellow-500">
+                        <AvatarFallback className="text-lg font-bold bg-gradient-to-br from-yellow-400 to-yellow-600 text-white">
                           {getInitials(topThree[0].username)}
                         </AvatarFallback>
                       </Avatar>
-                      <h3 className="font-bold text-lg md:text-xl mb-1 truncate px-2">{topThree[0].username}</h3>
-                      <p className="text-xs md:text-sm text-muted-foreground mb-4">🏆 Champion</p>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-xs md:text-sm">
+                      <h3 className="font-bold text-base md:text-xl mb-0.5 truncate px-1">{topThree[0].username}</h3>
+                      <p className="text-[10px] md:text-sm text-muted-foreground mb-3 font-medium text-yellow-500">🏆 Champion</p>
+                      <div className="space-y-1.5 md:space-y-2">
+                        <div className="flex justify-between text-[11px] md:text-sm">
                           <span className="text-muted-foreground">Net Profit:</span>
                           <span className={`font-semibold ${topThree[0].net_profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                             {formatCurrency(topThree[0].net_profit)}
                           </span>
                         </div>
-                        <div className="flex justify-between text-xs md:text-sm">
+                        <div className="flex justify-between text-[11px] md:text-sm">
                           <span className="text-muted-foreground">Win Rate:</span>
                           <span className="font-semibold">{topThree[0].win_rate.toFixed(1)}%</span>
                         </div>
-                        <div className="flex justify-between text-xs md:text-sm">
+                        <div className="flex justify-between text-[11px] md:text-sm">
                           <span className="text-muted-foreground">Trades:</span>
                           <span className="font-semibold">{topThree[0].total_trades}</span>
                         </div>
@@ -247,29 +247,29 @@ const Leaderboard = () => {
 
                   {/* 3rd Place */}
                   {topThree[2] && (
-                    <div className={`glass-card p-4 md:p-6 text-center shrink-0 w-[280px] md:w-auto snap-center transform md:translate-y-8 ${topThree[2].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
-                      <div className="flex justify-center mb-4">
+                    <div className={`glass-card p-3 md:p-6 text-center shrink-0 w-[220px] md:w-auto snap-center transform md:translate-y-8 ${topThree[2].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
+                      <div className="flex justify-center mb-3">
                         {getMedalIcon(3)}
                       </div>
-                      <Avatar className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 ring-4 ring-amber-600">
-                        <AvatarFallback className="text-lg font-bold bg-gradient-to-br from-amber-500 to-amber-700 text-white">
+                      <Avatar className="w-14 h-14 md:w-20 md:h-20 mx-auto mb-3 ring-4 ring-amber-600">
+                        <AvatarFallback className="text-base font-bold bg-gradient-to-br from-amber-500 to-amber-700 text-white">
                           {getInitials(topThree[2].username)}
                         </AvatarFallback>
                       </Avatar>
-                      <h3 className="font-bold text-base md:text-lg mb-1 truncate px-2">{topThree[2].username}</h3>
-                      <p className="text-xs md:text-sm text-muted-foreground mb-4">Rank #{topThree[2].rank}</p>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-xs md:text-sm">
+                      <h3 className="font-bold text-sm md:text-lg mb-0.5 truncate px-1">{topThree[2].username}</h3>
+                      <p className="text-[10px] md:text-sm text-muted-foreground mb-3">Rank #{topThree[2].rank}</p>
+                      <div className="space-y-1.5 md:space-y-2">
+                        <div className="flex justify-between text-[11px] md:text-sm">
                           <span className="text-muted-foreground">Net Profit:</span>
                           <span className={`font-semibold ${topThree[2].net_profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                             {formatCurrency(topThree[2].net_profit)}
                           </span>
                         </div>
-                        <div className="flex justify-between text-xs md:text-sm">
+                        <div className="flex justify-between text-[11px] md:text-sm">
                           <span className="text-muted-foreground">Win Rate:</span>
                           <span className="font-semibold">{topThree[2].win_rate.toFixed(1)}%</span>
                         </div>
-                        <div className="flex justify-between text-xs md:text-sm">
+                        <div className="flex justify-between text-[11px] md:text-sm">
                           <span className="text-muted-foreground">Trades:</span>
                           <span className="font-semibold">{topThree[2].total_trades}</span>
                         </div>
