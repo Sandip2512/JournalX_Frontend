@@ -125,23 +125,23 @@ export default function DisciplineDiary() {
                 )}
 
                 {/* Enhanced Calendar Grid */}
-                <div className="glass-card p-8 opacity-0 animate-fade-up" style={{ animationDelay: '0.2s' }}>
-                    <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                        <Calendar className="w-6 h-6 text-primary" />
+                <div className="glass-card p-6 opacity-0 animate-fade-up" style={{ animationDelay: '0.2s' }}>
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-primary" />
                         Last 30 Days
                     </h2>
 
                     {/* Day headers with gradient */}
-                    <div className="grid grid-cols-7 gap-4 mb-4">
+                    <div className="grid grid-cols-7 gap-2 mb-3">
                         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                            <div key={day} className="text-center text-sm font-bold text-primary py-3 bg-primary/5 rounded-lg">
+                            <div key={day} className="text-center text-xs font-bold text-primary py-2 bg-primary/5 rounded-lg">
                                 {day}
                             </div>
                         ))}
                     </div>
 
                     {/* Calendar days with enhanced styling */}
-                    <div className="grid grid-cols-7 gap-4">
+                    <div className="grid grid-cols-7 gap-2">
                         {history.slice().reverse().map((day, index) => {
                             const date = new Date(day.date);
                             const isToday = new Date().toDateString() === date.toDateString();
@@ -150,12 +150,12 @@ export default function DisciplineDiary() {
                                 <div
                                     key={index}
                                     className={`
-                                        group relative aspect-square rounded-xl cursor-pointer transition-all duration-300
+                                        group relative aspect-square rounded-lg cursor-pointer transition-all duration-300
                                         ${day.all_rules_followed
-                                            ? 'bg-gradient-to-br from-success/20 to-success/10 border-2 border-success/40 hover:border-success hover:shadow-lg hover:shadow-success/20'
-                                            : 'bg-gradient-to-br from-destructive/20 to-destructive/10 border-2 border-destructive/40 hover:border-destructive hover:shadow-lg hover:shadow-destructive/20'
+                                            ? 'bg-gradient-to-br from-success/20 to-success/10 border-2 border-success/40 hover:border-success hover:shadow-md hover:shadow-success/20'
+                                            : 'bg-gradient-to-br from-destructive/20 to-destructive/10 border-2 border-destructive/40 hover:border-destructive hover:shadow-md hover:shadow-destructive/20'
                                         }
-                                        ${selectedDay?.date === day.date ? 'ring-4 ring-primary scale-105' : 'hover:scale-105'}
+                                        ${selectedDay?.date === day.date ? 'ring-2 ring-primary scale-105' : 'hover:scale-105'}
                                         ${isToday ? 'ring-2 ring-warning' : ''}
                                     `}
                                     onClick={() => setSelectedDay(day)}
@@ -164,39 +164,34 @@ export default function DisciplineDiary() {
                                     }}
                                 >
                                     {/* Shine effect on hover */}
-                                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
+                                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg" />
 
                                     {/* Content */}
-                                    <div className="relative h-full flex flex-col items-center justify-center p-3 gap-2">
+                                    <div className="relative h-full flex flex-col items-center justify-center p-1 gap-1">
                                         {/* Date */}
-                                        <div className={`text-lg font-bold ${isToday ? 'text-warning' : ''}`}>
+                                        <div className={`text-sm font-bold ${isToday ? 'text-warning' : ''}`}>
                                             {date.getDate()}
                                         </div>
 
                                         {/* Icon with animation */}
                                         <div className="transform group-hover:scale-110 transition-transform">
                                             {day.all_rules_followed ? (
-                                                <CheckCircle2 className="w-8 h-8 text-success drop-shadow-lg" />
+                                                <CheckCircle2 className="w-5 h-5 text-success drop-shadow-lg" />
                                             ) : (
-                                                <XCircle className="w-8 h-8 text-destructive drop-shadow-lg" />
+                                                <XCircle className="w-5 h-5 text-destructive drop-shadow-lg" />
                                             )}
                                         </div>
 
-                                        {/* Trades count */}
-                                        <div className="text-xs font-medium text-muted-foreground bg-background/50 px-2 py-1 rounded-full">
-                                            {day.total_trades} trades
-                                        </div>
-
                                         {/* P&L indicator */}
-                                        <div className={`text-xs font-bold ${day.daily_pnl >= 0 ? 'text-success' : 'text-destructive'}`}>
+                                        <div className={`text-[10px] font-bold ${day.daily_pnl >= 0 ? 'text-success' : 'text-destructive'}`}>
                                             {day.daily_pnl >= 0 ? '+' : ''}{day.daily_pnl.toFixed(0)}
                                         </div>
                                     </div>
 
                                     {/* Today indicator */}
                                     {isToday && (
-                                        <div className="absolute -top-2 -right-2 bg-warning text-warning-foreground text-xs font-bold px-2 py-1 rounded-full shadow-lg">
-                                            Today
+                                        <div className="absolute -top-1 -right-1 bg-warning text-warning-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg">
+                                            Now
                                         </div>
                                     )}
                                 </div>
@@ -205,14 +200,14 @@ export default function DisciplineDiary() {
                     </div>
 
                     {/* Legend */}
-                    <div className="mt-8 flex items-center justify-center gap-8 p-4 bg-muted/30 rounded-lg">
+                    <div className="mt-4 flex items-center justify-center gap-6 p-3 bg-muted/30 rounded-lg">
                         <div className="flex items-center gap-2">
-                            <CheckCircle2 className="w-5 h-5 text-success" />
-                            <span className="text-sm font-medium">All Rules Followed</span>
+                            <CheckCircle2 className="w-4 h-4 text-success" />
+                            <span className="text-xs font-medium">All Rules Followed</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <XCircle className="w-5 h-5 text-destructive" />
-                            <span className="text-sm font-medium">Rule Violated</span>
+                            <XCircle className="w-4 h-4 text-destructive" />
+                            <span className="text-xs font-medium">Rule Violated</span>
                         </div>
                     </div>
                 </div>
