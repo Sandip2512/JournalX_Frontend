@@ -32,7 +32,7 @@ export default function Goals() {
                 try {
                     // Fetch Goals
                     const goalsRes = await api.get(`/api/goals/user/${user.user_id}`);
-                    setGoals(goalsRes.data);
+                    setGoals(prev => ({ ...prev, ...goalsRes.data }));
 
                     // Fetch Real-time stats (Using calendar/stats endpoint logic roughly)
                     // Simplified: We need daily stats for today and monthly total
@@ -73,17 +73,23 @@ export default function Goals() {
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!user?.user_id) return;
+
         setSaving(true);
         try {
-            await api.post(`/api/goals/?user_id=${user?.user_id}`, goals);
+            const response = await api.post(`/api/goals/`, goals, {
+                params: { user_id: user.user_id }
+            });
+            setGoals(response.data);
             toast({
                 title: "Goals Updated",
                 description: "Your trading goals and limits have been saved."
             });
         } catch (error) {
+            console.error("Error saving goals:", error);
             toast({
                 title: "Error",
-                description: "Failed to save goals.",
+                description: "Failed to save goals. Please try again.",
                 variant: "destructive"
             });
         } finally {
