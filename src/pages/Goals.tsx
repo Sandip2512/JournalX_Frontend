@@ -137,10 +137,60 @@ export default function Goals() {
                     </div>
                     <button
                         onClick={() => window.location.href = '/discipline-diary'}
-                        className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 font-medium shadow-lg hover:shadow-xl"
+                        className="group relative px-8 py-4 rounded-xl font-bold text-white overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95"
+                        style={{
+                            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)',
+                            boxShadow: `
+                                0 10px 30px -5px rgba(139, 92, 246, 0.5),
+                                0 4px 12px -2px rgba(139, 92, 246, 0.3),
+                                inset 0 2px 4px rgba(255, 255, 255, 0.3),
+                                inset 0 -3px 6px rgba(0, 0, 0, 0.2)
+                            `,
+                            transform: 'translateZ(0)',
+                            transformStyle: 'preserve-3d'
+                        }}
                     >
-                        <Calendar className="w-5 h-5" />
-                        View Discipline Diary
+                        {/* Animated gradient overlay */}
+                        <div
+                            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                            style={{
+                                background: 'linear-gradient(135deg, #8b5cf6 0%, #a855f7 50%, #c084fc 100%)',
+                            }}
+                        />
+
+                        {/* Shimmer effect */}
+                        <div
+                            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            style={{
+                                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
+                                backgroundSize: '200% 100%',
+                                animation: 'shimmer 2s linear infinite'
+                            }}
+                        />
+
+                        {/* Top highlight for glass effect */}
+                        <div
+                            className="absolute inset-0 rounded-xl"
+                            style={{
+                                background: 'linear-gradient(to bottom, rgba(255,255,255,0.2) 0%, transparent 50%)'
+                            }}
+                        />
+
+                        {/* Content */}
+                        <div className="relative flex items-center gap-3 z-10">
+                            <Calendar className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
+                            <span className="text-base">View Discipline Diary</span>
+                            <div className="w-2 h-2 rounded-full bg-white/80 group-hover:scale-150 transition-transform duration-300" />
+                        </div>
+
+                        {/* Pulsing glow effect */}
+                        <div
+                            className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
+                            style={{
+                                boxShadow: '0 0 40px rgba(139, 92, 246, 0.6)',
+                                animation: 'pulse-glow 2s infinite'
+                            }}
+                        />
                     </button>
                 </div>
 
