@@ -154,6 +154,19 @@ const Profile = () => {
         }
     };
 
+    const handleCancel = () => {
+        if (user) {
+            setFirstName(user.first_name || "");
+            setLastName(user.last_name || "");
+            // @ts-ignore
+            setMobileNumber(user.mobile_number || "");
+            toast({
+                title: "Changes Reset",
+                description: "Form reset to current profile data."
+            });
+        }
+    };
+
     return (
         <div className="min-h-screen">
             <Header />
@@ -216,7 +229,7 @@ const Profile = () => {
                             </div>
                         </div>
                         <div className="flex justify-end gap-4 mt-6">
-                            <Button variant="outline" type="button">Cancel</Button>
+                            <Button variant="outline" type="button" onClick={handleCancel}>Cancel</Button>
                             <Button variant="hero" className="gap-2" onClick={handleSave} disabled={isLoading}>
                                 <Save className="w-4 h-4" />
                                 {isLoading ? "Saving..." : "Save Profile"}
