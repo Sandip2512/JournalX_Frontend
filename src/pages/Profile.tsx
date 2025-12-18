@@ -177,11 +177,12 @@ const Profile = () => {
                 title: "Report Deleted",
                 description: "The performance report has been removed."
             });
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error deleting report:", error);
+            const detail = error.response?.data?.detail || "Could not delete the report. Please try again.";
             toast({
                 title: "Delete Failed",
-                description: "Could not delete the report. Please try again.",
+                description: detail,
                 variant: "destructive"
             });
         }
