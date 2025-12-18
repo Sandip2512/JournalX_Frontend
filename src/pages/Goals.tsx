@@ -31,8 +31,15 @@ export default function Goals() {
             if (user?.user_id) {
                 try {
                     // Fetch Goals
-                    const goalsRes = await api.get(`/api/goals/user/${user.user_id}`);
-                    setGoals(prev => ({ ...prev, ...goalsRes.data }));
+                    try {
+                        const goalsRes = await api.get(`/api/goals/user/${user.user_id}`);
+                        setGoals(prev => ({ ...prev, ...goalsRes.data }));
+                    } catch (goalError: any) {
+                        // If 404, user hasn't set goals yet - keep default empty state
+                        if (goalError.response?.status !== 404) {
+                            throw goalError;
+                        }
+                    }
 
                     // Fetch Real-time stats (Using calendar/stats endpoint logic roughly)
                     // Simplified: We need daily stats for today and monthly total
