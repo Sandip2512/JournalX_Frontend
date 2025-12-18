@@ -188,7 +188,7 @@ export default function Goals() {
                             className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
                             style={{
                                 boxShadow: '0 0 40px rgba(139, 92, 246, 0.6)',
-                                animation: 'pulse-glow 2s infinite'
+                                animation: 'pulse-glow-violet 2s infinite'
                             }}
                         />
                     </button>

@@ -217,6 +217,19 @@
   animation: pulse-glow 2s infinite;
 }
 
+
+@keyframes pulse-glow-violet {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.8);
+  }
+}
+
 @keyframes shimmer {
   0% {
     background-position: 200% 0;
