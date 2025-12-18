@@ -5,7 +5,7 @@ import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Target, ShieldAlert, Zap, CheckCircle2 } from "lucide-react";
+import { Loader2, Target, ShieldAlert, Zap, CheckCircle2, Calendar } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 
@@ -130,9 +130,18 @@ export default function Goals() {
         <div className="min-h-screen bg-background pb-20">
             <Header />
             <main className="container mx-auto px-4 lg:px-6 py-8 md:py-12">
-                <div className="flex items-center gap-3 mb-8 opacity-0 animate-fade-up">
-                    <Target className="w-8 h-8 text-primary" />
-                    <h1 className="text-3xl font-bold">Goals & Discipline</h1>
+                <div className="flex items-center justify-between mb-8 opacity-0 animate-fade-up">
+                    <div className="flex items-center gap-3">
+                        <Target className="w-8 h-8 text-primary" />
+                        <h1 className="text-3xl font-bold">Goals & Discipline</h1>
+                    </div>
+                    <button
+                        onClick={() => window.location.href = '/discipline-diary'}
+                        className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 font-medium shadow-lg hover:shadow-xl"
+                    >
+                        <Calendar className="w-5 h-5" />
+                        View Discipline Diary
+                    </button>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">

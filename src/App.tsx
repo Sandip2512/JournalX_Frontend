@@ -15,6 +15,7 @@ import Leaderboard from "./pages/Leaderboard";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 import Goals from "./pages/Goals";
+import DisciplineDiary from "./pages/DisciplineDiary";
 import TradersDiary from "./pages/TradersDiary";
 import ProtectedAdminRoute from "./components/layout/ProtectedAdminRoute";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -56,6 +57,7 @@ const App = () => (
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/goals" element={<Goals />} />
+                <Route path="/discipline-diary" element={<DisciplineDiary />} />
                 <Route path="/traders-diary" element={<TradersDiary />} />
                 <Route path="/broker-connections" element={<BrokerConnections />} />
               </Route>
