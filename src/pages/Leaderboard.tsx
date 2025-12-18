@@ -180,10 +180,10 @@ const Leaderboard = () => {
             {topThree.length > 0 && (
               <div className="mb-12 opacity-0 animate-fade-up" style={{ animationDelay: "0.2s" }}>
                 <h2 className="text-2xl font-bold mb-6 text-center">Top Performers</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                <div className="flex overflow-x-auto pb-6 snap-x snap-mandatory gap-6 md:grid md:grid-cols-3 md:max-w-4xl md:mx-auto lg:overflow-visible">
                   {/* 2nd Place */}
                   {topThree[1] && (
-                    <div className={`glass-card p-4 md:p-6 text-center transform md:translate-y-8 ${topThree[1].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
+                    <div className={`glass-card p-4 md:p-6 text-center shrink-0 w-[280px] md:w-auto snap-center transform md:translate-y-8 ${topThree[1].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
                       <div className="flex justify-center mb-4">
                         {getMedalIcon(2)}
                       </div>
@@ -192,7 +192,7 @@ const Leaderboard = () => {
                           {getInitials(topThree[1].username)}
                         </AvatarFallback>
                       </Avatar>
-                      <h3 className="font-bold text-base md:text-lg mb-1">{topThree[1].username}</h3>
+                      <h3 className="font-bold text-base md:text-lg mb-1 truncate px-2">{topThree[1].username}</h3>
                       <p className="text-xs md:text-sm text-muted-foreground mb-4">Rank #{topThree[1].rank}</p>
                       <div className="space-y-2">
                         <div className="flex justify-between text-xs md:text-sm">
@@ -215,7 +215,7 @@ const Leaderboard = () => {
 
                   {/* 1st Place */}
                   {topThree[0] && (
-                    <div className={`glass-card p-4 md:p-6 text-center ${topThree[0].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
+                    <div className={`glass-card p-4 md:p-6 text-center shrink-0 w-[280px] md:w-auto snap-center ${topThree[0].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
                       <div className="flex justify-center mb-4">
                         {getMedalIcon(1)}
                       </div>
@@ -224,7 +224,7 @@ const Leaderboard = () => {
                           {getInitials(topThree[0].username)}
                         </AvatarFallback>
                       </Avatar>
-                      <h3 className="font-bold text-lg md:text-xl mb-1">{topThree[0].username}</h3>
+                      <h3 className="font-bold text-lg md:text-xl mb-1 truncate px-2">{topThree[0].username}</h3>
                       <p className="text-xs md:text-sm text-muted-foreground mb-4">🏆 Champion</p>
                       <div className="space-y-2">
                         <div className="flex justify-between text-xs md:text-sm">
@@ -247,7 +247,7 @@ const Leaderboard = () => {
 
                   {/* 3rd Place */}
                   {topThree[2] && (
-                    <div className={`glass-card p-4 md:p-6 text-center transform md:translate-y-8 ${topThree[2].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
+                    <div className={`glass-card p-4 md:p-6 text-center shrink-0 w-[280px] md:w-auto snap-center transform md:translate-y-8 ${topThree[2].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
                       <div className="flex justify-center mb-4">
                         {getMedalIcon(3)}
                       </div>
@@ -256,7 +256,7 @@ const Leaderboard = () => {
                           {getInitials(topThree[2].username)}
                         </AvatarFallback>
                       </Avatar>
-                      <h3 className="font-bold text-base md:text-lg mb-1">{topThree[2].username}</h3>
+                      <h3 className="font-bold text-base md:text-lg mb-1 truncate px-2">{topThree[2].username}</h3>
                       <p className="text-xs md:text-sm text-muted-foreground mb-4">Rank #{topThree[2].rank}</p>
                       <div className="space-y-2">
                         <div className="flex justify-between text-xs md:text-sm">
@@ -283,7 +283,7 @@ const Leaderboard = () => {
             {/* Full Leaderboard Table */}
             <div className="glass-card overflow-hidden opacity-0 animate-fade-up" style={{ animationDelay: "0.3s" }}>
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full min-w-[800px]">
                   <thead className="bg-muted/50 border-b">
                     <tr>
                       <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold">Rank</th>
