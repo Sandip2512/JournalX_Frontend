@@ -23,6 +23,7 @@ import TradeManagement from "./pages/admin/TradeManagement";
 import SystemLogs from "./pages/admin/SystemLogs";
 import Announcements from "./pages/admin/Announcements";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import Sales from "./pages/admin/Sales";
 import BrokerConnections from "./pages/BrokerConnections";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -65,6 +66,7 @@ const App = () => (
                 <Route path="admin/users" element={<UserManagement />} />
                 <Route path="admin/trades" element={<TradeManagement />} />
                 <Route path="admin/analytics" element={<AdminAnalytics />} />
+                <Route path="admin/sales" element={<Sales />} />
                 <Route path="admin/logs" element={<SystemLogs />} />
                 <Route path="admin/announcements" element={<Announcements />} />
               </Route>

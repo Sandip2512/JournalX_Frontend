@@ -11,7 +11,8 @@ import {
     LogOut,
     Menu,
     ShieldAlert,
-    BarChart3
+    BarChart3,
+    DollarSign
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -55,6 +56,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
         { icon: Users, label: "User Management", path: "/admin/users" },
         { icon: TrendingUp, label: "Trade Management", path: "/admin/trades" },
         { icon: BarChart3, label: "Analytics", path: "/admin/analytics" },
+        { icon: DollarSign, label: "Sales", path: "/admin/sales" },
         { icon: ShieldAlert, label: "System Logs", path: "/admin/logs" },
         { icon: Bell, label: "Announcements", path: "/admin/announcements" },
     ];
