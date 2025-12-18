@@ -30,10 +30,10 @@ export default function Goals() {
         const fetchData = async () => {
             if (user?.user_id) {
                 try {
-                    // Fetch Goals
+                    // Fetch Goals - but don't populate the form, just check if they exist
                     try {
-                        const goalsRes = await api.get(`/api/goals/user/${user.user_id}`);
-                        setGoals(prev => ({ ...prev, ...goalsRes.data }));
+                        await api.get(`/api/goals/user/${user.user_id}`);
+                        // Goals exist but we don't populate the form - form stays empty
                     } catch (goalError: any) {
                         // If 404, user hasn't set goals yet - keep default empty state
                         if (goalError.response?.status !== 404) {
