@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
-import { User, Save, CreditCard, Download, History, Sparkles, FileText, Loader2, RotateCw } from "lucide-react";
+import { User, Save, CreditCard, Download, History, Sparkles, FileText, Loader2, RotateCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -163,6 +163,26 @@ const Profile = () => {
             toast({
                 title: "Changes Reset",
                 description: "Form reset to current profile data."
+            });
+        }
+    };
+
+    const handleDeleteReport = async (reportId: string) => {
+        if (!window.confirm("Are you sure you want to delete this report? This action cannot be undone.")) return;
+
+        try {
+            await api.delete(`/api/reports/${reportId}`);
+            setReports(prev => prev.filter(r => r.id !== reportId));
+            toast({
+                title: "Report Deleted",
+                description: "The performance report has been removed."
+            });
+        } catch (error) {
+            console.error("Error deleting report:", error);
+            toast({
+                title: "Delete Failed",
+                description: "Could not delete the report. Please try again.",
+                variant: "destructive"
             });
         }
     };
@@ -393,20 +413,40 @@ const Profile = () => {
                                                     </td>
                                                     <td className="p-3 text-right">
                                                         {report.status === 'completed' ? (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-8 w-8 p-0"
-                                                                onClick={() => handleDownloadReport(report.id, report.filename)}
-                                                            >
-                                                                <Download className="w-4 h-4" />
-                                                            </Button>
+                                                            <div className="flex justify-end gap-2">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0"
+                                                                    onClick={() => handleDownloadReport(report.id, report.filename)}
+                                                                >
+                                                                    <Download className="w-4 h-4" />
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                                    onClick={() => handleDeleteReport(report.id)}
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </Button>
+                                                            </div>
                                                         ) : report.status === 'pending' ? (
                                                             <div className="flex justify-end p-2">
                                                                 <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                                                             </div>
                                                         ) : (
-                                                            <span className="text-xs text-destructive">Error</span>
+                                                            <div className="flex justify-end items-center gap-2">
+                                                                <span className="text-xs text-destructive">Error</span>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                                    onClick={() => handleDeleteReport(report.id)}
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </Button>
+                                                            </div>
                                                         )}
                                                     </td>
                                                 </tr>
