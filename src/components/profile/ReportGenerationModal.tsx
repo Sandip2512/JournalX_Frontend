@@ -217,7 +217,7 @@ const ReportGenerationModal = ({ isOpen, onClose, onSuccess }: ReportGenerationM
                             </div>
 
                             {reportType === "custom" && (
-                                <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
                                     <div className="space-y-2">
                                         <Label className="text-[10px] uppercase text-muted-foreground">Start Date</Label>
                                         <Input

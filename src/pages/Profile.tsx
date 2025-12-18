@@ -252,8 +252,8 @@ const Profile = () => {
                                 <History className="w-4 h-4 text-primary" />
                                 <h3 className="font-medium">Transaction History</h3>
                             </div>
-                            <div className="rounded-md border overflow-hidden">
-                                <table className="w-full text-sm">
+                            <div className="rounded-md border overflow-x-auto">
+                                <table className="w-full text-sm min-w-[600px]">
                                     <thead className="bg-muted/50 border-b">
                                         <tr>
                                             <th className="text-left p-3 font-medium">Invoice #</th>
@@ -307,7 +307,7 @@ const Profile = () => {
 
                     {/* Performance Reports Section */}
                     <div className="glass-card p-6 opacity-0 animate-fade-up" style={{ animationDelay: "0.4s" }}>
-                        <div className="flex items-center justify-between mb-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                             <div className="flex items-center gap-3">
                                 <Sparkles className="w-5 h-5 text-primary" />
                                 <h2 className="text-lg font-semibold">Performance Reports</h2>
@@ -334,8 +334,8 @@ const Profile = () => {
                         </div>
 
                         <div className="space-y-4">
-                            <div className="rounded-md border overflow-hidden">
-                                <table className="w-full text-sm">
+                            <div className="rounded-md border overflow-x-auto">
+                                <table className="w-full text-sm min-w-[600px]">
                                     <thead className="bg-muted/50 border-b">
                                         <tr>
                                             <th className="text-left p-3 font-medium">Report Type</th>
