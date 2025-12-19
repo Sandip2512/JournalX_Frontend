@@ -214,57 +214,71 @@ export default function DisciplineDiary() {
                             })}
                         </h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className={`p-4 rounded-lg border-2 ${selectedDay.followed_loss_limit ? 'border-success/30 bg-success/5' : 'border-destructive/30 bg-destructive/5'}`}>
-                                <div className="flex items-center gap-2 mb-2">
-                                    {selectedDay.followed_loss_limit ? (
-                                        <CheckCircle2 className="w-5 h-5 text-success" />
-                                    ) : (
-                                        <XCircle className="w-5 h-5 text-destructive" />
-                                    )}
-                                    <span className="font-medium">Daily Loss Limit</span>
+                        {selectedDay.total_trades === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-12 text-center animate-fade-up">
+                                <div className="p-4 bg-muted/20 rounded-full mb-4">
+                                    <Calendar className="w-8 h-8 text-muted-foreground" />
                                 </div>
-                                <div className="text-sm text-muted-foreground">
-                                    P&L: ${selectedDay.daily_pnl.toFixed(2)}
-                                </div>
+                                <h3 className="text-xl font-medium text-muted-foreground">No Trades Recorded</h3>
+                                <p className="text-muted-foreground/60 mt-2">
+                                    There is no trading activity recorded for this date.
+                                </p>
                             </div>
+                        ) : (
+                            <>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className={`p-4 rounded-lg border-2 ${selectedDay.followed_loss_limit ? 'border-success/30 bg-success/5' : 'border-destructive/30 bg-destructive/5'}`}>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            {selectedDay.followed_loss_limit ? (
+                                                <CheckCircle2 className="w-5 h-5 text-success" />
+                                            ) : (
+                                                <XCircle className="w-5 h-5 text-destructive" />
+                                            )}
+                                            <span className="font-medium">Daily Loss Limit</span>
+                                        </div>
+                                        <div className="text-sm text-muted-foreground">
+                                            P&L: ${selectedDay.daily_pnl.toFixed(2)}
+                                        </div>
+                                    </div>
 
-                            <div className={`p-4 rounded-lg border-2 ${selectedDay.followed_trade_limit ? 'border-success/30 bg-success/5' : 'border-destructive/30 bg-destructive/5'}`}>
-                                <div className="flex items-center gap-2 mb-2">
-                                    {selectedDay.followed_trade_limit ? (
-                                        <CheckCircle2 className="w-5 h-5 text-success" />
-                                    ) : (
-                                        <XCircle className="w-5 h-5 text-destructive" />
-                                    )}
-                                    <span className="font-medium">Trade Limit</span>
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                    Trades: {selectedDay.total_trades}
-                                </div>
-                            </div>
+                                    <div className={`p-4 rounded-lg border-2 ${selectedDay.followed_trade_limit ? 'border-success/30 bg-success/5' : 'border-destructive/30 bg-destructive/5'}`}>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            {selectedDay.followed_trade_limit ? (
+                                                <CheckCircle2 className="w-5 h-5 text-success" />
+                                            ) : (
+                                                <XCircle className="w-5 h-5 text-destructive" />
+                                            )}
+                                            <span className="font-medium">Trade Limit</span>
+                                        </div>
+                                        <div className="text-sm text-muted-foreground">
+                                            Trades: {selectedDay.total_trades}
+                                        </div>
+                                    </div>
 
-                            <div className={`p-4 rounded-lg border-2 ${selectedDay.on_track_profit ? 'border-success/30 bg-success/5' : 'border-destructive/30 bg-destructive/5'}`}>
-                                <div className="flex items-center gap-2 mb-2">
-                                    {selectedDay.on_track_profit ? (
-                                        <CheckCircle2 className="w-5 h-5 text-success" />
-                                    ) : (
-                                        <XCircle className="w-5 h-5 text-destructive" />
-                                    )}
-                                    <span className="font-medium">Profitable Day</span>
+                                    <div className={`p-4 rounded-lg border-2 ${selectedDay.on_track_profit ? 'border-success/30 bg-success/5' : 'border-destructive/30 bg-destructive/5'}`}>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            {selectedDay.on_track_profit ? (
+                                                <CheckCircle2 className="w-5 h-5 text-success" />
+                                            ) : (
+                                                <XCircle className="w-5 h-5 text-destructive" />
+                                            )}
+                                            <span className="font-medium">Profitable Day</span>
+                                        </div>
+                                        <div className="text-sm text-muted-foreground">
+                                            {selectedDay.on_track_profit ? 'Positive' : 'Negative'}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="text-sm text-muted-foreground">
-                                    {selectedDay.on_track_profit ? 'Positive' : 'Negative'}
-                                </div>
-                            </div>
-                        </div>
 
-                        <div className="mt-6 p-4 bg-muted/30 rounded-lg">
-                            <div className="text-center">
-                                <span className="text-lg font-semibold">
-                                    Overall: {[selectedDay.followed_loss_limit, selectedDay.followed_trade_limit, selectedDay.on_track_profit].filter(Boolean).length}/3 Rules Followed
-                                </span>
-                            </div>
-                        </div>
+                                <div className="mt-6 p-4 bg-muted/30 rounded-lg">
+                                    <div className="text-center">
+                                        <span className="text-lg font-semibold">
+                                            Overall: {[selectedDay.followed_loss_limit, selectedDay.followed_trade_limit, selectedDay.on_track_profit].filter(Boolean).length}/3 Rules Followed
+                                        </span>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 )}
             </main>
