@@ -85,7 +85,7 @@ export default function DisciplineDiary() {
                             </div>
                             <div className="text-3xl font-bold">{stats.compliance_rate}%</div>
                             <div className="text-xs text-muted-foreground mt-1">
-                                {stats.compliant_days}/{stats.total_days} days
+                                {stats.compliant_days}/{stats.compliant_days + stats.violation_days} active days
                             </div>
                         </div>
 
