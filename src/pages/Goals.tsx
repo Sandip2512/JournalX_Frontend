@@ -137,12 +137,11 @@ export default function Goals() {
                     </div>
                     <button
                         onClick={() => window.location.href = '/discipline-diary'}
-                        className="group relative px-8 py-4 rounded-xl font-bold text-white overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95"
+                        className="group relative px-8 py-4 rounded-xl font-bold text-primary-foreground overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 bg-primary"
                         style={{
-                            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)',
                             boxShadow: `
-                                0 10px 30px -5px rgba(139, 92, 246, 0.5),
-                                0 4px 12px -2px rgba(139, 92, 246, 0.3),
+                                0 10px 30px -5px hsl(var(--primary) / 0.5),
+                                0 4px 12px -2px hsl(var(--primary) / 0.3),
                                 inset 0 2px 4px rgba(255, 255, 255, 0.3),
                                 inset 0 -3px 6px rgba(0, 0, 0, 0.2)
                             `,
@@ -150,11 +149,11 @@ export default function Goals() {
                             transformStyle: 'preserve-3d'
                         }}
                     >
-                        {/* Animated gradient overlay */}
+                        {/* Animated gradient overlay - adaptable to theme */}
                         <div
                             className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                             style={{
-                                background: 'linear-gradient(135deg, #8b5cf6 0%, #a855f7 50%, #c084fc 100%)',
+                                background: 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%)',
                             }}
                         />
 
@@ -187,8 +186,8 @@ export default function Goals() {
                         <div
                             className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
                             style={{
-                                boxShadow: '0 0 40px rgba(139, 92, 246, 0.6)',
-                                animation: 'pulse-glow-violet 2s infinite'
+                                boxShadow: '0 0 40px hsl(var(--primary) / 0.6)',
+                                animation: 'pulse-glow 2s infinite'
                             }}
                         />
                     </button>
