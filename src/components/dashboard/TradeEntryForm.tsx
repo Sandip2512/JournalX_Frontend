@@ -88,6 +88,8 @@ export function TradeEntryForm({ open, onOpenChange, onSuccess }: TradeEntryForm
     strategy: "",
     session: "",
     emotion: "",
+    mae: "",
+    mfe: "",
   });
 
   const [showMoreOptions, setShowMoreOptions] = useState(false);
@@ -153,6 +155,8 @@ export function TradeEntryForm({ open, onOpenChange, onSuccess }: TradeEntryForm
         strategy: formData.strategy,
         session: formData.session,
         emotion: formData.emotion,
+        mae: parseFloat(formData.mae) || 0,
+        mfe: parseFloat(formData.mfe) || 0,
       };
 
       await api.post("/trades", payload);
@@ -181,6 +185,8 @@ export function TradeEntryForm({ open, onOpenChange, onSuccess }: TradeEntryForm
         strategy: "",
         session: "",
         emotion: "",
+        mae: "",
+        mfe: "",
       });
       setShowMoreOptions(false);
       setRrRatio(null);
@@ -543,6 +549,31 @@ export function TradeEntryForm({ open, onOpenChange, onSuccess }: TradeEntryForm
                       <SelectItem value="Bored">Bored</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                {/* Efficiency Data */}
+                <div className="space-y-2">
+                  <Label htmlFor="mae" className="text-destructive/80 font-semibold">MAE ($ Max Floating Loss)</Label>
+                  <Input
+                    id="mae"
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g. 50.00 (Positive #)"
+                    value={formData.mae}
+                    onChange={(e) => handleChange("mae", e.target.value)}
+                    className="bg-muted/50 focus:border-destructive/50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mfe" className="text-emerald-500/80 font-semibold">MFE ($ Max Floating Profit)</Label>
+                  <Input
+                    id="mfe"
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g. 120.00"
+                    value={formData.mfe}
+                    onChange={(e) => handleChange("mfe", e.target.value)}
+                    className="bg-muted/50 focus:border-emerald-500/50"
+                  />
                 </div>
               </div>
             )}

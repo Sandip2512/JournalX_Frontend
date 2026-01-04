@@ -265,3 +265,97 @@
     filter: brightness(1.1);
   }
 }
+
+/* Premium Dashboard Utilities */
+@layer utilities {
+  .glass-card-premium {
+    @apply bg-white/90 dark:bg-black/40 backdrop-blur-xl border border-black/5 dark:border-white/10 shadow-lg dark:shadow-xl;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.6) 100%);
+  }
+
+  .dark .glass-card-premium {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+  }
+
+  .glass-card-premium:hover {
+    @apply border-white/40 dark:border-white/20;
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+    transform: translateY(-4px);
+  }
+
+  .glass-card-success {
+    @apply bg-emerald-500/10 border-emerald-500/20;
+    background: linear-gradient(145deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.02) 100%);
+  }
+
+  .glass-card-danger {
+    @apply bg-red-500/10 border-red-500/20;
+    background: linear-gradient(145deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.02) 100%);
+  }
+
+  .aurora-bg {
+    background-color: transparent;
+    background-image:
+      radial-gradient(at 0% 0%, hsla(253, 16%, 15%, 0.3) 0, transparent 50%),
+      radial-gradient(at 50% 10%, hsla(280, 80%, 30%, 0.15) 0, transparent 50%),
+      radial-gradient(at 80% 0%, hsla(320, 90%, 35%, 0.15) 0, transparent 50%),
+      radial-gradient(at 0% 50%, hsla(240, 80%, 30%, 0.15) 0, transparent 50%),
+      radial-gradient(at 80% 50%, hsla(200, 90%, 30%, 0.15) 0, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(240, 100%, 25%, 0.2) 0, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(280, 100%, 25%, 0.2) 0, transparent 50%);
+    opacity: 1;
+    filter: blur(60px);
+    z-index: 0;
+    animation: aurora-shift 20s ease-in-out infinite alternate;
+  }
+
+  @keyframes aurora-shift {
+    0% {
+      background-position: 0% 50%;
+      opacity: 0.7;
+    }
+
+    50% {
+      background-position: 100% 50%;
+      opacity: 0.9;
+    }
+
+    100% {
+      background-position: 0% 50%;
+      opacity: 0.7;
+    }
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500;
+  }
+
+  /* Animations */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-soft {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}

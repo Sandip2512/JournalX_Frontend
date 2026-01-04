@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
-import { Loader2, Calendar, TrendingUp, TrendingDown, CheckCircle2, XCircle, Award } from "lucide-react";
+import { Loader2, Calendar, TrendingUp, TrendingDown, CheckCircle2, XCircle, Award, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface DisciplineDay {
@@ -25,24 +25,36 @@ interface DisciplineStats {
     worst_streak: number;
 }
 
+interface AchievedGoal {
+    id: string;
+    goal_type: string;
+    target_amount: number;
+    created_at: string;
+    achieved_date: string;
+    final_amount?: number;
+}
+
 export default function DisciplineDiary() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [history, setHistory] = useState<DisciplineDay[]>([]);
     const [stats, setStats] = useState<DisciplineStats | null>(null);
+    const [achievedGoals, setAchievedGoals] = useState<AchievedGoal[]>([]);
     const [selectedDay, setSelectedDay] = useState<DisciplineDay | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
             if (user?.user_id) {
                 try {
-                    const [historyRes, statsRes] = await Promise.all([
+                    const [historyRes, statsRes, achievedRes] = await Promise.all([
                         api.get(`/api/discipline/history/${user.user_id}?days=30`),
-                        api.get(`/api/discipline/stats/${user.user_id}?days=30`)
+                        api.get(`/api/discipline/stats/${user.user_id}?days=30`),
+                        api.get(`/api/goals/user/${user.user_id}/achieved`)
                     ]);
                     setHistory(historyRes.data);
                     setStats(statsRes.data);
+                    setAchievedGoals(achievedRes.data);
                 } catch (error) {
                     console.error("Error fetching discipline data", error);
                 } finally {
@@ -124,7 +136,62 @@ export default function DisciplineDiary() {
                     </div>
                 )}
 
-                {/* Enhanced Calendar Grid */}
+                {/* Achieved Goals Gallery */}
+                {achievedGoals.length > 0 && (
+                    <div className="mb-8 opacity-0 animate-fade-up" style={{ animationDelay: '0.15s' }}>
+                        <div className="flex items-center gap-2 mb-4">
+                            <Trophy className="w-5 h-5 text-amber-500" />
+                            <h2 className="text-xl font-bold">Hall of Fame</h2>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {achievedGoals.map((goal) => (
+                                <div
+                                    key={goal.id}
+                                    className="relative group overflow-hidden rounded-xl border border-white/5 p-4 transition-all duration-500 hover:scale-[1.02]"
+                                    style={{
+                                        background: "rgba(30, 41, 59, 0.4)",
+                                        backdropFilter: "blur(8px)"
+                                    }}
+                                >
+                                    {/* 3D Prism Glow */}
+                                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+
+                                    <div className="relative z-10 flex items-center justify-between">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">
+                                                {goal.goal_type} Achieved
+                                            </span>
+                                            <span className="text-lg font-black text-white tabular-nums">
+                                                ${goal.target_amount.toLocaleString()}
+                                            </span>
+                                        </div>
+                                        <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
+                                            <Trophy className="w-5 h-5" />
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4 flex flex-col gap-1 border-t border-white/5 pt-3">
+                                        <div className="flex items-center justify-between text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                                            <span>Period</span>
+                                            <span className="text-white">
+                                                {new Date(goal.created_at).toLocaleDateString()} - {new Date(goal.achieved_date).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                                            <span>Final Result</span>
+                                            <span className="text-emerald-500">
+                                                +${(goal.final_amount || goal.target_amount).toLocaleString()}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Decorative background glow */}
+                                    <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-amber-500/5 blur-3xl rounded-full group-hover:bg-amber-500/10 transition-all duration-700" />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
                 <div className="glass-card p-4 opacity-0 animate-fade-up max-w-2xl mx-auto" style={{ animationDelay: '0.2s' }}>
                     <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-primary" />

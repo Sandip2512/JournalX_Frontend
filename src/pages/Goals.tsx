@@ -1,368 +1,535 @@
-import { useState, useEffect } from "react";
-import { Header } from "@/components/layout/Header";
-import { useAuth } from "@/context/AuthContext";
-import api from "@/lib/api";
+
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Target, ShieldAlert, Zap, CheckCircle2, Calendar } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/components/ui/use-toast";
+import { Header } from "@/components/layout/Header";
+import {
+    Target,
+    TrendingUp,
+    CheckCircle2,
+    Calendar,
+    Trophy,
+    AlertCircle,
+    Activity,
+    RotateCcw,
+    Settings,
+    Trash2
+} from 'lucide-react';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import api from '../lib/api';
+import { cn } from "@/lib/utils";
+import { useNavigate } from 'react-router-dom';
 
-export default function Goals() {
-    const { user } = useAuth();
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    // Form state - always starts empty
-    const [goals, setGoals] = useState({
-        monthly_profit_target: 0,
-        max_daily_loss: 0,
-        max_trades_per_day: 0
+interface AnalyticsData {
+    beginner: {
+        total_pl: number;
+        weekly_profit: number;
+        monthly_profit: number;
+        yearly_profit: number;
+        win_rate: number;
+        total_trades: number;
+        avg_risk: number;
+        equity_curve: { time: string; equity: number }[];
+    };
+}
+
+interface Goal {
+    id: string;
+    goal_type: 'weekly' | 'monthly' | 'yearly';
+    target_amount: number;
+    is_active: boolean;
+}
+
+const Goals = () => {
+    const { user, updateUser } = useAuth(); // Assuming updateUser updates the context
+    const { toast } = useToast();
+    const navigate = useNavigate();
+    const [loading, setLoading] = useState(false);
+    const [open, setOpen] = useState(false);
+
+    const [goals, setGoals] = useState<Record<string, Goal>>({});
+    const [currentStats, setCurrentStats] = useState<AnalyticsData['beginner']>({
+        total_pl: 0,
+        weekly_profit: 0,
+        monthly_profit: 0,
+        yearly_profit: 0,
+        win_rate: 0,
+        total_trades: 0,
+        avg_risk: 0,
+        equity_curve: [],
     });
 
-    // Saved goals from database - for display in tracking cards
-    const [savedGoals, setSavedGoals] = useState({
-        monthly_profit_target: 0,
-        max_daily_loss: 0,
-        max_trades_per_day: 0
-    });
-
-    // Real-time stats (mocked for now, strictly should fetch)
-    const [currentStats, setCurrentStats] = useState({
-        current_profit: 0,
-        today_loss: 0,
-        today_trades: 0
+    // Form State
+    const [formData, setFormData] = useState({
+        weeklyTarget: '',
+        monthlyTarget: '',
+        yearlyTarget: '',
+        dailyLossLimit: '',
+        maxTrades: ''
     });
 
     useEffect(() => {
-        const fetchData = async () => {
-            if (user?.user_id) {
-                try {
-                    // Fetch Goals - populate savedGoals for tracking display, but keep form empty
-                    try {
-                        const goalsRes = await api.get(`/api/goals/user/${user.user_id}`);
-                        setSavedGoals(goalsRes.data);
-                    } catch (goalError: any) {
-                        // If 404, user hasn't set goals yet - keep default empty state
-                        if (goalError.response?.status !== 404) {
-                            throw goalError;
-                        }
-                    }
-
-                    // Fetch Real-time stats (Using calendar/stats endpoint logic roughly)
-                    // Simplified: We need daily stats for today and monthly total
-                    const today = new Date();
-                    const calendarRes = await api.get(`/api/analytics/calendar`, {
-                        params: {
-                            user_id: user.user_id,
-                            month: today.getMonth() + 1,
-                            year: today.getFullYear()
-                        }
-                    });
-
-                    const dailyData = calendarRes.data;
-                    const totalProfit = dailyData.reduce((acc: number, d: any) => acc + d.profit, 0);
-
-                    const dateStr = today.toISOString().split('T')[0];
-                    const todayData = dailyData.find((d: any) => d.date === dateStr);
-
-                    setCurrentStats({
-                        current_profit: totalProfit,
-                        today_loss: todayData && todayData.profit < 0 ? Math.abs(todayData.profit) : 0,
-                        today_trades: todayData ? todayData.trades : 0
-                    });
-
-                } catch (error) {
-                    console.error("Error fetching data", error);
-                } finally {
-                    setLoading(false);
-                }
-            }
-        };
         fetchData();
     }, [user?.user_id]);
 
-    const handleChange = (field: string, value: string) => {
-        setGoals(prev => ({ ...prev, [field]: parseFloat(value) || 0 }));
-    };
-
-    const handleSave = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const fetchData = async () => {
         if (!user?.user_id) return;
 
-        setSaving(true);
         try {
-            const response = await api.post(`/api/goals/`, goals, {
-                params: { user_id: user.user_id }
+            const [goalsRes, analyticsRes] = await Promise.all([
+                api.get(`/api/goals/user/${user.user_id}`),
+                api.get(`/api/analytics/user/${user.user_id}`)
+            ]);
+
+            // Process Goals
+            const goalsMap: Record<string, Goal> = {};
+            if (Array.isArray(goalsRes.data)) {
+                goalsRes.data.forEach((g: Goal) => {
+                    if (g.is_active) goalsMap[g.goal_type] = g;
+                });
+            }
+            setGoals(goalsMap);
+
+            // Process Analytics
+            let stats = analyticsRes.data?.beginner || currentStats;
+
+            // Sync Weekly Profit calculation with Dashboard (Sunday start)
+            try {
+                const now = new Date();
+                const calendarRes = await api.get(`/api/analytics/calendar?user_id=${user.user_id}&month=${now.getMonth() + 1}&year=${now.getFullYear()}`);
+                const monthData = calendarRes.data;
+
+                const getLocalDateStr = (d: Date) => {
+                    const y = d.getFullYear();
+                    const m = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    return `${y}-${m}-${day}`;
+                };
+
+                const weekStart = new Date(now);
+                weekStart.setDate(now.getDate() - now.getDay());
+                weekStart.setHours(0, 0, 0, 0);
+
+                let weekData = [...monthData];
+                if (weekStart.getMonth() !== now.getMonth()) {
+                    try {
+                        const prevMonthRes = await api.get(`/api/analytics/calendar?user_id=${user.user_id}&month=${weekStart.getMonth() + 1}&year=${weekStart.getFullYear()}`);
+                        weekData = [...weekData, ...prevMonthRes.data];
+                    } catch (e) { }
+                }
+
+                let totalWeekly = 0;
+                for (let i = 0; i < 7; i++) {
+                    const checkDate = new Date(weekStart);
+                    checkDate.setDate(weekStart.getDate() + i);
+                    const dayStr = getLocalDateStr(checkDate);
+                    const dayData = weekData.find((d: any) => d.date === dayStr);
+                    if (dayData) totalWeekly += dayData.profit;
+                }
+
+                // Also Sync Monthly Profit for perfect parity
+                const totalMonthly = monthData.reduce((sum: number, day: any) => sum + (day.profit || 0), 0);
+
+                // Override both weekly and monthly profit
+                stats = {
+                    ...stats,
+                    weekly_profit: totalWeekly,
+                    monthly_profit: totalMonthly
+                };
+            } catch (e) {
+                console.warn("Failed to sync stats in Goals page", e);
+            }
+
+            setCurrentStats(stats);
+
+            // Sync Form Data
+            setFormData({
+                weeklyTarget: goalsMap['weekly']?.target_amount.toString() || '',
+                monthlyTarget: goalsMap['monthly']?.target_amount.toString() || '',
+                yearlyTarget: goalsMap['yearly']?.target_amount.toString() || '',
+                dailyLossLimit: user.daily_loss_limit?.toString() || '',
+                maxTrades: user.max_daily_trades?.toString() || ''
             });
-            // Update saved goals for display in tracking cards
-            setSavedGoals(response.data);
-            // Clear the form
-            setGoals({
-                monthly_profit_target: 0,
-                max_daily_loss: 0,
-                max_trades_per_day: 0
-            });
-            toast({
-                title: "Goals Updated",
-                description: "Your trading goals and limits have been saved."
-            });
+
         } catch (error) {
-            console.error("Error saving goals:", error);
-            toast({
-                title: "Error",
-                description: "Failed to save goals. Please try again.",
-                variant: "destructive"
-            });
-        } finally {
-            setSaving(false);
+            console.error('Error fetching dashboard data:', error);
         }
     };
 
-    if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
+    const handleSave = async () => {
+        setLoading(true);
+        try {
+            // 1. Update User Settings (Risk)
+            const updateData = {
+                daily_loss_limit: Number(formData.dailyLossLimit) || 0,
+                max_daily_trades: Number(formData.maxTrades) || 0
+            };
 
-    // Calculate progress using saved goals
-    const profitProgress = savedGoals.monthly_profit_target > 0
-        ? Math.min(100, Math.max(0, (currentStats.current_profit / savedGoals.monthly_profit_target) * 100))
-        : 0;
+            await api.put('/api/auth/profile', updateData);
+
+            // Update context
+            if (user) {
+                updateUser({ ...user, ...updateData });
+            }
+
+            // 2. Update Goals (Sequentially or Parallel)
+            const goalTypes = ['weekly', 'monthly', 'yearly'] as const;
+            const promises = goalTypes.map(type => {
+                const target = Number(formData[`${type}Target` as keyof typeof formData]);
+                if (target > 0) {
+                    return api.post(`/api/goals/?user_id=${user?.user_id}`, {
+                        goal_type: type,
+                        target_amount: target
+                    });
+                }
+                return Promise.resolve();
+            });
+
+            await Promise.all(promises);
+
+            toast({
+                title: "Settings Saved",
+                description: "Your goals and rules have been updated successfully.",
+            });
+
+            fetchData(); // Refresh UI
+            setOpen(false); // Close dialog
+
+        } catch (error) {
+            console.error('Error saving settings:', error);
+            toast({
+                variant: 'destructive',
+                title: "Save Failed",
+                description: "Could not update settings. Please try again.",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const ProgressCard = ({ type, title, icon: Icon, current, target }: { type: string, title: string, icon: any, current: number, target: number }) => {
+        const progress = target > 0 ? Math.min(Math.max((current / target) * 100, 0), 100) : 0;
+        const safeCurrent = current || 0;
+        const isAchieved = safeCurrent >= target && target > 0;
+
+        const isWeekly = type.toLowerCase() === 'weekly';
+        const isMonthly = type.toLowerCase() === 'monthly';
+
+        const config = isWeekly
+            ? {
+                gradient: "from-cyan-400 via-blue-500 to-indigo-600",
+                glow: "bg-cyan-500/20",
+                iconColor: "text-cyan-500",
+                bgColor: "bg-cyan-500/10"
+            }
+            : isMonthly
+                ? {
+                    gradient: "from-violet-400 via-fuchsia-500 to-rose-500",
+                    glow: "bg-fuchsia-500/20",
+                    iconColor: "text-fuchsia-500",
+                    bgColor: "bg-fuchsia-500/10"
+                }
+                : {
+                    gradient: "from-amber-400 via-orange-500 to-red-600",
+                    glow: "bg-orange-500/20",
+                    iconColor: "text-amber-500",
+                    bgColor: "bg-amber-500/10"
+                };
+
+        return (
+            <Card className="hover:shadow-xl transition-all duration-500 border-white/10 group overflow-hidden relative">
+                <div className={cn("absolute -top-12 -right-12 w-24 h-24 blur-[60px] rounded-full pointer-events-none opacity-50", config.glow)} />
+
+                <CardContent className="pt-6 relative z-10">
+                    <div className="flex justify-between items-start mb-6">
+                        <div className="flex items-center gap-4">
+                            <div className={cn("p-3 rounded-xl transition-colors duration-300", isAchieved ? "bg-emerald-500/10 text-emerald-500" : config.bgColor, config.iconColor)}>
+                                <Icon className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="font-black text-xl tracking-tight">{title}</h3>
+                                {isAchieved && (
+                                    <span className="text-[10px] text-emerald-500 font-black flex items-center gap-1 uppercase tracking-widest mt-0.5 animate-pulse">
+                                        Goal Crushed <CheckCircle2 className="w-3 h-3" />
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">{type} Target</div>
+                            <div className="font-black text-2xl tracking-tighter tabular-nums">${target.toLocaleString()}</div>
+                        </div>
+                    </div>
+
+                    {/* 3D Solid Prism Progress Bar */}
+                    <div className="relative h-4 w-full mb-8 group/progress mt-4">
+                        {/* High-Contrast Track */}
+                        <div className="absolute inset-0 bg-secondary/50 rounded-sm border border-black/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] overflow-hidden" />
+
+                        {/* 3D Solid Prism Progress Fill */}
+                        <div
+                            className={cn(
+                                "absolute inset-y-0 left-0 rounded-l-sm transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] border-r border-white/20 shadow-[0_4px_12px_rgba(0,0,0,0.3)]",
+                                isWeekly
+                                    ? "bg-[#1e3a8a]" // Deep Blue (Solid)
+                                    : isMonthly
+                                        ? "bg-[#064e3b]" // Dark Emerald (Solid)
+                                        : "bg-[#78350f]" // Saturated Amber (Solid)
+                            )}
+                            style={{
+                                width: `${progress}%`,
+                            }}
+                        >
+                            {/* 3D Convex Lighting Highlights */}
+                            <div className="absolute top-0 left-0 right-0 h-[40%] bg-white/10 rounded-t-sm blur-[0.5px]" />
+                            <div className="absolute bottom-0 left-0 right-0 h-[30%] bg-black/20 rounded-b-sm blur-[0.5px]" />
+
+                            {/* Traveling Sheen Animation (on hover) */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent w-full opacity-0 group-hover/progress:opacity-100 transition-opacity duration-300 animate-[shimmer_2s_infinite]" style={{ backgroundSize: '50% 100%' }} />
+
+                            {/* Floating Value Badge at the Tip (End) */}
+                            <div
+                                className="absolute right-[-10px] top-[-30px] bg-foreground text-background text-[10px] font-black px-2 py-0.5 rounded-md shadow-xl pointer-events-none whitespace-nowrap opacity-0 group-hover/progress:opacity-100 transition-all duration-300 transform translate-x-1/2 group-hover/progress:translate-y-[-2px]"
+                            >
+                                {progress.toFixed(0)}%
+                                <div className="absolute bottom-[-4px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[5px] border-t-foreground" />
+                            </div>
+
+                            {/* Edge Sparkle */}
+                            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-full bg-white/10 blur-[1px]" />
+                        </div>
+                    </div>
+
+                    <div className="flex justify-between items-center tabular-nums">
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Current P/L</span>
+                            <span className={cn("font-black text-lg", safeCurrent >= 0 ? "text-emerald-500" : "text-red-500")}>
+                                ${safeCurrent.toLocaleString()}
+                            </span>
+                        </div>
+                        <div className="text-right flex flex-col items-end">
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Completion</span>
+                            <span className={cn("font-black text-2xl tracking-tighter", isAchieved ? "text-emerald-500" : config.iconColor)}>
+                                {progress.toFixed(0)}%
+                            </span>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+        );
+    };
 
     return (
-        <div className="min-h-screen bg-background pb-20">
-            <Header />
-            <main className="container mx-auto px-4 lg:px-6 py-8 md:py-12">
-                <div className="flex items-center justify-between mb-8 opacity-0 animate-fade-up">
-                    <div className="flex items-center gap-3">
-                        <Target className="w-8 h-8 text-primary" />
-                        <h1 className="text-3xl font-bold">Goals & Discipline</h1>
-                    </div>
-                    <button
-                        onClick={() => window.location.href = '/discipline-diary'}
-                        className="group relative px-8 py-4 rounded-xl font-bold text-primary-foreground overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 bg-primary"
-                        style={{
-                            boxShadow: `
-                                0 10px 30px -5px hsl(var(--primary) / 0.5),
-                                0 4px 12px -2px hsl(var(--primary) / 0.3),
-                                inset 0 2px 4px rgba(255, 255, 255, 0.3),
-                                inset 0 -3px 6px rgba(0, 0, 0, 0.2)
-                            `,
-                            transform: 'translateZ(0)',
-                            transformStyle: 'preserve-3d'
-                        }}
-                    >
-                        {/* Animated gradient overlay - adaptable to theme */}
-                        <div
-                            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                            style={{
-                                background: 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%)',
-                            }}
-                        />
+        <div className="min-h-screen bg-background relative overflow-hidden">
+            <div className="absolute inset-0 aurora-bg pointer-events-none" />
+            <div className="absolute inset-0 bg-grid-white/5 pointer-events-none" />
 
-                        {/* Shimmer effect */}
-                        <div
-                            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                            style={{
-                                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
-                                backgroundSize: '200% 100%',
-                                animation: 'shimmer 2s linear infinite'
-                            }}
-                        />
+            <div className="relative z-10">
+                <Header />
+                <main className="container mx-auto px-4 lg:px-6 py-8">
 
-                        {/* Top highlight for glass effect */}
-                        <div
-                            className="absolute inset-0 rounded-xl"
-                            style={{
-                                background: 'linear-gradient(to bottom, rgba(255,255,255,0.2) 0%, transparent 50%)'
-                            }}
-                        />
-
-                        {/* Content */}
-                        <div className="relative flex items-center gap-3 z-10">
-                            <Calendar className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
-                            <span className="text-base">View Discipline Diary</span>
-                            <div className="w-2 h-2 rounded-full bg-white/80 group-hover:scale-150 transition-transform duration-300" />
+                    {/* Header Section */}
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                        <div>
+                            <h1 className="text-3xl font-bold flex items-center gap-3 mb-1">
+                                <Target className="w-8 h-8 text-primary" />
+                                Goals & Discipline
+                            </h1>
+                            <p className="text-muted-foreground">Track your targets and maintain your trading rules.</p>
                         </div>
+                        <div className="flex items-center gap-3">
+                            <Dialog open={open} onOpenChange={setOpen}>
+                                <DialogTrigger asChild>
+                                    <Button className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
+                                        <Settings className="w-4 h-4 mr-2" /> Set Goals & Rules
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                                    <DialogHeader>
+                                        <DialogTitle>Define Your Rules</DialogTitle>
+                                        <DialogDescription>
+                                            Set your profit targets and risk limits to maintain discipline.
+                                        </DialogDescription>
+                                    </DialogHeader>
 
-                        {/* Pulsing glow effect */}
-                        <div
-                            className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
-                            style={{
-                                boxShadow: '0 0 40px hsl(var(--primary) / 0.6)',
-                                animation: 'pulse-glow 2s infinite'
-                            }}
-                        />
-                    </button>
-                </div>
+                                    <div className="space-y-6 py-4">
+                                        {/* Goals Section */}
+                                        <div className="space-y-4">
+                                            <Label className="text-base font-semibold">Goal Targets</Label>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                {['weekly', 'monthly', 'yearly'].map((type) => (
+                                                    <div key={type} className="space-y-2">
+                                                        <div className="flex justify-between items-center">
+                                                            <Label className="flex items-center gap-2 capitalize">
+                                                                {type === 'weekly' && <Activity className="w-3 h-3 text-blue-500" />}
+                                                                {type === 'monthly' && <Target className="w-3 h-3 text-emerald-500" />}
+                                                                {type === 'yearly' && <TrendingUp className="w-3 h-3 text-purple-500" />}
+                                                                {type} ($)
+                                                            </Label>
+                                                            {/* Delete button always visible to ensure accessibility */}
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-6 w-6 text-muted-foreground hover:text-red-500"
+                                                                title="Delete Goal"
+                                                                onClick={async () => {
+                                                                    if (!user?.user_id) return;
+                                                                    try {
+                                                                        // Only call API if there was a real value to delete
+                                                                        if (formData[`${type}Target` as keyof typeof formData]) {
+                                                                            await api.delete(`/api/goals/user/${user.user_id}?goal_type=${type}`);
+                                                                            toast({ title: `${type.charAt(0).toUpperCase() + type.slice(1)} Goal Deleted` });
+                                                                            fetchData();
+                                                                        }
+                                                                        // Always clear the form
+                                                                        setFormData(prev => ({ ...prev, [`${type}Target`]: '' }));
+                                                                    } catch (e) {
+                                                                        toast({ title: "Delete Failed", variant: "destructive" });
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <Trash2 className="w-3 h-3" />
+                                                            </Button>
+                                                        </div>
+                                                        <Input
+                                                            type="number"
+                                                            placeholder={type === 'weekly' ? "200" : type === 'monthly' ? "1000" : "10000"}
+                                                            value={formData[`${type}Target` as keyof typeof formData]}
+                                                            onChange={(e) => setFormData({ ...formData, [`${type}Target`]: e.target.value })}
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                    {/* Tracking Section */}
-                    <div className="space-y-8 opacity-0 animate-fade-up" style={{ animationDelay: '0.1s' }}>
-                        <div className="glass-card p-6 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-10">
-                                <Target className="w-24 h-24" />
-                            </div>
-                            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                                <Zap className="w-5 h-5 text-yellow-500" />
-                                Monthly Progress
-                            </h2>
+                                        <div className="h-px bg-border" />
 
-                            <div className="space-y-2 mb-2">
-                                <div className="flex justify-between text-sm font-medium">
-                                    <span>Profit Goal</span>
-                                    <span>${savedGoals.monthly_profit_target.toFixed(2)}</span>
-                                </div>
-                                {/* Ultra 3D Progress Bar */}
-                                <div
-                                    className="relative h-8 rounded-xl overflow-visible"
-                                    style={{
-                                        perspective: '1000px',
-                                        transformStyle: 'preserve-3d'
-                                    }}
-                                >
-                                    {/* Background track with depth */}
-                                    <div className="absolute inset-0 bg-gradient-to-b from-muted/40 to-muted/70 rounded-xl shadow-inner"
-                                        style={{
-                                            boxShadow: 'inset 0 4px 8px rgba(0,0,0,0.15), inset 0 -2px 4px rgba(255,255,255,0.1)'
-                                        }}
-                                    />
-
-                                    {/* Progress bar with extreme 3D */}
-                                    <div
-                                        className="absolute inset-0 rounded-xl transition-all duration-1000 ease-out overflow-hidden"
-                                        style={{
-                                            width: `${profitProgress}%`,
-                                            transform: 'translateZ(20px)',
-                                            transformStyle: 'preserve-3d'
-                                        }}
-                                    >
-                                        {/* Main gradient bar */}
-                                        <div
-                                            className="absolute inset-0 rounded-xl"
-                                            style={{
-                                                background: 'linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%)',
-                                                boxShadow: `
-                                                    0 8px 24px -4px rgba(16, 185, 129, 0.6),
-                                                    0 4px 12px -2px rgba(16, 185, 129, 0.4),
-                                                    inset 0 2px 6px rgba(255, 255, 255, 0.4),
-                                                    inset 0 -3px 6px rgba(0, 0, 0, 0.3),
-                                                    0 0 40px rgba(16, 185, 129, ${profitProgress > 0 ? '0.3' : '0'})
-                                                `,
-                                                animation: profitProgress > 0 ? 'pulse-progress 2s ease-in-out infinite' : 'none'
-                                            }}
-                                        >
-                                            {/* Top highlight for glass effect */}
-                                            <div
-                                                className="absolute inset-0 rounded-xl"
-                                                style={{
-                                                    background: 'linear-gradient(to bottom, rgba(255,255,255,0.3) 0%, transparent 50%, rgba(0,0,0,0.1) 100%)'
-                                                }}
-                                            />
-
-                                            {/* Animated shimmer overlay */}
-                                            <div
-                                                className="absolute inset-0 rounded-xl"
-                                                style={{
-                                                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
-                                                    backgroundSize: '200% 100%',
-                                                    animation: profitProgress > 0 ? 'shimmer 3s linear infinite' : 'none'
-                                                }}
-                                            />
-
-                                            {/* Percentage text inside bar */}
-                                            {profitProgress > 15 && (
-                                                <div className="absolute inset-0 flex items-center justify-end pr-3">
-                                                    <span className="text-white font-bold text-sm drop-shadow-lg">
-                                                        {profitProgress.toFixed(0)}%
-                                                    </span>
+                                        {/* Risk Section */}
+                                        <div className="space-y-4">
+                                            <Label className="text-base font-semibold text-red-500">Risk Management</Label>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                    <Label>Max Daily Loss ($)</Label>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="50"
+                                                        value={formData.dailyLossLimit}
+                                                        onChange={(e) => setFormData({ ...formData, dailyLossLimit: e.target.value })}
+                                                        className="border-red-200 focus-visible:ring-red-500"
+                                                    />
+                                                    <p className="text-[10px] text-muted-foreground">Stop trading at this loss.</p>
                                                 </div>
-                                            )}
+                                                <div className="space-y-2">
+                                                    <Label>Max Trades Per Day</Label>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="3"
+                                                        value={formData.maxTrades}
+                                                        onChange={(e) => setFormData({ ...formData, maxTrades: e.target.value })}
+                                                    />
+                                                    <p className="text-[10px] text-muted-foreground">Hard limit on trade count.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-4 flex items-center justify-between gap-4">
+                                            <Button
+                                                className="w-full"
+                                                onClick={handleSave}
+                                                disabled={loading}
+                                            >
+                                                {loading ? <Activity className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                                                Save Settings
+                                            </Button>
                                         </div>
                                     </div>
-                                </div>
-                                <div className="flex justify-between text-xs text-muted-foreground pt-1">
-                                    <span>Current: ${currentStats.current_profit.toFixed(2)}</span>
-                                    {profitProgress <= 15 && <span>{profitProgress.toFixed(0)}%</span>}
-                                </div>
-                            </div>
-                        </div>
+                                </DialogContent>
+                            </Dialog>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="glass-card p-6 border-l-4 border-l-destructive/50">
-                                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Daily Loss Limit</h3>
-                                <div className="text-2xl font-bold mb-1">
-                                    ${currentStats.today_loss.toFixed(2)} <span className="text-muted-foreground text-base font-normal">/ ${savedGoals.max_daily_loss.toFixed(2)}</span>
-                                </div>
-                                {savedGoals.max_daily_loss > 0 && currentStats.today_loss >= savedGoals.max_daily_loss && (
-                                    <div className="text-destructive text-sm font-bold flex items-center gap-1 mt-2">
-                                        <ShieldAlert className="w-4 h-4" /> STOP TRADING
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="glass-card p-6">
-                                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Daily Trades</h3>
-                                <div className="text-2xl font-bold mb-1">
-                                    {currentStats.today_trades} <span className="text-muted-foreground text-base font-normal">/ {savedGoals.max_trades_per_day}</span>
-                                </div>
-                                {savedGoals.max_trades_per_day > 0 && currentStats.today_trades >= savedGoals.max_trades_per_day && (
-                                    <div className="text-yellow-500 text-sm font-bold flex items-center gap-1 mt-2">
-                                        <ShieldAlert className="w-4 h-4" /> LIMIT REACHED
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Settings Form */}
-                    <div className="glass-card p-8 opacity-0 animate-fade-up" style={{ animationDelay: '0.2s' }}>
-                        <h2 className="text-xl font-semibold mb-6">Define Your Rules</h2>
-                        <form onSubmit={handleSave} className="space-y-6">
-                            <div className="space-y-3">
-                                <Label htmlFor="target">Monthly Profit Target ($)</Label>
-                                <Input
-                                    id="target"
-                                    type="number"
-                                    value={goals.monthly_profit_target || ''}
-                                    onChange={(e) => handleChange("monthly_profit_target", e.target.value)}
-                                    className="bg-muted/50"
-                                    placeholder="Enter monthly profit target"
-                                />
-                                <p className="text-xs text-muted-foreground">What is your realistic profit goal for this month?</p>
-                            </div>
-
-                            <div className="space-y-3">
-                                <Label htmlFor="loss_limit">Max Daily Loss ($)</Label>
-                                <Input
-                                    id="loss_limit"
-                                    type="number"
-                                    value={goals.max_daily_loss || ''}
-                                    onChange={(e) => handleChange("max_daily_loss", e.target.value)}
-                                    className="bg-muted/50 border-destructive/20 focus:border-destructive"
-                                    placeholder="Enter max daily loss"
-                                />
-                                <p className="text-xs text-muted-foreground">At what loss amount will you stop trading for the day?</p>
-                            </div>
-
-                            <div className="space-y-3">
-                                <Label htmlFor="trade_limit">Max Trades Per Day</Label>
-                                <Input
-                                    id="trade_limit"
-                                    type="number"
-                                    value={goals.max_trades_per_day || ''}
-                                    onChange={(e) => handleChange("max_trades_per_day", e.target.value)}
-                                    className="bg-muted/50"
-                                    placeholder="Enter max trades per day"
-                                />
-                                <p className="text-xs text-muted-foreground">To prevent overtrading, set a hard limit on trade count.</p>
-                            </div>
-
-                            <Button type="submit" className="w-full" disabled={saving}>
-                                {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
-                                Save Goals
+                            <Button
+                                variant="outline"
+                                onClick={() => navigate('/discipline-diary')}
+                            >
+                                <Calendar className="w-4 h-4 mr-2" /> Discipline Diary
                             </Button>
-                        </form>
+                        </div>
                     </div>
-                </div>
-            </main>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        {/* Left Column: Progress Cards */}
+                        <div className="space-y-6">
+                            <ProgressCard
+                                type="Weekly"
+                                title="Weekly Progress"
+                                icon={Activity}
+                                current={currentStats.weekly_profit}
+                                target={goals['weekly']?.target_amount || 0}
+                            />
+                            <ProgressCard
+                                type="Monthly"
+                                title="Monthly Progress"
+                                icon={Target}
+                                current={currentStats.monthly_profit}
+                                target={goals['monthly']?.target_amount || 0}
+                            />
+                            <ProgressCard
+                                type="Yearly"
+                                title="Yearly Progress"
+                                icon={TrendingUp}
+                                current={currentStats.yearly_profit}
+                                target={goals['yearly']?.target_amount || 0}
+                            />
+                        </div>
+
+                        {/* Right Column: Total Account Growth */}
+                        <Card className="h-full flex flex-col justify-center items-center relative overflow-hidden border-none shadow-lg bg-background/50 backdrop-blur-sm p-8">
+                            {/* Large Trophy Icon Background */}
+                            <Trophy className="absolute top-4 right-4 w-32 h-32 text-muted/5 -rotate-12" />
+
+                            <CardHeader className="text-center relative z-10 p-0 mb-8">
+                                <CardTitle className="text-xl flex items-center gap-2 justify-center text-muted-foreground">
+                                    <Trophy className="w-5 h-5 text-yellow-500" /> Total Account Growth
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="text-center relative z-10 space-y-6 p-0">
+                                <div className="space-y-2">
+                                    <div className="text-sm text-muted-foreground uppercase tracking-wider">All-Time Net P/L</div>
+                                    <div className={cn(
+                                        "text-6xl font-black tracking-tight",
+                                        currentStats.total_pl >= 0 ? "text-emerald-500" : "text-red-500"
+                                    )}>
+                                        ${currentStats.total_pl.toLocaleString()}
+                                    </div>
+                                    <div className={cn(
+                                        "inline-flex px-4 py-1.5 rounded-full text-sm font-semibold",
+                                        currentStats.total_pl >= 0
+                                            ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                                            : "bg-red-500/10 text-red-600 border border-red-500/20"
+                                    )}>
+                                        {currentStats.total_pl >= 0 ? '🚀 Profitable' : '📉 In Loss'}
+                                    </div>
+                                </div>
+                                <div className="text-sm text-muted-foreground">Total profit/loss across all trades</div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+
+                </main>
+            </div>
         </div>
     );
-}
+};
+
+export default Goals;
