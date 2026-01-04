@@ -93,15 +93,12 @@ const Goals = () => {
             ]);
 
             // Process Goals
-            console.log("🏆 GOALS PAGE RAW:", goalsRes.data);
             const goalsMap: Record<string, Goal> = {};
             if (Array.isArray(goalsRes.data)) {
                 goalsRes.data.forEach((g: Goal) => {
-                    console.log(`🏆 Checking goal ${g.goal_type}: active=${g.is_active}, target=${g.target_amount}`);
                     if (g.is_active) goalsMap[g.goal_type] = g;
                 });
             }
-            console.log("🏆 GOALS MAP:", goalsMap);
             setGoals(goalsMap);
 
             // Process Analytics
