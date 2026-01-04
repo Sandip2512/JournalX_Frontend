@@ -93,10 +93,14 @@ export function Dashboard() {
         // Fetch actual goal target
         try {
           const goalRes = await api.get(`/api/goals/user/${user.user_id}`);
+          console.log("🎯 DASHBOARD GOAL RAW:", goalRes.data);
           // Ensure we only store active goals and handle array response
           if (Array.isArray(goalRes.data)) {
-            setGoalData(goalRes.data.filter((g: any) => g.is_active && g.target_amount > 0));
+            const activeGoals = goalRes.data.filter((g: any) => g.is_active && g.target_amount > 0);
+            console.log("🎯 DASHBOARD ACTIVE GOALS:", activeGoals);
+            setGoalData(activeGoals);
           } else {
+            console.warn("🎯 GOAL DATA IS NOT AN ARRAY:", goalRes.data);
             setGoalData([]);
           }
         } catch (e) {
