@@ -40,12 +40,10 @@ const navItems = [
 
 const UniqueClockIcon = () => (
   <div className="relative w-4 h-4 mr-1">
-    <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping" />
-    <svg viewBox="0 0 24 24" className="w-4 h-4 text-primary relative z-10 animate-pulse">
-      <circle cx="12" cy="12" r="10" className="stroke-current fill-none" strokeWidth="2" />
+    <svg viewBox="0 0 24 24" className="w-4 h-4 text-primary relative z-10">
+      <circle cx="12" cy="12" r="10" className="stroke-current fill-none opacity-50" strokeWidth="2" />
       <path d="M12 6v6l4 2" className="stroke-current fill-none" strokeWidth="2" strokeLinecap="round" />
     </svg>
-    <div className="absolute -inset-1 bg-primary/10 rounded-full blur-[2px] animate-pulse" />
   </div>
 );
 
@@ -63,10 +61,7 @@ const HeaderClock = () => {
   const ampm = time.getHours() >= 12 ? 'PM' : 'AM';
 
   return (
-    <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/[0.08] hover:bg-white/[0.12] backdrop-blur-xl rounded-2xl border border-white/20 hover:border-primary/50 text-header-foreground transition-all duration-500 shadow-2xl w-[150px] flex-none justify-center group cursor-default relative overflow-hidden">
-      {/* Aurora Background Glow */}
-      <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-primary/10 blur-[40px] group-hover:bg-primary/20 transition-colors duration-500" />
-
+    <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/[0.1] hover:bg-white/[0.15] backdrop-blur-md rounded-2xl border border-white/20 hover:border-primary/40 text-header-foreground transition-all duration-300 shadow-xl w-[150px] flex-none justify-center group cursor-default relative overflow-hidden">
       <UniqueClockIcon />
 
       <div className="flex items-baseline gap-0.5 relative z-10">
@@ -76,7 +71,7 @@ const HeaderClock = () => {
         <span className="text-[11px] font-bold text-primary tabular-nums w-4 ml-0.5">
           {seconds}
         </span>
-        <span className="text-[10px] font-black text-header-foreground/80 ml-1.5 uppercase tracking-widest">
+        <span className="text-[10px] font-black text-header-foreground/70 ml-1.5 uppercase tracking-widest">
           {ampm}
         </span>
       </div>
