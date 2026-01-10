@@ -38,6 +38,17 @@ const navItems = [
   { icon: AlertTriangle, label: "Mistakes", path: "/mistakes" },
 ];
 
+const UniqueClockIcon = () => (
+  <div className="relative w-4 h-4 mr-1">
+    <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping" />
+    <svg viewBox="0 0 24 24" className="w-4 h-4 text-primary relative z-10 animate-pulse">
+      <circle cx="12" cy="12" r="10" className="stroke-current fill-none" strokeWidth="2" />
+      <path d="M12 6v6l4 2" className="stroke-current fill-none" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+    <div className="absolute -inset-1 bg-primary/10 rounded-full blur-[2px] animate-pulse" />
+  </div>
+);
+
 const HeaderClock = () => {
   const [time, setTime] = React.useState(new Date());
 
@@ -46,10 +57,29 @@ const HeaderClock = () => {
     return () => clearInterval(timer);
   }, []);
 
+  const hours = time.getHours() % 12 || 12;
+  const minutes = time.getMinutes().toString().padStart(2, '0');
+  const seconds = time.getSeconds().toString().padStart(2, '0');
+  const ampm = time.getHours() >= 12 ? 'PM' : 'AM';
+
   return (
-    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/[0.05] hover:bg-white/[0.08] backdrop-blur-md rounded-full border border-white/10 hover:border-primary/40 text-[13px] font-medium text-header-foreground transition-all duration-300 shadow-sm w-[130px] flex-none justify-center group cursor-default">
-      <Clock className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform duration-300" />
-      <span className="tabular-nums tracking-tight">{time.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}</span>
+    <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/[0.03] hover:bg-white/[0.07] backdrop-blur-xl rounded-2xl border border-white/10 hover:border-primary/30 text-header-foreground transition-all duration-500 shadow-2xl w-[145px] flex-none justify-center group cursor-default relative overflow-hidden">
+      {/* Aurora Background Glow */}
+      <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-primary/5 blur-[40px] group-hover:bg-primary/10 transition-colors duration-500" />
+
+      <UniqueClockIcon />
+
+      <div className="flex items-baseline gap-0.5 relative z-10">
+        <span className="text-sm font-black tracking-tighter tabular-nums">
+          {hours}:{minutes}
+        </span>
+        <span className="text-[10px] font-bold text-primary/60 tabular-nums w-4">
+          {seconds}
+        </span>
+        <span className="text-[9px] font-black text-header-foreground/40 ml-1 uppercase tracking-widest">
+          {ampm}
+        </span>
+      </div>
     </div>
   );
 };
@@ -174,7 +204,7 @@ export function Header() {
               <div className="relative group">
                 <Button variant="ghost" size="icon" className="text-header-foreground/80 hover:text-header-foreground hover:bg-white/[0.08] rounded-full h-9 w-9 transition-all duration-300">
                   <Bell className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
-                  <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center border-2 border-header shadow-lg shadow-red-500/20">
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center border-2 border-header shadow-lg shadow-red-500/40 animate-pulse">
                     0
                   </span>
                 </Button>
