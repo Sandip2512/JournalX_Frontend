@@ -1,6 +1,6 @@
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import { format, formatDistanceToNowStrict } from "date-fns";
-import { Heart, MessageSquare, Trash2, MoreVertical, Reply, SendHorizontal, Loader2, CheckCheck, X, Smile } from "lucide-react";
+import { Heart, MessageSquare, Trash2, MoreVertical, Reply, SendHorizontal, Loader2, CheckCheck, X, Smile, Pencil } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Post, Comment } from "@/types/lounge";
 import { likePost, unlikePost, deletePost, updatePost, addComment, getComments, deleteComment, getImageUrl, likeComment, unlikeComment, reactToPost } from "@/lib/postsApi";
@@ -449,9 +449,9 @@ const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted, onImageClick, 
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end" className="w-32 bg-background/90 backdrop-blur-xl">
-                                            {post.user_id === user?.user_id && (
+                                            {isOwnPost && (
                                                 <DropdownMenuItem onClick={() => setIsEditing(true)} className="cursor-pointer">
-                                                    <Smile className="mr-2 h-3.5 w-3.5" />
+                                                    <Pencil className="mr-2 h-3.5 w-3.5" />
                                                     <span className="font-medium">Edit</span>
                                                 </DropdownMenuItem>
                                             )}
