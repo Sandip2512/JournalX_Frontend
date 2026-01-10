@@ -47,9 +47,9 @@ const HeaderClock = () => {
   }, []);
 
   return (
-    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-background/40 backdrop-blur-md rounded-full border border-header-foreground/10 text-[13px] font-medium text-header-foreground/70 shadow-sm font-mono w-[124px] flex-none justify-center">
-      <Clock className="w-3.5 h-3.5 text-primary/70" />
-      <span>{time.toLocaleTimeString([], { hour12: true })}</span>
+    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/[0.05] hover:bg-white/[0.08] backdrop-blur-md rounded-full border border-white/10 hover:border-primary/40 text-[13px] font-medium text-header-foreground transition-all duration-300 shadow-sm w-[130px] flex-none justify-center group cursor-default">
+      <Clock className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform duration-300" />
+      <span className="tabular-nums tracking-tight">{time.toLocaleTimeString([], { hour: true, minute: '2-digit', second: '2-digit', hour12: true })}</span>
     </div>
   );
 };
@@ -171,10 +171,10 @@ export function Header() {
             <div className="flex items-center gap-2 ml-4">
               <HeaderClock />
 
-              <div className="relative">
-                <Button variant="ghost" size="icon" className="text-header-foreground/70 hover:text-header-foreground hover:bg-header-foreground/10 rounded-full h-9 w-9">
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center border-2 border-header shadow-sm">
+              <div className="relative group">
+                <Button variant="ghost" size="icon" className="text-header-foreground/80 hover:text-header-foreground hover:bg-white/[0.08] rounded-full h-9 w-9 transition-all duration-300">
+                  <Bell className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center border-2 border-header shadow-lg shadow-red-500/20">
                     0
                   </span>
                 </Button>
