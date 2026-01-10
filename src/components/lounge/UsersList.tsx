@@ -38,7 +38,6 @@ export const UsersList: React.FC<UsersListProps> = ({ className }) => {
     };
 
     const onlineUsers = members.filter(m => isOnline(m.last_seen));
-    const offlineUsers = members.filter(m => !isOnline(m.last_seen));
 
     const getRoleInfo = (user: CommunityMember) => {
         if (user.name === "Sandip Salunkhe" && user.role === "admin") {
@@ -54,7 +53,7 @@ export const UsersList: React.FC<UsersListProps> = ({ className }) => {
             <div className="p-4 border-b border-border/40 h-14 flex items-center justify-between">
                 <h2 className="font-bold text-sm tracking-tight text-muted-foreground">Members</h2>
                 <div className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                    {members.length}
+                    {onlineUsers.length}
                 </div>
             </div>
 
@@ -96,34 +95,6 @@ export const UsersList: React.FC<UsersListProps> = ({ className }) => {
                     </div>
                 </div>
 
-                {/* Offline */}
-                <div>
-                    <div className="px-1 text-[10px] uppercase font-bold text-muted-foreground/70 mb-2 tracking-wider">
-                        Offline — {offlineUsers.length}
-                    </div>
-                    <div className="space-y-1">
-                        {offlineUsers.map((user) => {
-                            const { label } = getRoleInfo(user);
-                            return (
-                                <div key={user.user_id} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/50 cursor-pointer transition-colors opacity-60 group">
-                                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                                        <User className="w-4 h-4 text-muted-foreground" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-sm font-medium text-muted-foreground">
-                                            {user.name}
-                                        </span>
-                                        {label !== "Member" && (
-                                            <span className="text-[10px] text-muted-foreground/60 leading-none">
-                                                {label}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
             </div>
         </div>
     );
