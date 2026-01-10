@@ -18,6 +18,7 @@ import {
     MoreVertical,
     ShieldOff,
     ShieldCheck,
+    Shield,
     KeyRound,
     Edit
 } from "lucide-react";
@@ -78,6 +79,27 @@ const UserManagement = () => {
         }
     };
 
+    const handleRoleToggle = async (userId: string, currentRole: string) => {
+        // Cycle: user -> moderator -> admin -> user
+        const roleMap: Record<string, string> = {
+            user: "moderator",
+            moderator: "admin",
+            admin: "user"
+        };
+        const newRole = roleMap[currentRole] || "user";
+
+        try {
+            await api.put(`/api/admin/users/${userId}`, { role: newRole });
+            toast({
+                title: "Success",
+                description: `User role updated to ${newRole}`
+            });
+            fetchUsers();
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: "Failed to update role" });
+        }
+    };
+
     const filteredUsers = users.filter(user =>
         (user.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         (user.email || "").toLowerCase().includes(searchTerm.toLowerCase())
@@ -125,7 +147,13 @@ const UserManagement = () => {
                                     </div>
                                 </TableCell>
                                 <TableCell>
-                                    <Badge variant={user.role === "admin" ? "default" : "secondary"}>
+                                    <Badge variant={
+                                        user.role === "admin" ? "default" :
+                                            user.role === "moderator" ? "outline" :
+                                                "secondary"
+                                    } className={
+                                        user.role === "moderator" ? "border-green-500 text-green-600" : ""
+                                    }>
                                         {user.role}
                                     </Badge>
                                 </TableCell>
@@ -146,6 +174,11 @@ const UserManagement = () => {
                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                             <DropdownMenuItem>
                                                 <Edit className="mr-2 h-4 w-4" /> Edit Details
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleRoleToggle(user.user_id, user.role)}>
+                                                {user.role === "user" && <><Shield className="mr-2 h-4 w-4" /> Promote to Moderator</>}
+                                                {user.role === "moderator" && <><ShieldCheck className="mr-2 h-4 w-4" /> Promote to Admin</>}
+                                                {user.role === "admin" && <><ShieldOff className="mr-2 h-4 w-4" /> Demote to User</>}
                                             </DropdownMenuItem>
                                             <DropdownMenuItem onClick={() => handleStatusToggle(user.user_id, user.is_active)}>
                                                 {user.is_active ? (

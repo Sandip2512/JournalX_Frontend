@@ -17,6 +17,8 @@ import Profile from "./pages/Profile";
 import Goals from "./pages/Goals";
 import DisciplineDiary from "./pages/DisciplineDiary";
 import TradersDiary from "./pages/TradersDiary";
+import Community from "./pages/Community";
+import TradersLounge from "./pages/TradersLounge";
 import ProtectedAdminRoute from "./components/layout/ProtectedAdminRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
@@ -59,6 +61,11 @@ const App = () => (
                 <Route path="/goals" element={<Goals />} />
                 <Route path="/discipline-diary" element={<DisciplineDiary />} />
                 <Route path="/traders-diary" element={<TradersDiary />} />
+                <Route path="/goals" element={<Goals />} />
+                <Route path="/discipline-diary" element={<DisciplineDiary />} />
+                <Route path="/traders-diary" element={<TradersDiary />} />
+                <Route path="/community" element={<Community />} />
+                <Route path="/community/lounge" element={<TradersLounge />} />
                 <Route path="/broker-connections" element={<BrokerConnections />} />
               </Route>
 
