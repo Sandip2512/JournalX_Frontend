@@ -8,7 +8,7 @@ import { Post, Comment, Like, CreatePostData, CreateCommentData } from "@/types/
 
 export const createPost = async (data: CreatePostData): Promise<Post> => {
     const formData = new FormData();
-    formData.append("content", data.content);
+    formData.append("content", data.content || "");
 
     if (data.image) {
         formData.append("image", data.image);
@@ -40,6 +40,11 @@ export const getPost = async (postId: string): Promise<Post> => {
 
 export const deletePost = async (postId: string): Promise<void> => {
     await api.delete(`/api/posts/${postId}`);
+};
+
+export const updatePost = async (postId: string, content: string): Promise<Post> => {
+    const response = await api.put(`/api/posts/${postId}`, { content });
+    return response.data;
 };
 
 // ============= LIKES =============

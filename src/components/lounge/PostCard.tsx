@@ -3,7 +3,7 @@ import { format, formatDistanceToNowStrict } from "date-fns";
 import { Heart, MessageSquare, Trash2, MoreVertical, Reply, SendHorizontal, Loader2, CheckCheck, X, Smile } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Post, Comment } from "@/types/lounge";
-import { likePost, unlikePost, deletePost, addComment, getComments, deleteComment, getImageUrl, likeComment, unlikeComment, reactToPost } from "@/lib/postsApi";
+import { likePost, unlikePost, deletePost, updatePost, addComment, getComments, deleteComment, getImageUrl, likeComment, unlikeComment, reactToPost } from "@/lib/postsApi";
 import { ReactionPicker } from "./ReactionPicker";
 import { useToast } from "@/components/ui/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -41,6 +41,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted, onImageClick, 
     const [comments, setComments] = useState<Comment[]>([]);
     const [commentsLoading, setCommentsLoading] = useState(false);
     const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editContent, setEditContent] = useState(post.content);
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
+    const [localContent, setLocalContent] = useState(post.content);
 
     // Watch for new comments added via global input
     useEffect(() => {
@@ -175,6 +179,25 @@ const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted, onImageClick, 
             onPostDeleted(post.post_id);
         } catch (error) {
             toast({ variant: "destructive", title: "Failed to delete" });
+        }
+    };
+
+    const handleEditPost = async () => {
+        if (!editContent.trim() || editContent === post.content) {
+            setIsEditing(false);
+            return;
+        }
+
+        try {
+            setIsSavingEdit(true);
+            await updatePost(post.post_id, editContent);
+            setLocalContent(editContent);
+            setIsEditing(false);
+            toast({ description: "Message updated" });
+        } catch (error) {
+            toast({ variant: "destructive", title: "Failed to update message" });
+        } finally {
+            setIsSavingEdit(false);
         }
     };
 
@@ -345,9 +368,41 @@ const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted, onImageClick, 
                                 />
                             </div>
                         )}
-                        <p className="text-[15px] md:text-[15.5px] whitespace-pre-wrap leading-relaxed tracking-normal font-normal">
-                            {post.content}
-                        </p>
+                        {isEditing ? (
+                            <div className="flex flex-col gap-2 min-w-[200px]">
+                                <textarea
+                                    value={editContent}
+                                    onChange={(e) => setEditContent(e.target.value)}
+                                    className="w-full bg-background/50 border border-white/20 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-foreground/50 text-foreground resize-none"
+                                    rows={Math.min(5, editContent.split('\n').length + 1)}
+                                    autoFocus
+                                />
+                                <div className="flex justify-end gap-2">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => { setIsEditing(false); setEditContent(localContent); }}
+                                        className="h-7 text-[11px] text-primary-foreground/80 hover:bg-black/10"
+                                        disabled={isSavingEdit}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={handleEditPost}
+                                        className="h-7 text-[11px] bg-white text-primary font-bold hover:bg-white/90"
+                                        disabled={isSavingEdit || !editContent.trim()}
+                                    >
+                                        {isSavingEdit ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-[15px] md:text-[15.5px] whitespace-pre-wrap leading-relaxed tracking-normal font-normal">
+                                {localContent}
+                            </p>
+                        )}
 
                         {/* Reaction Chips */}
                         {Object.keys(reactions).length > 0 && (
@@ -376,6 +431,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted, onImageClick, 
                         )}>
                             <span className="text-[10px] font-medium opacity-80">
                                 {format(new Date(post.created_at), "h:mm a")}
+                                {post.updated_at && <span className="ml-1 opacity-60">(edited)</span>}
                             </span>
                             {isLiked && (
                                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="ml-1">
@@ -393,6 +449,12 @@ const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted, onImageClick, 
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end" className="w-32 bg-background/90 backdrop-blur-xl">
+                                            {post.user_id === user?.user_id && (
+                                                <DropdownMenuItem onClick={() => setIsEditing(true)} className="cursor-pointer">
+                                                    <Smile className="mr-2 h-3.5 w-3.5" />
+                                                    <span className="font-medium">Edit</span>
+                                                </DropdownMenuItem>
+                                            )}
                                             <DropdownMenuItem onClick={handleDeletePost} className="text-destructive focus:text-destructive cursor-pointer">
                                                 <Trash2 className="mr-2 h-3.5 w-3.5" />
                                                 <span className="font-medium">Delete</span>

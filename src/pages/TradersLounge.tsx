@@ -37,17 +37,24 @@ const TradersLounge: React.FC = () => {
 
     const fetchPosts = async (currentPage: number, isRefresh = false) => {
         try {
-            if (currentPage === 0) setIsLoading(true);
-            else setIsLoadingMore(true);
+            if (currentPage === 0) {
+                if (!isRefresh) setIsLoading(true);
+            } else {
+                setIsLoadingMore(true);
+            }
 
             const newPosts = await getPosts(currentPage * LIMIT, LIMIT);
 
             if (isRefresh) {
                 setPosts(newPosts);
+                setPage(0);
                 setTimeout(() => {
                     bottomRef.current?.scrollIntoView({ behavior: "auto" });
                 }, 100);
             } else {
+                // If loading older messages (page > 0), prepend them
+                // Wait, if reverse() is used in render, then posts should be [Newest...Oldest]
+                // and reverse() makes it [Oldest...Newest].
                 setPosts(prev => [...prev, ...newPosts]);
             }
 
