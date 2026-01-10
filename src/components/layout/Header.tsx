@@ -47,7 +47,7 @@ const HeaderClock = () => {
   }, []);
 
   return (
-    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-background/40 backdrop-blur-md rounded-full border border-header-foreground/10 text-[13px] font-medium text-header-foreground/70 shadow-sm tabular-nums min-w-[110px] justify-center">
+    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-background/40 backdrop-blur-md rounded-full border border-header-foreground/10 text-[13px] font-medium text-header-foreground/70 shadow-sm font-mono w-[124px] flex-none justify-center">
       <Clock className="w-3.5 h-3.5 text-primary/70" />
       <span>{time.toLocaleTimeString([], { hour12: true })}</span>
     </div>
