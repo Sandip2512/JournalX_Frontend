@@ -114,7 +114,10 @@ const TradersLounge: React.FC = () => {
                         Back to Community
                     </Button>
                     <div className="h-6 w-px bg-border/50 mx-2 hidden md:block" />
-                    <h1 className="font-bold"># general</h1>
+                    <div className="flex flex-col">
+                        <h1 className="font-bold"># general</h1>
+                        <span className="text-[10px] text-muted-foreground font-mono opacity-50">API: {import.meta.env.VITE_API_URL || "Local/Fallback"}</span>
+                    </div>
                 </div>
 
                 {/* Mobile Open Sidebar Trigger could go here */}
