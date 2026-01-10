@@ -1,13 +1,37 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { MessageSquare, Users, Trophy, Radio, ArrowRight, Search, Command } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { getCommunityMembers } from "@/lib/membersApi";
 
 const Community: React.FC = () => {
     const navigate = useNavigate();
+    const [onlineCount, setOnlineCount] = useState<number>(0);
+
+    useEffect(() => {
+        const fetchOnlineCount = async () => {
+            try {
+                const members = await getCommunityMembers();
+                const count = members.filter(m => {
+                    if (!m.last_seen) return false;
+                    const lastSeenDate = new Date(m.last_seen);
+                    const now = new Date();
+                    const diffInMinutes = (now.getTime() - lastSeenDate.getTime()) / 1000 / 60;
+                    return diffInMinutes < 5;
+                }).length;
+                setOnlineCount(count);
+            } catch (error) {
+                console.error("Error fetching online count:", error);
+            }
+        };
+
+        fetchOnlineCount();
+        const interval = setInterval(fetchOnlineCount, 30000);
+        return () => clearInterval(interval);
+    }, []);
 
     return (
         <div className="min-h-screen bg-background relative flex flex-col">
@@ -45,7 +69,7 @@ const Community: React.FC = () => {
                                 <div className="absolute top-0 right-0 p-6">
                                     <div className="flex items-center gap-2 text-xs font-medium text-green-500 bg-green-500/10 px-3 py-1 rounded-full">
                                         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                        <span>3 Online now</span>
+                                        <span>{onlineCount} Online now</span>
                                     </div>
                                 </div>
 
