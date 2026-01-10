@@ -14,6 +14,12 @@ export const createPost = async (data: CreatePostData): Promise<Post> => {
         formData.append("image", data.image);
     }
 
+    console.log("🚀 postsApi: Sending FormData...", {
+        content: data.content,
+        hasImage: !!data.image,
+        formDataEntries: Array.from((formData as any).entries()).map(([k, v]: any) => k)
+    });
+
     const response = await api.post("/api/posts/", formData);
 
     return response.data;
