@@ -327,7 +327,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted, onImageClick, 
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.2 }}
             className={cn(
-                "flex w-full mb-3 group relative select-none",
+                "flex w-full mb-3 group relative",
+                !isEditing && "select-none",
                 isOwnPost ? "justify-end" : "justify-start"
             )}
         >
@@ -463,11 +464,13 @@ const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted, onImageClick, 
                                     </DropdownMenu>
                                 </div>
                             )}
-                            <button
-                                className="absolute inset-0 w-full h-full cursor-default"
-                                onDoubleClick={(e) => handleLike(e)}
-                                tabIndex={-1}
-                            />
+                            {!isEditing && (
+                                <button
+                                    className="absolute inset-0 w-full h-full cursor-default"
+                                    onDoubleClick={(e) => handleLike(e)}
+                                    tabIndex={-1}
+                                />
+                            )}
                         </div>
 
                     </div>
