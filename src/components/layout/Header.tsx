@@ -36,7 +36,6 @@ const navItems = [
   { icon: ClipboardList, label: "Trader's Diary", path: "/traders-diary" },
   { icon: MessageSquare, label: "Community", path: "/community" },
   { icon: AlertTriangle, label: "Mistakes", path: "/mistakes" },
-  { icon: Trophy, label: "Leaderboard", path: "/leaderboard" },
 ];
 
 export function Header() {
