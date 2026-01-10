@@ -119,7 +119,25 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({ onPostCreated, replyCon
 
         } catch (error: any) {
             console.error("Failed to send:", error);
-            const errorMessage = error.response?.data?.detail || error.message || "Failed to send message.";
+
+            let errorMessage = "Failed to send message.";
+            if (error.response?.data?.detail) {
+                const detail = error.response.data.detail;
+                if (typeof detail === 'string') {
+                    errorMessage = detail;
+                } else if (Array.isArray(detail)) {
+                    // Handle FastAPI/Pydantic validation errors
+                    errorMessage = detail.map((err: any) => {
+                        const loc = err.loc ? (Array.isArray(err.loc) ? err.loc.join('.') : err.loc) : '';
+                        return `${err.msg}${loc ? ` (${loc})` : ''}`;
+                    }).join(', ');
+                } else {
+                    errorMessage = JSON.stringify(detail);
+                }
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
             toast({
                 variant: "destructive",
                 title: "Error",
