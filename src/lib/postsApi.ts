@@ -14,11 +14,7 @@ export const createPost = async (data: CreatePostData): Promise<Post> => {
         formData.append("image", data.image);
     }
 
-    const response = await api.post("/api/posts/", formData, {
-        headers: {
-            "Content-Type": "multipart/form-data",
-        },
-    });
+    const response = await api.post("/api/posts/", formData);
 
     return response.data;
 };
@@ -94,5 +90,7 @@ export const unlikeComment = async (postId: string, commentId: string): Promise<
 // ============= IMAGES =============
 
 export const getImageUrl = (fileId: string): string => {
-    return `${API_BASE_URL}/api/posts/images/${fileId}`;
+    // Use the baseURL from the shared api instance
+    const baseURL = api.defaults.baseURL || "";
+    return `${baseURL}/api/posts/images/${fileId}`;
 };
