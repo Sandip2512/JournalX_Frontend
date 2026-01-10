@@ -63,20 +63,20 @@ const HeaderClock = () => {
   const ampm = time.getHours() >= 12 ? 'PM' : 'AM';
 
   return (
-    <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/[0.03] hover:bg-white/[0.07] backdrop-blur-xl rounded-2xl border border-white/10 hover:border-primary/30 text-header-foreground transition-all duration-500 shadow-2xl w-[145px] flex-none justify-center group cursor-default relative overflow-hidden">
+    <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/[0.08] hover:bg-white/[0.12] backdrop-blur-xl rounded-2xl border border-white/20 hover:border-primary/50 text-header-foreground transition-all duration-500 shadow-2xl w-[150px] flex-none justify-center group cursor-default relative overflow-hidden">
       {/* Aurora Background Glow */}
-      <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-primary/5 blur-[40px] group-hover:bg-primary/10 transition-colors duration-500" />
+      <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-primary/10 blur-[40px] group-hover:bg-primary/20 transition-colors duration-500" />
 
       <UniqueClockIcon />
 
       <div className="flex items-baseline gap-0.5 relative z-10">
-        <span className="text-sm font-black tracking-tighter tabular-nums">
+        <span className="text-[14px] font-black tracking-tighter tabular-nums">
           {hours}:{minutes}
         </span>
-        <span className="text-[10px] font-bold text-primary/60 tabular-nums w-4">
+        <span className="text-[11px] font-bold text-primary tabular-nums w-4 ml-0.5">
           {seconds}
         </span>
-        <span className="text-[9px] font-black text-header-foreground/40 ml-1 uppercase tracking-widest">
+        <span className="text-[10px] font-black text-header-foreground/80 ml-1.5 uppercase tracking-widest">
           {ampm}
         </span>
       </div>
