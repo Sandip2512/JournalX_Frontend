@@ -20,9 +20,6 @@ console.log('🚀 API Configured to:', API_URL);
 
 const api = axios.create({
     baseURL: API_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    },
 });
 
 // Add a request interceptor to attach the token if available
