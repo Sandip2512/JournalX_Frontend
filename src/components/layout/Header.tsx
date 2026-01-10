@@ -1,5 +1,5 @@
 import React from "react";
-import { TrendingUp, LayoutDashboard, ArrowRightLeft, BarChart3, AlertTriangle, Trophy, Settings, Plug, User, ChevronDown, Menu, Calendar, Target, ClipboardList, MessageSquare } from "lucide-react";
+import { TrendingUp, LayoutDashboard, ArrowRightLeft, BarChart3, AlertTriangle, Trophy, Settings, Plug, User, ChevronDown, Menu, Calendar, Target, ClipboardList, MessageSquare, Clock, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -37,6 +37,22 @@ const navItems = [
   { icon: MessageSquare, label: "Community", path: "/community" },
   { icon: AlertTriangle, label: "Mistakes", path: "/mistakes" },
 ];
+
+const HeaderClock = () => {
+  const [time, setTime] = React.useState(new Date());
+
+  React.useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-background/40 backdrop-blur-md rounded-full border border-header-foreground/10 text-[13px] font-medium text-header-foreground/70 shadow-sm">
+      <Clock className="w-3.5 h-3.5 text-primary/70" />
+      <span>{time.toLocaleTimeString([], { hour12: true })}</span>
+    </div>
+  );
+};
 
 export function Header() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -137,19 +153,34 @@ export function Header() {
 
         {/* Desktop Navigation */}
         {isAuthenticated && (
-          <nav className="hidden lg:flex items-center gap-1 mx-6">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.label}
-                to={item.path}
-                className="inline-flex items-center gap-2 h-9 px-3 text-sm text-header-foreground/80 hover:text-header-foreground hover:bg-header-foreground/10 rounded-lg transition-colors"
-                activeClassName="text-header-foreground bg-header-foreground/15 font-medium"
-              >
-                <item.icon className="w-4 h-4" />
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
+          <div className="flex items-center gap-4 flex-1 justify-end">
+            <nav className="hidden lg:flex items-center gap-1">
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.label}
+                  to={item.path}
+                  className="inline-flex items-center gap-2 h-9 px-3 text-sm text-header-foreground/80 hover:text-header-foreground hover:bg-header-foreground/10 rounded-lg transition-colors"
+                  activeClassName="text-header-foreground bg-header-foreground/15 font-medium"
+                >
+                  <item.icon className="w-4 h-4" />
+                  {item.label}
+                </NavLink>
+              ))}
+            </nav>
+
+            <div className="flex items-center gap-2 ml-4">
+              <HeaderClock />
+
+              <div className="relative">
+                <Button variant="ghost" size="icon" className="text-header-foreground/70 hover:text-header-foreground hover:bg-header-foreground/10 rounded-full h-9 w-9">
+                  <Bell className="w-5 h-5" />
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center border-2 border-header shadow-sm">
+                    0
+                  </span>
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* User Menu */}
