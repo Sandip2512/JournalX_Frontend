@@ -1,27 +1,8 @@
-import axios from "axios";
+import api from "./api";
 import { Post, Comment, Like, CreatePostData, CreateCommentData } from "@/types/lounge";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-
-// Get auth token from localStorage
-const getAuthToken = () => {
-    const token = localStorage.getItem("token");
-    return token;
-};
-
-// Create axios instance with auth header
-const api = axios.create({
-    baseURL: API_BASE_URL,
-});
-
-// Add auth token to all requests
-api.interceptors.request.use((config) => {
-    const token = getAuthToken();
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-});
+// Reuse the central api instance from api.ts
+// which has correct production/dev fallback URLs and interceptors
 
 // ============= POSTS =============
 
