@@ -49,7 +49,7 @@ const HeaderClock = () => {
   return (
     <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/[0.05] hover:bg-white/[0.08] backdrop-blur-md rounded-full border border-white/10 hover:border-primary/40 text-[13px] font-medium text-header-foreground transition-all duration-300 shadow-sm w-[130px] flex-none justify-center group cursor-default">
       <Clock className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform duration-300" />
-      <span className="tabular-nums tracking-tight">{time.toLocaleTimeString([], { hour: true, minute: '2-digit', second: '2-digit', hour12: true })}</span>
+      <span className="tabular-nums tracking-tight">{time.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}</span>
     </div>
   );
 };
