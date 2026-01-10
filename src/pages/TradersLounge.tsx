@@ -188,6 +188,16 @@ const TradersLounge: React.FC = () => {
                                     <p className="text-sm text-muted-foreground mt-4 animate-pulse">Connecting to encrypted channel...</p>
                                 </div>
                             )}
+
+                            {error && (
+                                <div className="flex flex-col items-center justify-center p-8 border border-destructive/20 bg-destructive/5 rounded-2xl mb-6 mx-4">
+                                    <RefreshCcw className="w-8 h-8 text-destructive mb-3 animate-pulse" />
+                                    <p className="text-sm font-medium text-destructive">{error}</p>
+                                    <Button variant="ghost" size="sm" onClick={() => fetchPosts(0, true)} className="mt-4 text-xs">
+                                        Try Refreshing
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     </div>
 
