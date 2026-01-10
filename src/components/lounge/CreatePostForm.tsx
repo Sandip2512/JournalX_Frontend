@@ -117,12 +117,13 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({ onPostCreated, replyCon
             if (textareaRef.current) textareaRef.current.style.height = 'auto';
             // onPostCreated(); // Moved inside if/else to handle isComment flag
 
-        } catch (error) {
-            console.error(error);
+        } catch (error: any) {
+            console.error("Failed to send:", error);
+            const errorMessage = error.response?.data?.detail || error.message || "Failed to send message.";
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: "Failed to send message.",
+                description: errorMessage,
             });
         } finally {
             setIsLoading(false);
