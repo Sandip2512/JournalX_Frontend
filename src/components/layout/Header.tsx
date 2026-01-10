@@ -61,17 +61,18 @@ const HeaderClock = () => {
   const ampm = time.getHours() >= 12 ? 'PM' : 'AM';
 
   return (
-    <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/[0.1] hover:bg-white/[0.15] backdrop-blur-md rounded-2xl border border-white/20 hover:border-primary/40 text-header-foreground transition-all duration-300 shadow-xl w-[150px] flex-none justify-center group cursor-default relative overflow-hidden">
+  return (
+    <div className="hidden sm:flex items-center gap-2 px-2 py-1 bg-transparent text-header-foreground transition-all duration-300 w-[130px] flex-none justify-center group cursor-default relative">
       <UniqueClockIcon />
 
       <div className="flex items-baseline gap-0.5 relative z-10">
-        <span className="text-[14px] font-black tracking-tighter tabular-nums">
+        <span className="text-[14px] font-black tracking-tighter tabular-nums text-header-foreground">
           {hours}:{minutes}
         </span>
-        <span className="text-[11px] font-bold text-primary tabular-nums w-4 ml-0.5">
+        <span className="text-[11px] font-bold text-primary tabular-nums w-4 ml-0.5 opacity-90">
           {seconds}
         </span>
-        <span className="text-[10px] font-black text-header-foreground/70 ml-1.5 uppercase tracking-widest">
+        <span className="text-[10px] font-black text-header-foreground/50 ml-1.5 uppercase tracking-widest">
           {ampm}
         </span>
       </div>
