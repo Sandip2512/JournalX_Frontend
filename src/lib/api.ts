@@ -22,7 +22,7 @@ const api = axios.create({
     baseURL: API_URL,
 });
 
-// Add a request interceptor to attach the token if available
+// Add a request interceptor to attach the token and handle content-type
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
@@ -30,6 +30,13 @@ api.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+
+        // Only set Content-Type to application/json if we're not sending FormData
+        // This allows Axios/Browser to automatically set the boundary for multipart/form-data
+        if (!(config.data instanceof FormData) && !config.headers['Content-Type']) {
+            config.headers['Content-Type'] = 'application/json';
+        }
+
         console.log('API Request - Headers:', config.headers);
         return config;
     },
