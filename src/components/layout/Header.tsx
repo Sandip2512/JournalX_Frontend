@@ -61,7 +61,6 @@ const HeaderClock = () => {
   const ampm = time.getHours() >= 12 ? 'PM' : 'AM';
 
   return (
-  return (
     <div className="hidden sm:flex items-center gap-2 px-2 py-1 bg-transparent text-header-foreground transition-all duration-300 w-[130px] flex-none justify-center group cursor-default relative">
       <UniqueClockIcon />
 
