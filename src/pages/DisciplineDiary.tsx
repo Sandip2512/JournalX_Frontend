@@ -303,8 +303,10 @@ export default function DisciplineDiary() {
                                             )}
                                             <span className="font-medium">Daily Loss Limit</span>
                                         </div>
-                                        <div className="text-sm text-muted-foreground">
-                                            P&L: ${selectedDay.daily_pnl.toFixed(2)}
+                                        <div className="text-sm font-bold mt-1">
+                                            P&L: <span className={selectedDay.daily_pnl >= 0 ? "text-emerald-500" : "text-red-500"}>
+                                                {selectedDay.daily_pnl >= 0 ? "+" : ""}${selectedDay.daily_pnl.toFixed(2)}
+                                            </span>
                                         </div>
                                     </div>
 

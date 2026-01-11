@@ -74,7 +74,10 @@ export function GoalTracker({ goals }: GoalTrackerProps) {
                                             {goal.label}
                                         </p>
                                     </div>
-                                    <p className="text-lg font-black text-foreground tabular-nums">
+                                    <p className={cn(
+                                        "text-lg font-black tabular-nums",
+                                        goal.current >= 0 ? "text-emerald-500" : "text-red-500"
+                                    )}>
                                         <span className="opacity-60 text-sm font-medium mr-0.5">$</span>
                                         {goal.current.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                         <span className="text-muted-foreground/40 font-bold mx-2 text-xs">/</span>

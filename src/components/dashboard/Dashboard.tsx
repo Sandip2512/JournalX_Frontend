@@ -9,7 +9,6 @@ import { TradeEntryForm } from "./TradeEntryForm";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { RecentActivityFeed } from "./RecentActivityFeed";
-import { AnnouncementBanner } from "./AnnouncementBanner";
 import { PerformanceChart } from "./PerformanceChart";
 import { GoalTracker } from "./GoalTracker";
 import { TotalTradesCard } from "./TotalTradesCard";
@@ -23,6 +22,8 @@ export function Dashboard() {
   const [monthlyProfit, setMonthlyProfit] = useState<number>(0);
   const [weeklyProfit, setWeeklyProfit] = useState<number>(0);
   const [goalData, setGoalData] = useState<any>(null);
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("1Y");
   const [loading, setLoading] = useState(true);
 
   const fetchData = React.useCallback(async () => {
@@ -40,10 +41,10 @@ export function Dashboard() {
         // OR better, checking if the backend supports pagination/limiting on the main trades endpoint.
         // For now, I will try a standard fetching pattern which likely exists.
         try {
-          const tradesRes = await api.get(`/trades/user/${user.user_id}?limit=5&skip=0`);
+          const tradesRes = await api.get(`/trades/user/${user.user_id}?limit=5&skip=0&sort=desc`);
           // Check if response is array or object with items
           const tradesData = Array.isArray(tradesRes.data) ? tradesRes.data : (tradesRes.data.items || []);
-          setRecentTrades(tradesData.slice(0, 5));
+          setRecentTrades(tradesData);
         } catch (e) {
           console.warn("Could not fetch recent trades", e);
           setRecentTrades([]);
@@ -103,6 +104,14 @@ export function Dashboard() {
           console.warn("Could not fetch goal target", e);
         }
 
+        // Fetch analytics for equity curve
+        try {
+          const analyticsRes = await api.get(`/api/analytics/user/${user.user_id}`);
+          setAnalyticsData(analyticsRes.data.beginner);
+        } catch (e) {
+          console.warn("Could not fetch analytics", e);
+        }
+
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -136,8 +145,6 @@ export function Dashboard() {
         <div className="absolute inset-0 bg-grid-white/5" />
 
         <div className="container mx-auto px-4 lg:px-6 py-12 relative z-10">
-          <AnnouncementBanner />
-
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 mt-6">
             <div className="space-y-2 animate-fade-up">
               <div className="flex items-center justify-between lg:justify-start gap-4 mb-2">
@@ -197,8 +204,7 @@ export function Dashboard() {
           {/* Row 1: Performance Chart (Large) + Goal Tracker + Win Rate */}
           <div className="md:col-span-2 stagger-1 animate-fade-up">
             <PerformanceChart
-              data={[]} // TODO: Pass real history data if available
-              totalProfit={stats?.net_profit || 0}
+              analyticsData={analyticsData}
             />
           </div>
 

@@ -198,12 +198,12 @@ const Leaderboard = () => {
                       <div className="hidden sm:block space-y-1 md:space-y-2 mt-auto">
                         <div className="flex justify-between text-[9px] md:text-sm">
                           <span className="text-muted-foreground">Profit:</span>
-                          <span className={`font-semibold ${topThree[1].net_profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          <span className={`font-semibold ${topThree[1].net_profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                             {formatCurrency(topThree[1].net_profit)}
                           </span>
                         </div>
                       </div>
-                      <div className="sm:hidden font-bold text-[9px] text-green-500 truncate">
+                      <div className="sm:hidden font-bold text-[9px] text-emerald-500 truncate">
                         {formatCurrency(topThree[1].net_profit)}
                       </div>
                     </div>
@@ -225,12 +225,12 @@ const Leaderboard = () => {
                       <div className="hidden sm:block space-y-1 md:space-y-2 mt-auto">
                         <div className="flex justify-between text-[9px] md:text-sm">
                           <span className="text-muted-foreground">Profit:</span>
-                          <span className={`font-semibold ${topThree[0].net_profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          <span className={`font-semibold ${topThree[0].net_profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                             {formatCurrency(topThree[0].net_profit)}
                           </span>
                         </div>
                       </div>
-                      <div className="sm:hidden font-bold text-[10px] text-green-500 truncate">
+                      <div className="sm:hidden font-bold text-[10px] text-emerald-500 truncate">
                         {formatCurrency(topThree[0].net_profit)}
                       </div>
                     </div>
@@ -252,12 +252,12 @@ const Leaderboard = () => {
                       <div className="hidden sm:block space-y-1 md:space-y-2 mt-auto">
                         <div className="flex justify-between text-[9px] md:text-sm">
                           <span className="text-muted-foreground">Profit:</span>
-                          <span className={`font-semibold ${topThree[2].net_profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          <span className={`font-semibold ${topThree[2].net_profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                             {formatCurrency(topThree[2].net_profit)}
                           </span>
                         </div>
                       </div>
-                      <div className="sm:hidden font-bold text-[9px] text-green-500 truncate">
+                      <div className="sm:hidden font-bold text-[9px] text-emerald-500 truncate">
                         {formatCurrency(topThree[2].net_profit)}
                       </div>
                     </div>
@@ -317,7 +317,7 @@ const Leaderboard = () => {
                           </div>
                         </td>
                         <td className="px-4 md:px-6 py-3 md:py-4 text-right whitespace-nowrap">
-                          <span className={`font-semibold ${entry.net_profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          <span className={`font-semibold ${entry.net_profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                             {formatCurrency(entry.net_profit)}
                           </span>
                         </td>
@@ -325,7 +325,7 @@ const Leaderboard = () => {
                           <div className="flex items-center justify-end gap-1">
                             <span className="font-medium">{entry.win_rate.toFixed(1)}%</span>
                             {entry.win_rate >= 50 ? (
-                              <ArrowUp className="w-3 h-3 md:w-4 md:h-4 text-green-500" />
+                              <ArrowUp className="w-3 h-3 md:w-4 md:h-4 text-emerald-500" />
                             ) : (
                               <ArrowDown className="w-3 h-3 md:w-4 md:h-4 text-red-500" />
                             )}
@@ -333,12 +333,12 @@ const Leaderboard = () => {
                         </td>
                         <td className="px-4 md:px-6 py-3 md:py-4 text-right font-medium">{entry.total_trades}</td>
                         <td className="px-4 md:px-6 py-3 md:py-4 text-right">
-                          <span className={`font-medium ${entry.profit_factor >= 1 ? 'text-green-500' : 'text-red-500'}`}>
+                          <span className={`font-medium ${entry.profit_factor >= 1 ? 'text-emerald-500' : 'text-red-500'}`}>
                             {entry.profit_factor.toFixed(2)}
                           </span>
                         </td>
                         <td className="px-4 md:px-6 py-3 md:py-4 text-right whitespace-nowrap">
-                          <span className="font-medium text-green-500">
+                          <span className="font-medium text-emerald-500">
                             {formatCurrency(entry.best_trade)}
                           </span>
                         </td>

@@ -86,7 +86,7 @@ export function RecentActivityFeed({ trades, isLoading }: RecentActivityFeedProp
                                         <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
                                             <span>{trade.volume} Lot</span>
                                             <span className="w-1 h-1 rounded-full bg-border" />
-                                            <span>{new Date(trade.close_time).toLocaleDateString()}</span>
+                                            <span>{new Date(trade.close_time).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}</span>
                                         </div>
                                     </div>
                                 </div>

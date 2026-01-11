@@ -2,6 +2,7 @@ import React from "react";
 import { TrendingUp, LayoutDashboard, ArrowRightLeft, BarChart3, AlertTriangle, Trophy, Settings, Plug, User, ChevronDown, Menu, Calendar, Target, ClipboardList, MessageSquare, Clock, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NavLink } from "@/components/NavLink";
+import { NotificationDropdown } from "./NotificationDropdown";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -196,14 +197,11 @@ export function Header() {
             <div className="flex items-center gap-2 ml-4">
               <HeaderClock />
 
-              <div className="relative group">
+              <NotificationDropdown>
                 <Button variant="ghost" size="icon" className="text-header-foreground/80 hover:text-header-foreground bg-transparent hover:bg-transparent rounded-full h-9 w-9 transition-all duration-300">
                   <Bell className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
-                  <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center border-2 border-header shadow-lg shadow-red-500/20">
-                    0
-                  </span>
                 </Button>
-              </div>
+              </NotificationDropdown>
             </div>
           </div>
         )}

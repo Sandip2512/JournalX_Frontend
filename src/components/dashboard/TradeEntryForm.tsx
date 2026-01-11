@@ -70,6 +70,13 @@ const predefinedMistakes = [
 ];
 
 export function TradeEntryForm({ open, onOpenChange, onSuccess }: TradeEntryFormProps) {
+  const getLocalISOString = () => {
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60000;
+    const localISOTime = new Date(now.getTime() - offset).toISOString().slice(0, 16);
+    return localISOTime;
+  };
+
   const [formData, setFormData] = useState({
     symbol: "",
     volume: "",
@@ -83,8 +90,8 @@ export function TradeEntryForm({ open, onOpenChange, onSuccess }: TradeEntryForm
     net_profit: "",
     reason: "",
     mistake: "No Mistake",
-    open_time: "",
-    close_time: "",
+    open_time: getLocalISOString(),
+    close_time: getLocalISOString(),
     strategy: "",
     session: "",
     emotion: "",
@@ -100,7 +107,18 @@ export function TradeEntryForm({ open, onOpenChange, onSuccess }: TradeEntryForm
   const [symbolOpen, setSymbolOpen] = useState(false);
 
   const handleChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      const newData = { ...prev, [field]: value };
+
+      // Auto-calculate Net Profit if either Profit or Loss amount changes
+      if (field === "profit_amount" || field === "loss_amount") {
+        const p = parseFloat(newData.profit_amount) || 0;
+        const l = parseFloat(newData.loss_amount) || 0;
+        newData.net_profit = (p - l).toString();
+      }
+
+      return newData;
+    });
   };
 
   const handleMistakeChange = (value: string) => {
@@ -180,8 +198,8 @@ export function TradeEntryForm({ open, onOpenChange, onSuccess }: TradeEntryForm
         net_profit: "",
         reason: "",
         mistake: "No Mistake",
-        open_time: "",
-        close_time: "",
+        open_time: getLocalISOString(),
+        close_time: getLocalISOString(),
         strategy: "",
         session: "",
         emotion: "",
@@ -449,7 +467,10 @@ export function TradeEntryForm({ open, onOpenChange, onSuccess }: TradeEntryForm
                   placeholder="0.00"
                   value={formData.net_profit}
                   onChange={(e) => handleChange("net_profit", e.target.value)}
-                  className="bg-muted/50 font-semibold"
+                  className={cn(
+                    "bg-muted/50 font-bold",
+                    (parseFloat(formData.net_profit) || 0) >= 0 ? "text-emerald-500" : "text-red-500"
+                  )}
                 />
               </div>
             </div>

@@ -86,7 +86,7 @@ const Analytics = () => {
       stats = [
         { label: "Avg R-Multiple", value: `${avgR.toFixed(2)}R`, icon: Layers, color: "text-primary", bg: "bg-primary/10" },
         { label: "Best Strategy", value: Object.entries(analytics.intermediate.strategy_performance || {}).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || "N/A", icon: Activity, color: "text-success", bg: "bg-success/10" },
-        { label: "Best Day", value: Object.entries(analytics.intermediate.day_of_week_performance || {}).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || "N/A", icon: Calendar, color: "text-blue-500", bg: "bg-blue-500/10" },
+        { label: "Best Day", value: Object.entries(analytics.intermediate.day_of_week_performance || {}).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || "N/A", icon: Calendar, color: "text-emerald-500", bg: "bg-emerald-500/10" },
         // Reusing Win Rate for context
         { label: "Win Rate", value: `${(analytics.beginner.win_rate || 0).toFixed(1)}%`, icon: Target, color: "text-primary", bg: "bg-primary/10" },
       ];
@@ -231,7 +231,7 @@ const Analytics = () => {
                 />
                 <Bar dataKey="pl" radius={[8, 8, 8, 8]} maxBarSize={50} animationDuration={1500}>
                   {dayData.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={entry.pl >= 0 ? "#3b82f6" : "#ef4444"} />
+                    <Cell key={`cell-${index}`} fill={entry.pl >= 0 ? "#10b981" : "#ef4444"} />
                   ))}
                 </Bar>
               </BarChart>

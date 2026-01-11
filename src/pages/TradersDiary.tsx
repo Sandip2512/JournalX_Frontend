@@ -74,13 +74,13 @@ export default function TradersDiary() {
 
     // Helper to get color class based on profit
     const getProfitColor = (val: number) => {
-        if (val > 0) return "text-green-500";
+        if (val > 0) return "text-emerald-500";
         if (val < 0) return "text-red-500";
         return "text-muted-foreground";
     };
 
     const getBgProfitColor = (val: number) => {
-        if (val > 0) return "bg-green-500/10 border-green-500/20";
+        if (val > 0) return "bg-emerald-500/10 border-emerald-500/20";
         if (val < 0) return "bg-red-500/10 border-red-500/20";
         return "bg-muted/10 border-muted/20";
     }
@@ -211,7 +211,7 @@ export default function TradersDiary() {
                                 <span className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
                                     <Medal className="w-3 h-3 text-yellow-500" /> Most Profitable (Period)
                                 </span>
-                                <span className="text-lg font-bold text-green-500">
+                                <span className="text-lg font-bold text-emerald-500">
                                     {stats?.most_profitable_period?.profit > 0 ? `+${stats.most_profitable_period.profit.toFixed(2)}` : "0.00"}
                                 </span>
                                 <span className="text-[10px] text-muted-foreground">on {stats?.most_profitable_period?.date || "-"}</span>
@@ -221,7 +221,7 @@ export default function TradersDiary() {
                                 <span className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
                                     <Trophy className="w-3 h-3 text-orange-500" /> Most Profitable (All Time)
                                 </span>
-                                <span className="text-lg font-bold text-green-500">
+                                <span className="text-lg font-bold text-emerald-500">
                                     {stats?.most_profitable_all_time?.profit > 0 ? `+${stats.most_profitable_all_time.profit.toFixed(2)}` : "0.00"}
                                 </span>
                                 <span className="text-[10px] text-muted-foreground">on {stats?.most_profitable_all_time?.date || "-"}</span>
@@ -234,9 +234,9 @@ export default function TradersDiary() {
                         {[
                             { label: "Trading Days", val: stats?.trading_days || 0, sub: "Total Days" },
                             { label: "Traded On", val: stats?.traded_on || 0, sub: "Active Days" },
-                            { label: "In-Profit Days", val: stats?.in_profit_days || 0, sub: "Green Days", color: "text-green-500" },
-                            { label: "Winning Streak", val: stats?.winning_streak || 0, sub: "Longest Run", color: "text-blue-500" },
-                            { label: "Current Streak", val: stats?.current_streak || 0, sub: "Active Run", color: "text-purple-500" },
+                            { label: "In-Profit Days", val: stats?.in_profit_days || 0, sub: "Green Days", color: "text-emerald-500" },
+                            { label: "Winning Streak", val: stats?.winning_streak || 0, sub: "Longest Run", color: "text-emerald-500" },
+                            { label: "Current Streak", val: stats?.current_streak || 0, sub: "Active Run", color: "text-emerald-500" },
                         ].map((item, i) => (
                             <div key={i} className="bg-card border border-border rounded-lg p-4 flex flex-col items-center justify-center text-center shadow-sm">
                                 <span className={`text-2xl font-bold mb-1 ${item.color || "text-foreground"}`}>{item.val}</span>
@@ -308,7 +308,7 @@ export default function TradersDiary() {
                             </div>
                             <div>
                                 <span className="text-xs text-muted-foreground uppercase tracking-wider block mb-1">Win Rate</span>
-                                <span className="text-2xl font-bold text-blue-500">{(stats?.in_profit_days / (stats?.traded_on || 1) * 100).toFixed(0)}% <span className="text-xs text-muted-foreground font-normal">(Days)</span></span>
+                                <span className="text-2xl font-bold text-emerald-500">{(stats?.in_profit_days / (stats?.traded_on || 1) * 100).toFixed(0)}% <span className="text-xs text-muted-foreground font-normal">(Days)</span></span>
                             </div>
                             <div>
                                 <span className="text-xs text-muted-foreground uppercase tracking-wider block mb-1">Brokerage</span>
@@ -335,14 +335,18 @@ export default function TradersDiary() {
                                 {stats?.trades_list?.length > 0 ? (
                                     stats.trades_list.map((trade: any) => (
                                         <div key={trade.id} className="p-3 grid grid-cols-12 text-sm border-b border-border/40 hover:bg-muted/20 items-center">
-                                            <div className="col-span-3 text-muted-foreground">{trade.date}</div>
+                                            <div className="col-span-3 text-muted-foreground">
+                                                {trade.close_time
+                                                    ? new Date(trade.close_time).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
+                                                    : trade.date}
+                                            </div>
                                             <div className="col-span-3 font-medium">{trade.name}</div>
                                             <div className="col-span-2 text-center text-muted-foreground font-mono text-xs">#{trade.trade_no}</div>
                                             <div className={`col-span-2 text-right font-medium ${getProfitColor(trade.net_profit)}`}>
                                                 {trade.net_profit > 0 ? "+" : ""}{trade.net_profit.toFixed(2)}
                                             </div>
                                             <div className="col-span-2 text-right">
-                                                <span className={`px-2 py-1 rounded text-[10px] uppercase font-bold ${trade.net_profit > 0 ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}`}>
+                                                <span className={`px-2 py-1 rounded text-[10px] uppercase font-bold ${trade.net_profit > 0 ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"}`}>
                                                     {trade.result}
                                                 </span>
                                             </div>
