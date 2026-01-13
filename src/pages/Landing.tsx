@@ -1,388 +1,1135 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Navigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { TrendingUp, BarChart2, BookOpen, Target, ArrowRight, Shield, Zap } from "lucide-react";
-import { Header } from "@/components/layout/Header";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { AuthDialog } from "@/components/auth/AuthDialog";
+import { Sun, Moon } from "lucide-react";
+import Background3D from "@/components/landing/Background3D";
+import "./Landing.css";
 
 const Landing = () => {
     const { isAuthenticated } = useAuth();
+    const { theme, setTheme } = useTheme();
     const [showAuth, setShowAuth] = useState(false);
-    const [scrolled, setScrolled] = useState(false);
-
-    // Track scroll for header effect if we wanted to change header style
-    useEffect(() => {
-        const handleScroll = () => {
-            setScrolled(window.scrollY > 20);
-        };
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
+    const [activeFaq, setActiveFaq] = useState<number | null>(null);
 
     // Redirect authenticated users to dashboard
     if (isAuthenticated) {
         return <Navigate to="/dashboard" replace />;
     }
 
-    return (
-        <div className="min-h-screen bg-slate-50 font-sans selection:bg-emerald-100/50 text-slate-900 overflow-x-hidden">
-            <Header />
+    const toggleTheme = () => {
+        setTheme(theme === 'dark' ? 'light' : 'dark');
+    };
 
-            {/* Auth Modal */}
+    const faqs = [
+        {
+            q: "Which brokers can I connect to JournalX?",
+            a: "JournalX supports all major brokers via manual entry. We are also actively developing direct API integrations for seamless, automated syncing."
+        },
+        {
+            q: "Can I execute trades through JournalX?",
+            a: "JournalX is a specialized journaling and analytics platform, not a trading terminal. You execute trades on your broker and log them here for deep performance analysis."
+        },
+        {
+            q: "Is there a free trial available?",
+            a: "Yes! Our Free plan allows you to log up to 20 trades per month with basic dashboard access, perpetually—no credit card or trial period required."
+        },
+        {
+            q: "What about privacy when sharing trades?",
+            a: "You have full control. You can choose to share specific trades with the community or keep everything 100% private. Your account balance is never shared."
+        },
+        {
+            q: "How secure is my trading data?",
+            a: "We use bank-grade 256-bit encryption and secure cloud infrastructure. Your data is backed up daily and remains your property at all times."
+        }
+    ];
+
+    return (
+        <div className="landing-page-wrapper">
+            <Background3D />
+
+            {/* Header / Navigation */}
+            <header style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                zIndex: 1000,
+                padding: '1.25rem 0',
+                background: 'rgba(10, 10, 15, 0.7)',
+                backdropFilter: 'blur(20px)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+            }}>
+                <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{
+                        fontSize: '1.75rem',
+                        fontWeight: '800',
+                        letterSpacing: '-0.04em',
+                        fontFamily: "'Outfit', sans-serif",
+                        display: 'flex',
+                        alignItems: 'center'
+                    }}>
+                        <span style={{ color: 'var(--color-text-primary)' }}>Journal</span>
+                        <span style={{
+                            background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.5))'
+                        }}>X</span>
+                    </div>
+
+                    <div className="nav-links" style={{ display: 'flex', gap: '2.5rem', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
+                        {['Features', 'Community', 'Pricing', 'FAQ'].map((item) => (
+                            <a key={item} href={`#${item.toLowerCase()}`} style={{
+                                color: 'var(--color-text-secondary)',
+                                fontWeight: '500',
+                                fontSize: '0.95rem',
+                                textDecoration: 'none',
+                                transition: 'color 0.2s'
+                            }}
+                                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-text-primary)'}
+                                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-secondary)'}
+                            >
+                                {item}
+                            </a>
+                        ))}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <button
+                            onClick={toggleTheme}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                fontSize: '1.2rem',
+                                cursor: 'pointer',
+                                padding: '0.5rem',
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                        >
+                            {theme === 'dark' ? '☀️' : '🌙'}
+                        </button>
+                        <button className="btn btn-primary" onClick={() => setShowAuth(true)} style={{ padding: '0.75rem 1.75rem', borderRadius: '30px', fontWeight: '700' }}>
+                            Open App
+                        </button>
+                    </div>
+                </div>
+            </header>
+
             <AuthDialog open={showAuth} onOpenChange={setShowAuth} />
 
-            <main className="flex flex-col relative">
-                {/* Background Grid Pattern */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none -z-10 h-[800px] mask-gradient-to-b" />
-
-                {/* Hero Section */}
-                <section className="container mx-auto px-4 pt-32 pb-20 md:pt-40 md:pb-32 flex flex-col items-center text-center relative z-10">
-                    <div className="max-w-4xl space-y-8 animate-fade-in flex flex-col items-center">
-                        <div className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-50/50 px-4 py-1.5 text-xs font-semibold text-emerald-700 shadow-sm backdrop-blur-sm transition-transform hover:scale-105 cursor-default">
-                            <span className="flex h-2 w-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
-                            JournalX v1.0 — Now Open for Traders
+            {/* Hero Section */}
+            <section className="hero">
+                <div className="container">
+                    <div className="hero-content">
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <span style={{
+                                padding: '0.6rem 1.2rem',
+                                background: 'var(--glass-bg)',
+                                border: '1px solid var(--glass-border)',
+                                borderRadius: '100px',
+                                color: 'var(--color-accent-blue)',
+                                fontWeight: '600',
+                                fontSize: '0.85rem',
+                                letterSpacing: '0.1em',
+                                textTransform: 'uppercase',
+                                boxShadow: 'var(--shadow-sm)'
+                            }}>
+                                JournalX
+                            </span>
                         </div>
-
-                        <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-slate-900 leading-tight">
-                            Master your <span className="text-transparent bg-clip-text bg-gradient-to-br from-emerald-500 to-teal-600">mindset.</span><br />
-                            <span className="relative">
-                                Simplify your edge.
-                                {/* Decorative underline */}
-                                <svg className="absolute w-full h-3 -bottom-1 left-0 text-emerald-400 opacity-60" viewBox="0 0 100 10" preserveAspectRatio="none">
-                                    <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="3" fill="none" />
-                                </svg>
+                        <h1 className="hero-title" style={{ fontSize: 'clamp(3.5rem, 7vw, 5.5rem)', lineHeight: '1.1' }}>
+                            <span className="text-execution">
+                                From Execution
+                            </span> <br />
+                            <span className="text-excellence" style={{ filter: 'drop-shadow(0 0 20px rgba(59, 130, 246, 0.3))' }}>
+                                to Excellence.
                             </span>
                         </h1>
-
-                        <p className="text-xl md:text-2xl text-slate-600 max-w-2xl mx-auto leading-relaxed font-light">
-                            The calm, minimal trading journal designed to stop self-sabotage.
-                            Focus on execution, psychology, and consistent growth.
+                        <p className="hero-subtitle" style={{ fontSize: '1.25rem', maxWidth: '650px', margin: '0 auto 2.5rem', color: 'var(--color-text-secondary)' }}>
+                            The all-in-one trading journal for serious traders. Log trades, track performance, analyze patterns, and connect with a community of elite traders.
                         </p>
-
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8 w-full sm:w-auto">
-                            <Button
-                                size="lg"
-                                className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white rounded-full px-10 py-7 text-lg h-auto shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1 group"
-                                onClick={() => setShowAuth(true)}
-                            >
-                                Start Journaling Free
-                                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="lg"
-                                className="w-full sm:w-auto border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-white hover:border-slate-300 rounded-full px-10 py-7 text-lg h-auto transition-all"
-                            >
-                                Watch Demo
-                            </Button>
+                        <div className="hero-cta">
+                            <button onClick={() => setShowAuth(true)} className="btn btn-primary">Start Free</button>
+                            <a href="#features" className="btn btn-secondary">Explore Features</a>
                         </div>
                     </div>
 
-                    {/* Mockup Preview */}
-                    <div className="mt-24 w-full max-w-6xl relative animate-fade-up opacity-0" style={{ animationDelay: '0.3s' }}>
-                        {/* Glow effect behind */}
-                        <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-3xl blur-2xl -z-10" />
+                    {/* Real Dashboard Preview */}
+                    <div className="hero-visual">
+                        <div className="dashboard-preview">
+                            <img src="/assets/dashboard_main.png"
+                                alt="JournalX Dashboard - Performance tracking with equity curve and growth targets"
+                                style={{ width: '100%', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-xl), var(--shadow-glow-blue)', border: '1px solid var(--glass-border)' }} />
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-                        <div className="rounded-2xl bg-slate-900/5 p-2 shadow-2xl ring-1 ring-slate-900/10 backdrop-blur-3xl">
-                            <div className="rounded-xl bg-white aspect-[16/10] overflow-hidden border border-slate-200/60 shadow-inner flex flex-col">
-                                {/* Mockup Header */}
-                                <div className="h-14 border-b border-slate-100 flex items-center px-6 gap-4 bg-slate-50/50">
-                                    <div className="flex gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-red-400/80" />
-                                        <div className="w-3 h-3 rounded-full bg-amber-400/80" />
-                                        <div className="w-3 h-3 rounded-full bg-emerald-400/80" />
-                                    </div>
-                                    <div className="h-6 w-32 bg-slate-200/50 rounded-md" />
-                                    <div className="flex-1" />
-                                    <div className="h-8 w-8 rounded-full bg-slate-200/50" />
-                                </div>
-                                {/* Mockup Content */}
-                                <div className="flex-1 flex bg-slate-50/30">
-                                    {/* Sidebar */}
-                                    <div className="w-64 border-r border-slate-100 bg-white hidden md:flex flex-col p-4 gap-3">
-                                        <div className="h-8 w-full bg-emerald-500/10 rounded-md" />
-                                        <div className="h-8 w-3/4 bg-slate-100 rounded-md" />
-                                        <div className="h-8 w-5/6 bg-slate-100 rounded-md" />
-                                        <div className="mt-auto h-12 w-full bg-slate-100/50 rounded-md" />
-                                    </div>
-                                    {/* Main Area */}
-                                    <div className="flex-1 p-8 grid grid-cols-3 gap-6">
-                                        {/* Chart 1: Premium SVG Area Chart */}
-                                        <div className="col-span-3 lg:col-span-2 h-64 bg-white rounded-xl border border-slate-100 shadow-sm p-6 flex flex-col relative overflow-hidden group hover:shadow-md transition-shadow">
-                                            <div className="flex justify-between items-center mb-4 z-10">
-                                                <div className="flex flex-col">
-                                                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Equity Curve</span>
-                                                    <span className="text-lg font-bold text-slate-900 font-mono">+$24,500.00</span>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <div className="px-2 py-0.5 rounded-full bg-emerald-100/50 text-emerald-600 text-[10px] font-bold border border-emerald-100">Live</div>
-                                                </div>
-                                            </div>
 
-                                            {/* Beautiful Area Chart */}
-                                            <div className="flex-1 w-full relative">
-                                                <svg viewBox="0 0 100 40" className="w-full h-full overflow-visible preserve-3d">
-                                                    <defs>
-                                                        <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="0%" stopColor="#10b981" stopOpacity="0.2" />
-                                                            <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-                                                        </linearGradient>
-                                                        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                                                            <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#10b981" floodOpacity="0.3" />
-                                                        </filter>
-                                                    </defs>
 
-                                                    {/* Grid lines */}
-                                                    <line x1="0" y1="10" x2="100" y2="10" stroke="#f1f5f9" strokeWidth="0.5" strokeDasharray="2" />
-                                                    <line x1="0" y1="20" x2="100" y2="20" stroke="#f1f5f9" strokeWidth="0.5" strokeDasharray="2" />
-                                                    <line x1="0" y1="30" x2="100" y2="30" stroke="#f1f5f9" strokeWidth="0.5" strokeDasharray="2" />
+            {/* Features Section - 3 Column Cards */}
+            <section id="features" className="section" style={{ paddingTop: '8rem', paddingBottom: '6rem' }}>
+                <div className="container">
+                    {/* Section Header */}
+                    <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                        <span style={{
+                            padding: '0.5rem 1.2rem',
+                            background: 'var(--glass-bg)',
+                            border: '1px solid var(--glass-border)',
+                            borderRadius: '100px',
+                            color: 'var(--color-accent-blue)',
+                            fontWeight: '600',
+                            fontSize: '0.75rem',
+                            letterSpacing: '0.1em',
+                            textTransform: 'uppercase'
+                        }}>
+                            FEATURES
+                        </span>
+                    </div>
+                    <h2 style={{
+                        fontSize: 'clamp(2.5rem, 5vw, 3.5rem)',
+                        textAlign: 'center',
+                        marginBottom: '1rem',
+                        fontWeight: '800',
+                        color: 'var(--color-text-primary)'
+                    }}>
+                        Everything You Need to <br /> Master Your Trading
+                    </h2>
+                    <p style={{
+                        textAlign: 'center',
+                        fontSize: '1.15rem',
+                        color: 'var(--color-text-secondary)',
+                        maxWidth: '700px',
+                        margin: '0 auto 4rem'
+                    }}>
+                        Comprehensive tools for trade logging, PnL analysis, journaling, and community engagement.
+                    </p>
 
-                                                    {/* The Chart Path */}
-                                                    <path
-                                                        d="M0,35 C10,32 20,38 30,25 C40,15 50,28 60,18 C70,10 80,15 90,5 L100,0 L100,40 L0,40 Z"
-                                                        fill="url(#chartGradient)"
-                                                    />
-                                                    <path
-                                                        d="M0,35 C10,32 20,38 30,25 C40,15 50,28 60,18 C70,10 80,15 90,5 L100,0"
-                                                        fill="none"
-                                                        stroke="#10b981"
-                                                        strokeWidth="2"
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        filter="url(#shadow)"
-                                                        className="drop-shadow-sm"
-                                                    />
-
-                                                    {/* Interactive Dots (Mock) */}
-                                                    <circle cx="30" cy="25" r="1.5" fill="white" stroke="#10b981" strokeWidth="1.5" />
-                                                    <circle cx="60" cy="18" r="1.5" fill="white" stroke="#10b981" strokeWidth="1.5" />
-                                                    <circle cx="90" cy="5" r="2.5" fill="#10b981" stroke="white" strokeWidth="1" className="animate-pulse" />
-                                                </svg>
-                                            </div>
-
-                                            <div className="flex justify-between mt-1 pt-2 border-t border-slate-50 text-[10px] text-slate-400 font-medium">
-                                                <span>09:30</span><span>10:30</span><span>11:30</span><span>12:30</span><span>13:30</span><span>14:30</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Win/Loss Donut Chart */}
-                                        <div className="col-span-3 lg:col-span-1 h-64 bg-white rounded-xl border border-slate-100 shadow-sm p-6 flex flex-col justify-center items-center relative overflow-hidden hover:shadow-md transition-shadow">
-                                            <span className="absolute top-6 left-6 text-xs font-semibold text-slate-400 uppercase tracking-wider">Win Ratio</span>
-                                            <div className="relative w-32 h-32">
-                                                <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                                                    <circle cx="50" cy="50" r="40" stroke="#f1f5f9" strokeWidth="12" fill="none" />
-                                                    <circle cx="50" cy="50" r="40" stroke="#10b981" strokeWidth="12" fill="none" strokeDasharray="251.2" strokeDashoffset="80" strokeLinecap="round" className="drop-shadow-sm" />
-                                                </svg>
-                                                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                                    <span className="text-2xl font-bold text-slate-900">68%</span>
-                                                    <span className="text-[10px] text-emerald-600 font-medium">+2.4%</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-4 mt-6 text-xs">
-                                                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500" /><span className="text-slate-600">Wins</span></div>
-                                                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-slate-200" /><span className="text-slate-600">Losses</span></div>
-                                            </div>
-                                        </div>
-
-                                        {/* Row 2: Insights, Performance, P&L */}
-                                        {/* AI Insights */}
-                                        <div className="col-span-3 lg:col-span-1 h-40 bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl shadow-sm p-6 flex flex-col justify-between text-white relative overflow-hidden group hover:scale-[1.02] transition-transform">
-                                            <div className="absolute top-0 right-0 p-3 opacity-10"><Zap className="w-16 h-16" /></div>
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-                                                <span className="text-xs font-bold text-indigo-300 uppercase tracking-widest">AI Insight</span>
-                                            </div>
-                                            <p className="text-sm font-medium leading-relaxed text-slate-200">
-                                                "You trade best on <span className="text-white border-b border-indigo-400/50">Tuesdays</span> between 10am-12pm. Avoid trading after a loss &gt; $500."
-                                            </p>
-                                        </div>
-
-                                        {/* Daily Performance Bars */}
-                                        <div className="col-span-3 lg:col-span-1 h-40 bg-white rounded-xl border border-slate-100 shadow-sm p-6 flex flex-col justify-end gap-2 group hover:border-slate-200 transition-colors">
-                                            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-auto">Daily P&L</span>
-                                            <div className="flex items-end justify-between h-20 gap-1.5">
-                                                {[60, 40, -20, 80, 30, -10, 90].map((h, i) => (
-                                                    <div key={i} className="w-full relative group/bar">
-                                                        <div
-                                                            className={`w-full rounded-sm transition-all duration-500 ${h >= 0 ? 'bg-emerald-400' : 'bg-rose-400'}`}
-                                                            style={{ height: `${Math.abs(h)}%` }}
-                                                        />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Net P&L Card */}
-                                        <div className="col-span-3 lg:col-span-1 h-40 bg-white rounded-xl border border-slate-100 shadow-sm p-6 flex flex-col justify-center group hover:border-slate-200 transition-colors">
-                                            <div className="text-sm font-medium text-slate-500 mb-2">Net Profit</div>
-                                            <div className="text-3xl font-bold text-slate-900 group-hover:text-emerald-600 transition-colors font-mono tracking-tight">+$12,450</div>
-                                            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600 font-medium">
-                                                <TrendingUp className="w-3 h-3" /> <span>+12.5% this month</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Row 3: Recent Trades */}
-                                        <div className="col-span-3 bg-white rounded-xl border border-slate-100 shadow-sm flex flex-col p-6 overflow-hidden relative">
-                                            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 flex justify-between">
-                                                <span>Recent Trades</span>
-                                                <span className="text-xs text-slate-400 cursor-pointer hover:text-slate-600">View All</span>
-                                            </div>
-                                            <div className="space-y-3 relative">
-                                                {[
-                                                    { s: 'AAPL', p: '+$450.00', t: 'Long', c: 'text-emerald-600' },
-                                                    { s: 'TSLA', p: '-$120.00', t: 'Short', c: 'text-rose-500' },
-                                                    { s: 'NVDA', p: '+$890.00', t: 'Long', c: 'text-emerald-600' }
-                                                ].map((t, i) => (
-                                                    <div key={i} className="flex items-center justify-between text-sm py-2 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 px-2 -mx-2 rounded transition-colors">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className={`w-1.5 h-1.5 rounded-full ${t.c === 'text-emerald-600' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                                                            <span className="font-bold text-slate-700 font-mono">{t.s}</span>
-                                                            <span className="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{t.t}</span>
-                                                        </div>
-                                                        <span className={`${t.c} font-bold font-mono`}>{t.p}</span>
-                                                    </div>
-                                                ))}
-                                                {/* Fade out bottom */}
-                                                <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-white to-transparent pointer-events-none" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                    {/* 3-Column Feature Cards */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                        gap: '2rem',
+                        maxWidth: '1200px',
+                        margin: '0 auto'
+                    }}>
+                        {/* Card 1: Automated Journaling */}
+                        <div style={{
+                            background: 'var(--glass-bg)',
+                            border: '1px solid var(--glass-border)',
+                            borderRadius: '16px',
+                            padding: '2.5rem 2rem',
+                            backdropFilter: 'blur(10px)',
+                            transition: 'transform 0.3s, box-shadow 0.3s',
+                            boxShadow: 'var(--shadow-md)'
+                        }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-4px)';
+                                e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                            }}>
+                            {/* Icon */}
+                            <div style={{
+                                width: '56px',
+                                height: '56px',
+                                background: 'rgba(59, 130, 246, 0.15)',
+                                border: '1px solid rgba(59, 130, 246, 0.3)',
+                                borderRadius: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginBottom: '1.5rem',
+                                fontSize: '1.75rem'
+                            }}>
+                                📊
                             </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Social Proof / Stats Strip */}
-                <section className="bg-slate-900 py-12 text-white border-y border-slate-800">
-                    <div className="container mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x divide-slate-800/50">
-                        <div>
-                            <div className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-300">10k+</div>
-                            <div className="text-slate-400 text-sm mt-1 uppercase tracking-wider">Trades Logged</div>
-                        </div>
-                        <div>
-                            <div className="text-3xl font-bold text-white">Zero</div>
-                            <div className="text-slate-400 text-sm mt-1 uppercase tracking-wider">Spreadsheet Hassle</div>
-                        </div>
-                        <div>
-                            <div className="text-3xl font-bold text-white">100%</div>
-                            <div className="text-slate-400 text-sm mt-1 uppercase tracking-wider">Private & Secure</div>
-                        </div>
-                        <div>
-                            <div className="text-3xl font-bold text-white">24/7</div>
-                            <div className="text-slate-400 text-sm mt-1 uppercase tracking-wider">Access Anywhere</div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Features Section */}
-                <section className="bg-white py-32 border-b border-slate-100 relative">
-                    <div className="absolute top-0 right-0 w-1/3 h-full bg-slate-50/50 -z-10 skew-x-12 opacity-50" />
-
-                    <div className="container mx-auto px-4">
-                        <div className="text-center max-w-3xl mx-auto mb-20">
-                            <h2 className="text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 mb-6">Clarity over complexity</h2>
-                            <p className="text-xl text-slate-500 leading-relaxed">
-                                Most journals are glorified spreadsheets. JournalX is an intelligent coach that helps you stop making the same mistakes.
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '0.75rem', color: 'var(--color-text-primary)' }}>
+                                Powerful Trade Ingestion
+                            </h3>
+                            <p style={{ color: 'var(--color-text-secondary)', marginBottom: '1.5rem', lineHeight: '1.6' }}>
+                                Log trades manually with single or multi-leg entries. Edit, delete, and bulk tag trades effortlessly. Support for equities and options with contract multipliers.
                             </p>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.95rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Manual single & multi-leg trade entry
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.95rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Bulk tagging & editing
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.95rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Options contract multipliers
+                                </li>
+                            </ul>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-                            {[
-                                { icon: BookOpen, title: "Effortless Logging", desc: "Input trades in seconds with a keyboard-first interface designed for speed." },
-                                { icon: BarChart2, title: "Clean Analytics", desc: "Visualize your equity curve, win rate, and drawdown without the clutter." },
-                                { icon: Target, title: "Goal Tracking", desc: "Set monthly targets and enforce daily loss limits to protect your capital." },
-                                { icon: TrendingUp, title: "Psychology First", desc: "Track emotions and mistake patterns, not just entry and exit prices." }
-                            ].map((feature, i) => (
-                                <div key={i} className="group p-8 rounded-3xl bg-slate-50 hover:bg-white transition-all duration-300 border border-slate-100 hover:border-emerald-100 hover:shadow-xl hover:shadow-emerald-900/5 relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                        <feature.icon className="w-24 h-24 text-emerald-500 rotate-12 transform translate-x-4 -translate-y-4" />
-                                    </div>
-                                    <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mb-6 text-emerald-600 shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 relative z-10">
-                                        <feature.icon className="w-7 h-7" />
-                                    </div>
-                                    <h3 className="text-xl font-bold text-slate-900 mb-3 relative z-10">{feature.title}</h3>
-                                    <p className="text-slate-500 leading-relaxed relative z-10">{feature.desc}</p>
-                                </div>
-                            ))}
+                        {/* Card 2: Advanced Analytics */}
+                        <div style={{
+                            background: 'var(--glass-bg)',
+                            border: '1px solid var(--glass-border)',
+                            borderRadius: '16px',
+                            padding: '2.5rem 2rem',
+                            backdropFilter: 'blur(10px)',
+                            transition: 'transform 0.3s, box-shadow 0.3s',
+                            boxShadow: 'var(--shadow-md)'
+                        }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-4px)';
+                                e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                            }}>
+                            {/* Icon */}
+                            <div style={{
+                                width: '56px',
+                                height: '56px',
+                                background: 'rgba(59, 130, 246, 0.15)',
+                                border: '1px solid rgba(59, 130, 246, 0.3)',
+                                borderRadius: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginBottom: '1.5rem',
+                                fontSize: '1.75rem'
+                            }}>
+                                📈
+                            </div>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '0.75rem', color: 'var(--color-text-primary)' }}>
+                                Performance Dashboard
+                            </h3>
+                            <p style={{ color: 'var(--color-text-secondary)', marginBottom: '1.5rem', lineHeight: '1.6' }}>
+                                Track your equity curve, monitor growth targets (Weekly, Monthly, Yearly), and visualize your win rate with live performance data.
+                            </p>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.95rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Live equity curve tracking
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.95rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Growth targets (Weekly/Monthly/Yearly)
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.95rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Win rate & volume analytics
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* Card 3: Community */}
+                        <div style={{
+                            background: 'var(--glass-bg)',
+                            border: '1px solid var(--glass-border)',
+                            borderRadius: '16px',
+                            padding: '2.5rem 2rem',
+                            backdropFilter: 'blur(10px)',
+                            transition: 'transform 0.3s, box-shadow 0.3s',
+                            boxShadow: 'var(--shadow-md)',
+                            position: 'relative'
+                        }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-4px)';
+                                e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                            }}>
+                            {/* Icon */}
+                            <div style={{
+                                width: '56px',
+                                height: '56px',
+                                background: 'rgba(59, 130, 246, 0.15)',
+                                border: '1px solid rgba(59, 130, 246, 0.3)',
+                                borderRadius: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginBottom: '1.5rem',
+                                fontSize: '1.75rem'
+                            }}>
+                                👥
+                            </div>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '0.75rem', color: 'var(--color-text-primary)' }}>
+                                Community & Collaboration
+                            </h3>
+                            <p style={{ color: 'var(--color-text-secondary)', marginBottom: '1.5rem', lineHeight: '1.6' }}>
+                                Connect with traders worldwide. Share insights, discuss strategies, and grow together in a supportive trading community.
+                            </p>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.95rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Active trading community
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.95rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Share strategies & insights
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.95rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Discussion forums
+                                </li>
+                            </ul>
                         </div>
                     </div>
-                </section>
+                </div>
+            </section>
 
-                {/* How it Works (3 Steps) */}
-                <section className="py-32 bg-slate-50 relative overflow-hidden">
-                    {/* Decorative blobs */}
-                    <div className="absolute top-1/4 left-0 w-96 h-96 bg-emerald-200/20 rounded-full blur-3xl -z-10" />
-                    <div className="absolute bottom-1/4 right-0 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl -z-10" />
-
-                    <div className="container mx-auto px-4">
-                        <div className="text-center max-w-2xl mx-auto mb-20">
-                            <h2 className="text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 mb-6">How JournalX works</h2>
-                            <p className="text-xl text-slate-500">The loop that turns amateurs into professionals.</p>
+            {/* Feature Showcase - Photos with Descriptions */}
+            <section className="section" style={{ paddingTop: '6rem', paddingBottom: '6rem', background: 'rgba(15, 23, 42, 0.3)' }}>
+                <div className="container">
+                    {/* Showcase 1: Dashboard */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+                        gap: '4rem',
+                        alignItems: 'center',
+                        marginBottom: '6rem'
+                    }}>
+                        <div>
+                            <span style={{
+                                color: 'var(--color-accent-blue)',
+                                fontSize: '0.9rem',
+                                fontWeight: '600',
+                                letterSpacing: '0.1em',
+                                textTransform: 'uppercase'
+                            }}>
+                                Performance Tracking
+                            </span>
+                            <h3 style={{
+                                fontSize: 'clamp(2rem, 4vw, 2.75rem)',
+                                fontWeight: '800',
+                                marginTop: '1rem',
+                                marginBottom: '1.5rem',
+                                color: 'var(--color-text-primary)',
+                                lineHeight: '1.2'
+                            }}>
+                                Your Trading Command Center
+                            </h3>
+                            <p style={{
+                                color: 'var(--color-text-secondary)',
+                                fontSize: '1.1rem',
+                                lineHeight: '1.7',
+                                marginBottom: '2rem'
+                            }}>
+                                Monitor your equity curve in real-time, track growth targets across multiple timeframes, and visualize your win rate—all in one powerful dashboard.
+                            </p>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                                    <span style={{ color: '#3b82f6', fontSize: '1.25rem' }}>✓</span>
+                                    <span>Live equity curve with historical performance data</span>
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                                    <span style={{ color: '#3b82f6', fontSize: '1.25rem' }}>✓</span>
+                                    <span>Weekly, Monthly, and Yearly profit targets</span>
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                                    <span style={{ color: '#3b82f6', fontSize: '1.25rem' }}>✓</span>
+                                    <span>Win rate percentage and total trade volume</span>
+                                </li>
+                            </ul>
                         </div>
-
-                        <div className="relative grid grid-cols-1 md:grid-cols-3 gap-12 max-w-6xl mx-auto">
-                            {/* Connector Line (Desktop) */}
-                            <div className="hidden md:block absolute top-16 left-[16%] right-[16%] h-0.5 bg-gradient-to-r from-slate-200 via-emerald-200 to-slate-200 -z-10" />
-
-                            {[
-                                { step: "01", icon: Zap, title: "Log Your Day", desc: "Enter your trades and tag your emotions in under 2 minutes." },
-                                { step: "02", icon: Shield, title: "Review Weekly", desc: "Use the Review Grid to spot profit leaks and winning streaks." },
-                                { step: "03", icon: TrendingUp, title: "Refine Edge", desc: "Adjust your strategy based on data, not guesswork." }
-                            ].map((item, i) => (
-                                <div key={i} className="flex flex-col items-center text-center group">
-                                    <div className="w-32 h-32 rounded-full bg-white border-8 border-slate-50 flex items-center justify-center mb-8 shadow-xl shadow-slate-200 group-hover:-translate-y-2 transition-transform duration-500 relative">
-                                        <div className="absolute top-0 right-0 bg-emerald-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm">{item.step}</div>
-                                        <item.icon className="w-10 h-10 text-slate-700 group-hover:text-emerald-500 transition-colors duration-300" />
-                                    </div>
-                                    <h3 className="text-2xl font-bold text-slate-900 mb-4">{item.title}</h3>
-                                    <p className="text-slate-500 leading-relaxed max-w-xs">{item.desc}</p>
-                                </div>
-                            ))}
+                        <div style={{
+                            borderRadius: '16px',
+                            overflow: 'hidden',
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}>
+                            <img src="/assets/dashboard_main.png" alt="JournalX Dashboard" style={{ width: '100%', display: 'block' }} />
                         </div>
                     </div>
-                </section>
 
-                {/* Final CTA */}
-                <section className="py-24 bg-white relative">
-                    <div className="container mx-auto px-4">
-                        <div className="bg-slate-900 rounded-[3rem] p-12 md:p-24 text-center relative overflow-hidden shadow-2xl">
-                            {/* CTA Background Effects */}
-                            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-900/40 via-slate-900 to-slate-900" />
-                            <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl opacity-50" />
 
-                            <div className="relative z-10 max-w-3xl mx-auto space-y-8">
-                                <h2 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-6">
-                                    Ready to find your edge?
-                                </h2>
-                                <p className="text-xl text-slate-300 mb-8 max-w-lg mx-auto">
-                                    Join JournalX today. Stop gambling, start trading.
-                                </p>
-                                <Button
-                                    size="lg"
-                                    className="bg-emerald-500 hover:bg-emerald-400 text-white rounded-full px-12 py-8 text-xl h-auto shadow-lg shadow-emerald-500/25 transition-all hover:scale-105"
-                                    onClick={() => setShowAuth(true)}
-                                >
-                                    Get Started Now
-                                </Button>
-                                <p className="text-slate-500 text-sm mt-8">No credit card required • Free plan available</p>
+                    {/* Showcase 3: Traders Diary (Reversed) */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+                        gap: '4rem',
+                        alignItems: 'center',
+                        marginBottom: '6rem'
+                    }}>
+                        <div style={{
+                            borderRadius: '16px',
+                            overflow: 'hidden',
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            order: 1
+                        }}>
+                            <img src="/assets/calendar.png" alt="Traders Diary Calendar" style={{ width: '100%', display: 'block' }} />
+                        </div>
+                        <div style={{ order: 2 }}>
+                            <span style={{
+                                color: 'var(--color-accent-blue)',
+                                fontSize: '0.9rem',
+                                fontWeight: '600',
+                                letterSpacing: '0.1em',
+                                textTransform: 'uppercase'
+                            }}>
+                                Traders Diary
+                            </span>
+                            <h3 style={{
+                                fontSize: 'clamp(2rem, 4vw, 2.75rem)',
+                                fontWeight: '800',
+                                marginTop: '1rem',
+                                marginBottom: '1.5rem',
+                                color: 'var(--color-text-primary)',
+                                lineHeight: '1.2'
+                            }}>
+                                Visualize Your Consistency
+                            </h3>
+                            <p style={{
+                                color: 'var(--color-text-secondary)',
+                                fontSize: '1.1rem',
+                                lineHeight: '1.7',
+                                marginBottom: '2rem'
+                            }}>
+                                Get a high-level view of your trading month. Identify winning streaks, manage drawdowns, and keep your momentum alive with a visual heat map of your performance.
+                            </p>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                                    <span style={{ color: '#3b82f6', fontSize: '1.25rem' }}>✓</span>
+                                    <span>Interactive monthly performance calendar</span>
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                                    <span style={{ color: '#3b82f6', fontSize: '1.25rem' }}>✓</span>
+                                    <span>Profit/Loss visualizations per day</span>
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                                    <span style={{ color: '#3b82f6', fontSize: '1.25rem' }}>✓</span>
+                                    <span>Streak tracking and monthly summaries</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    {/* Showcase 4: Analytics */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+                        gap: '4rem',
+                        alignItems: 'center',
+                        marginBottom: '6rem'
+                    }}>
+                        <div>
+                            <span style={{
+                                color: 'var(--color-accent-blue)',
+                                fontSize: '0.9rem',
+                                fontWeight: '600',
+                                letterSpacing: '0.1em',
+                                textTransform: 'uppercase'
+                            }}>
+                                Deep Analytics
+                            </span>
+                            <h3 style={{
+                                fontSize: 'clamp(2rem, 4vw, 2.75rem)',
+                                fontWeight: '800',
+                                marginTop: '1rem',
+                                marginBottom: '1.5rem',
+                                color: 'var(--color-text-primary)',
+                                lineHeight: '1.2'
+                            }}>
+                                Data-Driven Insights
+                            </h3>
+                            <p style={{
+                                color: 'var(--color-text-secondary)',
+                                fontSize: '1.1rem',
+                                lineHeight: '1.7',
+                                marginBottom: '2rem'
+                            }}>
+                                Visualize your performance with advanced charts. Analyze win/loss ratios, track performance by symbol, and identify patterns that lead to profitable trades.
+                            </p>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                                    <span style={{ color: '#3b82f6', fontSize: '1.25rem' }}>✓</span>
+                                    <span>Win/Loss ratio pie charts with percentages</span>
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                                    <span style={{ color: '#3b82f6', fontSize: '1.25rem' }}>✓</span>
+                                    <span>Performance breakdown by trading symbol</span>
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                                    <span style={{ color: '#3b82f6', fontSize: '1.25rem' }}>✓</span>
+                                    <span>Interactive equity curve visualization</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div style={{
+                            borderRadius: '16px',
+                            overflow: 'hidden',
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}>
+                            <img src="/assets/analytics.png" alt="Analytics Dashboard" style={{ width: '100%', display: 'block' }} />
+                        </div>
+                    </div>
+
+                    {/* Showcase 5: JournalX Report (Reversed) */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+                        gap: '4rem',
+                        alignItems: 'center'
+                    }}>
+                        <div style={{
+                            borderRadius: '16px',
+                            overflow: 'hidden',
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            order: 1,
+                            maxWidth: '420px',
+                            margin: '0 auto'
+                        }}>
+                            <img src="/assets/ai_report.png" alt="JournalX AI Performance Report" style={{ width: '100%', display: 'block' }} />
+                        </div>
+                        <div style={{ order: 2 }}>
+                            <span style={{
+                                color: 'var(--color-accent-blue)',
+                                fontSize: '0.9rem',
+                                fontWeight: '600',
+                                letterSpacing: '0.1em',
+                                textTransform: 'uppercase'
+                            }}>
+                                AI Intelligence
+                            </span>
+                            <h3 style={{
+                                fontSize: 'clamp(2rem, 4vw, 2.75rem)',
+                                fontWeight: '800',
+                                marginTop: '1rem',
+                                marginBottom: '1.5rem',
+                                color: 'var(--color-text-primary)',
+                                lineHeight: '1.2'
+                            }}>
+                                JournalX Performance Reports
+                            </h3>
+                            <p style={{
+                                color: 'var(--color-text-secondary)',
+                                fontSize: '1.1rem',
+                                lineHeight: '1.7',
+                                marginBottom: '2rem'
+                            }}>
+                                Stop guessing why you won or lost. Our AI analyzes your trading journal to generate detailed psychological and technical reports, revealing hidden patterns in your behavior.
+                            </p>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                                    <span style={{ color: '#3b82f6', fontSize: '1.25rem' }}>✓</span>
+                                    <span>Auto-generated Yearly and Monthly reviews</span>
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                                    <span style={{ color: '#3b82f6', fontSize: '1.25rem' }}>✓</span>
+                                    <span>Psychological insights and performance metrics</span>
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                                    <span style={{ color: '#3b82f6', fontSize: '1.25rem' }}>✓</span>
+                                    <span>Symbol dominance and Profit Factor analysis</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Community Section */}
+            <section id="community" className="section" style={{ paddingTop: '6rem', paddingBottom: '6rem' }}>
+                <div className="container">
+                    {/* Community Header */}
+                    <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
+                        <div style={{
+                            display: 'inline-block',
+                            padding: '6px 16px',
+                            background: 'var(--glass-bg)',
+                            border: '1px solid var(--glass-border)',
+                            borderRadius: '20px',
+                            color: 'var(--color-accent-blue)',
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            letterSpacing: '0.05em',
+                            marginBottom: '1.5rem',
+                            textTransform: 'uppercase'
+                        }}>
+                            Community
+                        </div>
+                        <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: '800', marginBottom: '1.5rem', lineHeight: '1.1', color: 'var(--color-text-primary)' }}>
+                            Trade Together, <br />
+                            <span className="text-gradient">Grow Together</span>
+                        </h2>
+                        <p style={{ fontSize: '1.2rem', color: 'var(--color-text-secondary)', maxWidth: '700px', margin: '0 auto', lineHeight: '1.6' }}>
+                            Connect with like-minded traders. Share trades, get feedback, and learn from the best.
+                        </p>
+                    </div>
+
+                    {/* Community Showcase 1: Profiles */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+                        gap: '5rem',
+                        alignItems: 'center',
+                        marginBottom: '8rem'
+                    }}>
+                        <div>
+                            <div style={{
+                                width: '48px',
+                                height: '48px',
+                                background: 'rgba(59, 130, 246, 0.1)',
+                                border: '1px solid rgba(59, 130, 246, 0.2)',
+                                borderRadius: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginBottom: '1.5rem',
+                                color: '#3b82f6',
+                                fontSize: '1.5rem'
+                            }}>
+                                👥
+                            </div>
+                            <h3 style={{ fontSize: '2.25rem', fontWeight: '800', marginBottom: '1.25rem', color: 'var(--color-text-primary)' }}>
+                                Member <span style={{ color: '#3b82f6' }}>Directory & Profiles</span>
+                            </h3>
+                            <p style={{ color: 'var(--color-text-secondary)', fontSize: '1.1rem', lineHeight: '1.7', marginBottom: '2rem' }}>
+                                Create your trader profile, showcase your stats, and discover other traders. Build your network and find trading partners.
+                            </p>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-text-secondary)', fontSize: '1.05rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Customizable profiles
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-text-secondary)', fontSize: '1.05rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Performance badges
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-text-secondary)', fontSize: '1.05rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Follow favorite traders
+                                </li>
+                            </ul>
+                        </div>
+                        <div style={{
+                            borderRadius: '20px',
+                            overflow: 'hidden',
+                            boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            background: 'rgba(30, 41, 59, 0.5)',
+                            padding: '1rem'
+                        }}>
+                            <img src="/assets/community_hub.png" alt="Community Hub" style={{ width: '100%', borderRadius: '12px', display: 'block' }} />
+                        </div>
+                    </div>
+
+                    {/* Community Showcase 2: Feed (Reversed) */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+                        gap: '5rem',
+                        alignItems: 'center'
+                    }}>
+                        <div style={{
+                            borderRadius: '20px',
+                            overflow: 'hidden',
+                            boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            background: 'rgba(30, 41, 59, 0.5)',
+                            padding: '1rem'
+                        }}>
+                            <img src="/assets/community_hub.png" alt="Traders Lounge" style={{ width: '100%', borderRadius: '12px', display: 'block' }} />
+                        </div>
+                        <div>
+                            <div style={{
+                                width: '48px',
+                                height: '48px',
+                                background: 'rgba(59, 130, 246, 0.1)',
+                                border: '1px solid rgba(59, 130, 246, 0.2)',
+                                borderRadius: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginBottom: '1.5rem',
+                                color: '#3b82f6',
+                                fontSize: '1.5rem'
+                            }}>
+                                🚀
+                            </div>
+                            <h3 style={{ fontSize: '2.25rem', fontWeight: '800', marginBottom: '1.25rem', color: 'var(--color-text-primary)' }}>
+                                Share Trades to <br />
+                                <span style={{ color: '#3b82f6' }}>Community Feed</span>
+                            </h3>
+                            <p style={{ color: 'var(--color-text-secondary)', fontSize: '1.1rem', lineHeight: '1.7', marginBottom: '2rem' }}>
+                                Post your trades with full privacy controls. Get comments and reactions from the community. Learn from others' strategies.
+                            </p>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-text-secondary)', fontSize: '1.05rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Privacy controls
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-text-secondary)', fontSize: '1.05rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Comments & reactions
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-text-secondary)', fontSize: '1.05rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Direct messages & chat rooms
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Pricing Section */}
+            <section id="pricing" className="section" style={{ paddingTop: '6rem', paddingBottom: '6rem', background: 'var(--color-bg-secondary)' }}>
+                <div className="container">
+                    {/* Pricing Header */}
+                    <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
+                        <div style={{
+                            display: 'inline-block',
+                            padding: '6px 16px',
+                            background: 'var(--glass-bg)',
+                            border: '1px solid var(--glass-border)',
+                            borderRadius: '20px',
+                            color: 'var(--color-accent-blue)',
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            letterSpacing: '0.05em',
+                            marginBottom: '1.5rem',
+                            textTransform: 'uppercase'
+                        }}>
+                            Pricing
+                        </div>
+                        <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: '800', marginBottom: '1.5rem', lineHeight: '1.1' }}>
+                            Plans for Every Trader
+                        </h2>
+
+                        {/* Toggle */}
+                        <div style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            background: 'var(--glass-bg)',
+                            padding: '4px',
+                            borderRadius: '30px',
+                            border: '1px solid var(--glass-border)',
+                            marginTop: '1rem'
+                        }}>
+                            <button style={{
+                                padding: '8px 24px',
+                                border: 'none',
+                                borderRadius: '25px',
+                                background: '#3b82f6',
+                                color: '#ffffff',
+                                fontWeight: '600',
+                                fontSize: '0.9rem',
+                                cursor: 'pointer'
+                            }}>
+                                Monthly
+                            </button>
+                            <div style={{
+                                padding: '8px 24px',
+                                color: 'var(--color-text-secondary)',
+                                fontWeight: '600',
+                                fontSize: '0.9rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}>
+                                Annual <span style={{ fontSize: '0.7rem', background: 'rgba(234, 179, 8, 0.2)', color: '#eab308', padding: '2px 8px', borderRadius: '10px' }}>Coming Soon</span>
                             </div>
                         </div>
                     </div>
-                </section>
 
-                <footer className="bg-white py-12 border-t border-slate-100">
-                    <div className="container mx-auto px-4 text-center text-slate-400 text-sm">
-                        <div className="flex justify-center gap-8 mb-8">
-                            <span className="cursor-pointer hover:text-slate-600">Privacy</span>
-                            <span className="cursor-pointer hover:text-slate-600">Terms</span>
-                            <span className="cursor-pointer hover:text-slate-600">Contact</span>
+                    {/* Pricing Cards Grid */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                        gap: '1.5rem',
+                        maxWidth: '850px',
+                        margin: '0 auto'
+                    }}>
+                        {/* Free Plan */}
+                        <div style={{
+                            background: 'var(--glass-bg)',
+                            border: '1px solid var(--glass-border)',
+                            borderRadius: '20px',
+                            padding: '1.5rem 1.25rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            boxShadow: 'var(--shadow-md)'
+                        }}>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.4rem', color: 'var(--color-text-primary)' }}>Free</h3>
+                            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', marginBottom: '1rem', lineHeight: '1.4' }}>
+                                Essential tracking for beginners.
+                            </p>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <span style={{ fontSize: '2.25rem', fontWeight: '800', color: 'var(--color-text-primary)' }}>$0</span>
+                                <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>/mo</span>
+                            </div>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem 0', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Manual Single-Leg Entry
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Basic Dashboard (30 Days)
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Traders Diary (Current Month)
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Community Read-Only
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Limit: 20 trades/month
+                                </li>
+                            </ul>
+                            <button className="btn btn-secondary" style={{ width: '100%', padding: '0.75rem', marginTop: 'auto', background: 'var(--glass-highlight)', fontSize: '0.85rem' }}>
+                                Get Started
+                            </button>
                         </div>
-                        <p>© 2025 JournalX. All rights reserved.</p>
+
+                        {/* Pro Plan */}
+                        <div style={{
+                            background: 'var(--glass-bg)',
+                            border: '2px solid #3b82f6',
+                            borderRadius: '20px',
+                            padding: '2rem 1.25rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            position: 'relative',
+                            boxShadow: '0 0 30px rgba(59, 130, 246, 0.15)',
+                            transform: 'scale(1.02)',
+                            zIndex: 1
+                        }}>
+                            <div style={{
+                                position: 'absolute',
+                                top: '-10px',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                background: '#3b82f6',
+                                color: '#ffffff',
+                                fontSize: '0.65rem',
+                                fontWeight: '700',
+                                padding: '3px 10px',
+                                borderRadius: '20px',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)'
+                            }}>
+                                Most Popular
+                            </div>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.4rem', color: 'var(--color-text-primary)' }}>Pro</h3>
+                            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', marginBottom: '1rem', lineHeight: '1.4' }}>
+                                Advanced insights & growth.
+                            </p>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <span style={{ fontSize: '2.25rem', fontWeight: '800', color: 'var(--color-text-primary)' }}>$5.99</span>
+                                <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>/mo</span>
+                            </div>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem 0', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Unlimited Multi-Leg Entries
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Weekly/Monthly/Yearly Goals
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Full Analytics Dashboard
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Traders Diary (Full History)
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Community Sharing
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Custom Trader Profile
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Auto-Trades <span style={{ fontSize: '0.6rem', background: 'rgba(234, 179, 8, 0.2)', color: '#eab308', padding: '1px 5px', borderRadius: '10px' }}>Soon</span>
+                                </li>
+                            </ul>
+                            <button className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', marginTop: 'auto', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)', fontSize: '0.85rem' }}>
+                                Get Started
+                            </button>
+                        </div>
+
+                        {/* Elite Plan */}
+                        <div style={{
+                            background: 'var(--glass-bg)',
+                            border: '1px solid var(--glass-border)',
+                            borderRadius: '20px',
+                            padding: '1.5rem 1.25rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            boxShadow: 'var(--shadow-md)'
+                        }}>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.4rem', color: 'var(--color-text-primary)' }}>Elite</h3>
+                            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', marginBottom: '1rem', lineHeight: '1.4' }}>
+                                AI intelligence & mentorship.
+                            </p>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <span style={{ fontSize: '2.25rem', fontWeight: '800', color: 'var(--color-text-primary)' }}>$11.99</span>
+                                <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>/mo</span>
+                            </div>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem 0', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Everything in Pro
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> **JournalX AI Reports**
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> 1-on-1 Mentorship <span style={{ fontSize: '0.6rem', background: 'rgba(234, 179, 8, 0.2)', color: '#eab308', padding: '1px 5px', borderRadius: '10px' }}>Soon</span>
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Strategy Builder <span style={{ fontSize: '0.6rem', background: 'rgba(234, 179, 8, 0.2)', color: '#eab308', padding: '1px 5px', borderRadius: '10px' }}>Soon</span>
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Performance Badges
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Early Signals Access
+                                </li>
+                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Auto-Trades <span style={{ fontSize: '0.6rem', background: 'rgba(234, 179, 8, 0.2)', color: '#eab308', padding: '1px 5px', borderRadius: '10px' }}>Soon</span>
+                                </li>
+                            </ul>
+                            <button className="btn btn-secondary" style={{ width: '100%', padding: '0.75rem', marginTop: 'auto', background: 'var(--glass-highlight)', fontSize: '0.85rem' }}>
+                                Get Started
+                            </button>
+                        </div>
                     </div>
-                </footer>
-            </main>
+                </div>
+            </section>
+
+            {/* FAQ Section */}
+            <section id="faq" className="section" style={{ paddingTop: '8rem', paddingBottom: '8rem' }}>
+                <div className="container" style={{ maxWidth: '1200px' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
+                        <div style={{
+                            display: 'inline-block',
+                            padding: '6px 20px',
+                            background: 'var(--glass-bg)',
+                            border: '1px solid var(--glass-border)',
+                            borderRadius: '30px',
+                            color: 'var(--color-text-secondary)',
+                            fontSize: '0.75rem',
+                            fontWeight: '700',
+                            letterSpacing: '0.1em',
+                            marginBottom: '2rem',
+                            textTransform: 'uppercase'
+                        }}>
+                            Support
+                        </div>
+                        <h2 style={{ fontSize: 'clamp(3rem, 6vw, 4.5rem)', fontWeight: '800', marginBottom: '2rem', lineHeight: '1.1' }}>
+                            Frequently Asked Questions
+                        </h2>
+                    </div>
+
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))',
+                        gap: '0 4rem',
+                        marginTop: '4rem'
+                    }}>
+                        {faqs.map((item, index) => (
+                            <div key={index} style={{
+                                borderBottom: '1px solid var(--glass-border)',
+                                padding: '1.5rem 0',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s'
+                            }}
+                                onClick={() => setActiveFaq(activeFaq === index ? null : index)}>
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center'
+                                }}>
+                                    <h4 style={{
+                                        fontSize: '1.1rem',
+                                        fontWeight: '600',
+                                        color: activeFaq === index ? 'var(--color-accent-blue)' : 'var(--color-text-primary)',
+                                        margin: 0,
+                                        transition: 'color 0.2s'
+                                    }}>
+                                        {item.q}
+                                    </h4>
+                                    <span style={{
+                                        fontSize: '1.5rem',
+                                        color: activeFaq === index ? '#3b82f6' : 'var(--color-text-muted)',
+                                        fontWeight: '300',
+                                        transform: activeFaq === index ? 'rotate(45deg)' : 'rotate(0deg)',
+                                        transition: 'all 0.3s'
+                                    }}>+</span>
+                                </div>
+
+                                <div style={{
+                                    maxHeight: activeFaq === index ? '200px' : '0',
+                                    overflow: 'hidden',
+                                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    opacity: activeFaq === index ? 1 : 0
+                                }}>
+                                    <p style={{
+                                        color: 'var(--color-text-secondary)',
+                                        fontSize: '0.95rem',
+                                        lineHeight: '1.6',
+                                        paddingTop: '1rem',
+                                        margin: 0
+                                    }}>
+                                        {item.a}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Call to Action Section */}
+            <section className="section" style={{ paddingTop: '6rem', paddingBottom: '6rem' }}>
+                <div className="container">
+                    <div style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto' }}>
+                        <h2 style={{ fontSize: '3rem', marginBottom: '1.5rem', color: 'var(--color-text-primary)' }}>
+                            Ready to Transform Your Trading?
+                        </h2>
+                        <p style={{ fontSize: '1.25rem', color: 'var(--color-text-secondary)', marginBottom: '2.5rem' }}>
+                            Start your journey with JournalX today. Track every trade, analyze every decision,
+                            and build the discipline that separates professionals from amateurs.
+                        </p>
+                        <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                            <button onClick={() => setShowAuth(true)} className="btn btn-primary" style={{ fontSize: '1.25rem', padding: '1.25rem 2.5rem' }}>
+                                Get Early Access
+                            </button>
+                            <a href="#features" className="btn btn-secondary" style={{ fontSize: '1.25rem', padding: '1.25rem 2.5rem' }}>
+                                Learn More
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Footer */}
+            <footer className="footer">
+                <div className="container">
+                    <div style={{
+                        fontSize: '1.75rem',
+                        fontWeight: '800',
+                        letterSpacing: '-0.04em',
+                        fontFamily: "'Outfit', sans-serif",
+                        marginBottom: '1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        <span style={{ color: 'var(--color-text-primary)' }}>Journal</span>
+                        <span style={{
+                            background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent'
+                        }}>X</span>
+                    </div>
+                    <p className="footer-text">
+                        © 2026 JournalX. Empowering traders to achieve consistent profitability.
+                    </p>
+                    <p className="footer-text" style={{ marginTop: '0.5rem' }}>
+                        Track. Analyze. Master.
+                    </p>
+                </div>
+            </footer>
         </div>
     );
 };

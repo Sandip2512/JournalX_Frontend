@@ -106,33 +106,67 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md bg-white data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] duration-200 backdrop-blur-sm">
+            <DialogContent className="sm:max-w-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] duration-200"
+                style={{
+                    background: 'rgba(15, 23, 42, 0.95)',
+                    backdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                }}>
                 <DialogHeader>
-                    <DialogTitle className="text-center text-xl">
+                    <DialogTitle className="text-center text-xl" style={{ color: '#ffffff' }}>
                         {activeTab === "login" ? "Welcome Back" : "Create Account"}
                     </DialogTitle>
-                    <DialogDescription className="text-center">
+                    <DialogDescription className="text-center" style={{ color: '#94a3b8' }}>
                         {activeTab === "login" ? "Enter your details to sign in" : "Enter your info to get started"}
                     </DialogDescription>
                 </DialogHeader>
 
                 <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "register")} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="login">Login</TabsTrigger>
-                        <TabsTrigger value="register">Sign Up</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-2" style={{
+                        background: 'rgba(30, 41, 59, 0.5)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        padding: '4px'
+                    }}>
+                        <TabsTrigger value="login" style={{
+                            color: activeTab === 'login' ? '#ffffff' : '#94a3b8',
+                            background: activeTab === 'login' ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+                            border: activeTab === 'login' ? '1px solid rgba(59, 130, 246, 0.3)' : 'none'
+                        }}>Login</TabsTrigger>
+                        <TabsTrigger value="register" style={{
+                            color: activeTab === 'register' ? '#ffffff' : '#94a3b8',
+                            background: activeTab === 'register' ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+                            border: activeTab === 'register' ? '1px solid rgba(59, 130, 246, 0.3)' : 'none'
+                        }}>Sign Up</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="login">
                         <form onSubmit={onLogin} className="space-y-4 mt-4">
                             <div className="space-y-2">
-                                <Label htmlFor="loginEmail">Email</Label>
-                                <Input id="loginEmail" type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required />
+                                <Label htmlFor="loginEmail" style={{ color: '#e2e8f0' }}>Email</Label>
+                                <Input id="loginEmail" type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required
+                                    style={{
+                                        background: 'rgba(30, 41, 59, 0.5)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        color: '#ffffff'
+                                    }}
+                                />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="loginPassword">Password</Label>
-                                <Input id="loginPassword" type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required />
+                                <Label htmlFor="loginPassword" style={{ color: '#e2e8f0' }}>Password</Label>
+                                <Input id="loginPassword" type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required
+                                    style={{
+                                        background: 'rgba(30, 41, 59, 0.5)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        color: '#ffffff'
+                                    }}
+                                />
                             </div>
-                            <Button type="submit" className="w-full bg-emerald-500 hover:bg-emerald-600 text-white" disabled={isLoading}>
+                            <Button type="submit" className="w-full text-white" disabled={isLoading}
+                                style={{
+                                    background: 'linear-gradient(to right, #3b82f6, #2563eb)',
+                                    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                                }}>
                                 {isLoading ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null} Sign In
                             </Button>
                         </form>
@@ -142,33 +176,73 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                         <form onSubmit={onRegister} className="space-y-4 mt-4">
                             <div className="grid grid-cols-2 gap-2">
                                 <div className="space-y-1">
-                                    <Label htmlFor="firstName">First Name</Label>
-                                    <Input id="firstName" value={regData.firstName} onChange={handleRegChange} required />
+                                    <Label htmlFor="firstName" style={{ color: '#e2e8f0', fontSize: '0.875rem' }}>First Name</Label>
+                                    <Input id="firstName" value={regData.firstName} onChange={handleRegChange} required
+                                        style={{
+                                            background: 'rgba(30, 41, 59, 0.5)',
+                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                            color: '#ffffff'
+                                        }}
+                                    />
                                 </div>
                                 <div className="space-y-1">
-                                    <Label htmlFor="lastName">Last Name</Label>
-                                    <Input id="lastName" value={regData.lastName} onChange={handleRegChange} required />
+                                    <Label htmlFor="lastName" style={{ color: '#e2e8f0', fontSize: '0.875rem' }}>Last Name</Label>
+                                    <Input id="lastName" value={regData.lastName} onChange={handleRegChange} required
+                                        style={{
+                                            background: 'rgba(30, 41, 59, 0.5)',
+                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                            color: '#ffffff'
+                                        }}
+                                    />
                                 </div>
                             </div>
                             <div className="space-y-1">
-                                <Label htmlFor="email">Email</Label>
-                                <Input id="email" type="email" value={regData.email} onChange={handleRegChange} required />
+                                <Label htmlFor="email" style={{ color: '#e2e8f0', fontSize: '0.875rem' }}>Email</Label>
+                                <Input id="email" type="email" value={regData.email} onChange={handleRegChange} required
+                                    style={{
+                                        background: 'rgba(30, 41, 59, 0.5)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        color: '#ffffff'
+                                    }}
+                                />
                             </div>
                             <div className="space-y-1">
-                                <Label htmlFor="mobileNumber">Mobile</Label>
-                                <Input id="mobileNumber" value={regData.mobileNumber} onChange={handleRegChange} required />
+                                <Label htmlFor="mobileNumber" style={{ color: '#e2e8f0', fontSize: '0.875rem' }}>Mobile</Label>
+                                <Input id="mobileNumber" value={regData.mobileNumber} onChange={handleRegChange} required
+                                    style={{
+                                        background: 'rgba(30, 41, 59, 0.5)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        color: '#ffffff'
+                                    }}
+                                />
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div className="space-y-1">
-                                    <Label htmlFor="password">Password</Label>
-                                    <Input id="password" type="password" value={regData.password} onChange={handleRegChange} required />
+                                    <Label htmlFor="password" style={{ color: '#e2e8f0', fontSize: '0.875rem' }}>Password</Label>
+                                    <Input id="password" type="password" value={regData.password} onChange={handleRegChange} required
+                                        style={{
+                                            background: 'rgba(30, 41, 59, 0.5)',
+                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                            color: '#ffffff'
+                                        }}
+                                    />
                                 </div>
                                 <div className="space-y-1">
-                                    <Label htmlFor="confirmPassword">Confirm</Label>
-                                    <Input id="confirmPassword" type="password" value={regData.confirmPassword} onChange={handleRegChange} required />
+                                    <Label htmlFor="confirmPassword" style={{ color: '#e2e8f0', fontSize: '0.875rem' }}>Confirm</Label>
+                                    <Input id="confirmPassword" type="password" value={regData.confirmPassword} onChange={handleRegChange} required
+                                        style={{
+                                            background: 'rgba(30, 41, 59, 0.5)',
+                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                            color: '#ffffff'
+                                        }}
+                                    />
                                 </div>
                             </div>
-                            <Button type="submit" className="w-full bg-emerald-500 hover:bg-emerald-600 text-white" disabled={isLoading}>
+                            <Button type="submit" className="w-full text-white" disabled={isLoading}
+                                style={{
+                                    background: 'linear-gradient(to right, #3b82f6, #2563eb)',
+                                    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                                }}>
                                 {isLoading ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null} Create Account
                             </Button>
                         </form>
