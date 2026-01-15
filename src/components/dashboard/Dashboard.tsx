@@ -28,92 +28,89 @@ export function Dashboard() {
 
   const fetchData = React.useCallback(async () => {
     if (user?.user_id) {
-      if (!stats) setLoading(true); // Only show loading spinner on initial load
+      if (!stats) setLoading(true);
+
+      // Define all fetching tasks in parallel to avoid "Waterfall" loading
+      const fetchTasks = [
+        // 1. Stats
+        api.get(`/trades/stats/user/${user.user_id}`)
+          .then(res => setStats(res.data))
+          .catch(e => console.error("Stats error", e)),
+
+        // 2. MT5 Status
+        api.get(`/users/${user.user_id}/mt5-status`)
+          .then(res => setMt5Status(res.data))
+          .catch(e => console.error("MT5 status error", e)),
+
+        // 3. Recent Trades
+        api.get(`/trades/user/${user.user_id}?limit=5&skip=0&sort=desc`)
+          .then(res => {
+            const tradesData = Array.isArray(res.data) ? res.data : (res.data.items || []);
+            setRecentTrades(tradesData);
+          })
+          .catch(e => console.warn("Recent trades error", e)),
+
+        // 4. Goals
+        api.get(`/api/goals/user/${user.user_id}`)
+          .then(res => {
+            if (Array.isArray(res.data)) {
+              setGoalData(res.data.filter((g: any) => g.is_active && g.target_amount > 0));
+            } else {
+              setGoalData([]);
+            }
+          })
+          .catch(e => console.warn("Goals error", e)),
+
+        // 5. Analytics
+        api.get(`/api/analytics/user/${user.user_id}`)
+          .then(res => setAnalyticsData(res.data.beginner))
+          .catch(e => console.warn("Analytics error", e)),
+
+        // 6. Profits (Monthly & Weekly)
+        (async () => {
+          try {
+            const now = new Date();
+            const calendarRes = await api.get(`/api/analytics/calendar?user_id=${user.user_id}&month=${now.getMonth() + 1}&year=${now.getFullYear()}`);
+            const monthData = calendarRes.data;
+            const totalMonthly = monthData.reduce((sum: number, day: any) => sum + (day.profit || 0), 0);
+            setMonthlyProfit(totalMonthly);
+
+            const weekStart = new Date(now);
+            weekStart.setDate(now.getDate() - now.getDay());
+            let weekData = [...monthData];
+
+            if (weekStart.getMonth() !== now.getMonth()) {
+              try {
+                const prevMonthRes = await api.get(`/api/analytics/calendar?user_id=${user.user_id}&month=${weekStart.getMonth() + 1}&year=${weekStart.getFullYear()}`);
+                weekData = [...weekData, ...prevMonthRes.data];
+              } catch (e) { }
+            }
+
+            let totalWeekly = 0;
+            const getLocalDateStr = (d: Date) => {
+              const year = d.getFullYear();
+              const month = String(d.getMonth() + 1).padStart(2, '0');
+              const day = String(d.getDate()).padStart(2, '0');
+              return `${year}-${month}-${day}`;
+            };
+
+            for (let i = 0; i < 7; i++) {
+              const checkDate = new Date(weekStart);
+              checkDate.setDate(weekStart.getDate() + i);
+              const dayStr = getLocalDateStr(checkDate);
+              const dayData = weekData.find((d: any) => d.date === dayStr);
+              if (dayData) totalWeekly += dayData.profit;
+            }
+            setWeeklyProfit(totalWeekly);
+          } catch (e) {
+            console.warn("Profit calc error", e);
+          }
+        })()
+      ];
+
+      // Wait for all to complete (or fail) then stop loading
       try {
-        const statsRes = await api.get(`/trades/stats/user/${user.user_id}`);
-        setStats(statsRes.data);
-
-        const mt5Res = await api.get(`/users/${user.user_id}/mt5-status`);
-        setMt5Status(mt5Res.data);
-
-        // Fetch recent trades (assuming an endpoint exists, or using getAll with limit)
-        // Since I don't see a specific "recent" endpoint, I'll try fetching all and slicing, 
-        // OR better, checking if the backend supports pagination/limiting on the main trades endpoint.
-        // For now, I will try a standard fetching pattern which likely exists.
-        try {
-          const tradesRes = await api.get(`/trades/user/${user.user_id}?limit=5&skip=0&sort=desc`);
-          // Check if response is array or object with items
-          const tradesData = Array.isArray(tradesRes.data) ? tradesRes.data : (tradesRes.data.items || []);
-          setRecentTrades(tradesData);
-        } catch (e) {
-          console.warn("Could not fetch recent trades", e);
-          setRecentTrades([]);
-        }
-
-        // Helper to get local date string YYYY-MM-DD
-        const getLocalDateStr = (d: Date) => {
-          const year = d.getFullYear();
-          const month = String(d.getMonth() + 1).padStart(2, '0');
-          const day = String(d.getDate()).padStart(2, '0');
-          return `${year}-${month}-${day}`;
-        };
-
-        // Fetch exact monthly profit from calendar analytics
-        try {
-          const now = new Date();
-          const calendarRes = await api.get(`/api/analytics/calendar?user_id=${user.user_id}&month=${now.getMonth() + 1}&year=${now.getFullYear()}`);
-          const monthData = calendarRes.data;
-          const totalMonthly = monthData.reduce((sum: number, day: any) => sum + (day.profit || 0), 0);
-          setMonthlyProfit(totalMonthly);
-
-          // Always calculate weekly profit too
-          const weekStart = new Date(now);
-          weekStart.setDate(now.getDate() - now.getDay());
-
-          let weekData = [...monthData];
-          if (weekStart.getMonth() !== now.getMonth()) {
-            try {
-              const prevMonthRes = await api.get(`/api/analytics/calendar?user_id=${user.user_id}&month=${weekStart.getMonth() + 1}&year=${weekStart.getFullYear()}`);
-              weekData = [...weekData, ...prevMonthRes.data];
-            } catch (e) { }
-          }
-
-          let totalWeekly = 0;
-          for (let i = 0; i < 7; i++) {
-            const checkDate = new Date(weekStart);
-            checkDate.setDate(weekStart.getDate() + i);
-            const dayStr = getLocalDateStr(checkDate);
-            const dayData = weekData.find((d: any) => d.date === dayStr);
-            if (dayData) totalWeekly += dayData.profit;
-          }
-          setWeeklyProfit(totalWeekly);
-        } catch (e) {
-          console.warn("Could not fetch profit data", e);
-        }
-
-        // Fetch actual goal target
-        try {
-          const goalRes = await api.get(`/api/goals/user/${user.user_id}`);
-          // Ensure we only store active goals and handle array response
-          if (Array.isArray(goalRes.data)) {
-            setGoalData(goalRes.data.filter((g: any) => g.is_active && g.target_amount > 0));
-          } else {
-            setGoalData([]);
-          }
-        } catch (e) {
-          console.warn("Could not fetch goal target", e);
-        }
-
-        // Fetch analytics for equity curve
-        try {
-          const analyticsRes = await api.get(`/api/analytics/user/${user.user_id}`);
-          setAnalyticsData(analyticsRes.data.beginner);
-        } catch (e) {
-          console.warn("Could not fetch analytics", e);
-        }
-
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+        await Promise.allSettled(fetchTasks);
       } finally {
         setLoading(false);
       }

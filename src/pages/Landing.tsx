@@ -5,6 +5,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { AuthDialog } from "@/components/auth/AuthDialog";
 import { Sun, Moon } from "lucide-react";
 import Background3D from "@/components/landing/Background3D";
+import { ChatWidget } from "@/components/chat/ChatWidget";
 import "./Landing.css";
 
 const Landing = () => {
@@ -1130,6 +1131,9 @@ const Landing = () => {
                     </p>
                 </div>
             </footer>
+
+            {/* AI Chat Widget */}
+            <ChatWidget />
         </div>
     );
 };

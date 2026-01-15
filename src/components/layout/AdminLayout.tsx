@@ -27,6 +27,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { ChatWidget } from "@/components/chat/ChatWidget";
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     const { user, logout } = useAuth();
@@ -178,6 +179,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                     {children}
                 </div>
             </main>
+            <ChatWidget />
         </div>
     );
 };

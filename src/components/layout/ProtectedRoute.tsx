@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { ChatWidget } from "@/components/chat/ChatWidget";
 
 const ProtectedRoute = () => {
     const { isAuthenticated, isLoading } = useAuth();
@@ -9,7 +10,12 @@ const ProtectedRoute = () => {
         return <div className="flex h-screen w-full items-center justify-center">Loading...</div>;
     }
 
-    return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+    return isAuthenticated ? (
+        <>
+            <Outlet />
+            <ChatWidget />
+        </>
+    ) : <Navigate to="/login" replace />;
 };
 
 export default ProtectedRoute;
