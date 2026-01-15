@@ -58,9 +58,9 @@ const Landing = () => {
                 right: 0,
                 zIndex: 1000,
                 padding: '1.25rem 0',
-                background: 'rgba(10, 10, 15, 0.7)',
+                background: 'var(--glass-bg)',
                 backdropFilter: 'blur(20px)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+                borderBottom: '1px solid var(--glass-border)'
             }}>
                 <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{
