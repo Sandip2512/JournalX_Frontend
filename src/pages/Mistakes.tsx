@@ -1,249 +1,171 @@
-import { Button } from "@/components/ui/button";
 import { Header } from "@/components/layout/Header";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertTriangle,
   TrendingUp,
   TrendingDown,
-  Calendar,
-  Tag,
-  ChevronRight,
-  Brain,
-  Shield,
-  Timer,
+  Plus,
   Activity,
-  ArrowRight,
-  CheckCircle2,
-  ShieldCheck,
-  Zap,
   Target,
-  Search,
-  ClipboardCheck,
-  LineChart
+  AlertCircle,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import {
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip as RechartsTooltip,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  ScatterChart,
-  Scatter,
-  ZAxis
-} from "recharts";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
-import { cn } from "@/lib/utils";
-
-const COLORS = ['#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4'];
-
-const ExecutionTooltip = ({ active, payload, label, stats }: any) => {
-  if (active && payload && payload.length) {
-    const data = payload[0].payload;
-    const isLossData = data.loss !== undefined;
-
-    return (
-      <div className="glass-card-premium p-3 backdrop-blur-3xl bg-white/95 dark:bg-[#0c0d12]/95 border border-black/10 dark:border-white/10 shadow-[0_15px_40px_rgba(0,0,0,0.2)] rounded-[1rem] min-w-[180px] max-w-[240px] relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-1 h-full bg-primary/50" />
-
-        <p className="text-[9px] font-black uppercase tracking-[0.1em] text-muted-foreground mb-2.5 truncate pl-1 border-b border-black/5 dark:border-white/5 pb-1.5">
-          {label || data.name || data.subject}
-        </p>
-
-        <div className="space-y-2 relative z-10 pl-1">
-          {payload.map((entry: any, index: number) => (
-            <div key={index} className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: entry.color }} />
-                <span className="text-[9px] font-bold text-muted-foreground uppercase">{entry.name}</span>
-              </div>
-              <span className="text-xs font-black text-foreground tabular-nums">
-                {entry.name === 'loss' ? `-$${entry.value.toLocaleString()}` : `${entry.value.toFixed(1)}%`}
-              </span>
-            </div>
-          ))}
-
-          {isLossData && stats && (
-            <div className="pt-2 mt-0.5 border-t border-black/5 dark:border-white/5 space-y-1.5">
-              <p className="text-[10px] text-muted-foreground leading-snug font-medium italic">
-                "Fixing saves <span className="text-emerald-500 font-bold">${Math.round(data.loss * 12).toLocaleString()}</span>/yr."
-              </p>
-              <div className="flex items-center justify-between bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded">
-                <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">Leakage</span>
-                <span className="text-[10px] font-black text-destructive">
-                  {Math.round((data.loss / stats.totalLoss) * 100)}%
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-  return null;
-};
-
-const renderUniqueBarLabel = ({ x, y, width, value }: any) => {
-  return (
-    <text
-      x={x + width + 12}
-      y={y + 36}
-      fill="currentColor"
-      className="text-foreground/40 font-bold text-[13px] tracking-tighter"
-    >
-      {Math.abs(value).toFixed(0)}%
-    </text>
-  );
-};
-
-const UniqueBar = (props: any) => {
-  const { fill, x, y, width, height } = props;
-  if (width === undefined || width === null || isNaN(width)) return null;
-
-  return (
-    <g className="group/bar">
-      <rect
-        x={x}
-        y={y + 16}
-        width={width}
-        height={32}
-        fill={fill}
-        rx={10}
-        className="transition-all duration-500 hover:brightness-110"
-      />
-      <rect
-        x={x}
-        y={y + 16}
-        width={width}
-        height={32}
-        fill="white"
-        fillOpacity={0.05}
-        rx={10}
-      />
-    </g>
-  );
-};
+import { motion, AnimatePresence } from "framer-motion";
+import { MistakeDialog } from "@/components/mistakes/MistakeDialog";
+import { FrequencyHeatmap } from "@/components/mistakes/FrequencyHeatmap";
+import { MistakeDistributionChart } from "@/components/mistakes/MistakeDistributionChart";
+import { MistakesTable } from "@/components/mistakes/MistakesTable";
+import { Mistake, MistakeCreate, MistakeAnalytics, FrequencyData } from "@/types/mistake-types";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Mistakes = () => {
   const { user } = useAuth();
-  const [mistakes, setMistakes] = useState<any[]>([]);
-  const [noMistakeCount, setNoMistakeCount] = useState(0);
-  const [totalTradesCount, setTotalTradesCount] = useState(0);
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [analytics, setAnalytics] = useState<MistakeAnalytics | null>(null);
+  const [frequencyData, setFrequencyData] = useState<FrequencyData[]>([]);
+  const [timeFilter, setTimeFilter] = useState<"all" | "month">("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editMistake, setEditMistake] = useState<Mistake | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [mistakeToDelete, setMistakeToDelete] = useState<string | null>(null);
+
+  const fetchData = async () => {
+    if (!user?.user_id) return;
+
+    try {
+      setLoading(true);
+      const [analyticsRes, frequencyRes] = await Promise.all([
+        api.get(`/api/mistakes/analytics/${user.user_id}?time_filter=${timeFilter}`),
+        api.get(`/api/mistakes/frequency/${user.user_id}?days=35`),
+      ]);
+
+      setAnalytics(analyticsRes.data);
+      setFrequencyData(frequencyRes.data.data || []);
+    } catch (error) {
+      console.error("Error fetching mistake data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load mistake data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchMistakes = async () => {
-      if (user?.user_id) {
-        try {
-          const response = await api.get(`/trades/user/${user.user_id}`);
-          const allTrades = response.data;
+    fetchData();
+  }, [user?.user_id, timeFilter]);
 
-          // Count "No Mistake" trades
-          const noMistakes = allTrades.filter((t: any) =>
-            t.mistake === "No Mistake" || !t.mistake || t.mistake.trim() === ""
-          );
-          setNoMistakeCount(noMistakes.length);
-          setTotalTradesCount(allTrades.length);
-
-          // Filter "Mistake" trades, excluding -0.00 P/L and "No Mistake" tag
-          const mistakeTrades = allTrades.filter((t: any) => {
-            const hasMistakeTag = t.mistake && t.mistake.trim() !== "" && t.mistake !== "No Mistake";
-            // Check if profit/loss is effectively zero (handling -0.00)
-            const netProfit = parseFloat(t.net_profit || 0);
-            const lossAmount = parseFloat(t.loss_amount || 0);
-            const isZeroPL = Math.abs(netProfit) < 0.001 && Math.abs(lossAmount) < 0.001;
-
-            return hasMistakeTag && !isZeroPL;
-          });
-
-          setMistakes(mistakeTrades);
-        } catch (error) {
-          console.error("Error fetching mistakes:", error);
-        } finally {
-          setLoading(false);
-        }
+  const handleCreateMistake = async (mistake: MistakeCreate) => {
+    try {
+      if (editMistake) {
+        await api.put(`/api/mistakes/${editMistake.id}`, mistake);
+        toast({
+          title: "Success",
+          description: "Mistake updated successfully",
+        });
+      } else {
+        await api.post("/api/mistakes/", mistake);
+        toast({
+          title: "Success",
+          description: "Mistake created successfully",
+        });
       }
-    };
-    fetchMistakes();
-  }, [user?.user_id]);
+      fetchData();
+      setEditMistake(null);
+    } catch (error) {
+      console.error("Error saving mistake:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save mistake",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
 
-  // Derived Statistics
-  const stats = useMemo(() => {
-    if (mistakes.length === 0) return null;
+  const handleEditMistake = (mistake: Mistake) => {
+    if (mistake.id.startsWith('auto-')) {
+      toast({
+        title: "Default Mistake",
+        description: "This mistake is auto-generated from your trade data and cannot be modified manually.",
+      });
+      return;
+    }
+    setEditMistake(mistake);
+    setDialogOpen(true);
+  };
 
-    const totalLoss = mistakes.reduce((sum, t) => sum + (t.loss_amount || 0), 0);
+  const handleDeleteClick = (mistakeId: string) => {
+    if (mistakeId.startsWith('auto-')) {
+      toast({
+        title: "System Protected",
+        description: "Default tracking entries cannot be removed. They reflect your actual trading history.",
+      });
+      return;
+    }
+    setMistakeToDelete(mistakeId);
+    setDeleteDialogOpen(true);
+  };
 
-    // Categorize
-    const categoryMap: Record<string, { count: number, loss: number }> = {};
-    mistakes.forEach(t => {
-      const type = t.mistake;
-      if (!categoryMap[type]) categoryMap[type] = { count: 0, loss: 0 };
-      categoryMap[type].count++;
-      categoryMap[type].loss += (t.loss_amount || 0);
-    });
+  const handleDeleteConfirm = async () => {
+    if (!mistakeToDelete) return;
 
-    const categories = Object.entries(categoryMap).map(([name, data]) => ({
-      name,
-      ...data
-    })).sort((a, b) => b.loss - a.loss);
-
-    const mostFrequent = [...categories].sort((a, b) => b.count - a.count)[0];
-    const mostExpensive = categories[0];
-
-    const totalTrades = totalTradesCount;
-    const disciplineScore = totalTrades > 0 ? Math.round((noMistakeCount / totalTrades) * 100) : 100;
-
-    // Projected Annual Savings (based on 200 trades per year)
-    const avgLossPerMistake = totalLoss / mistakes.length;
-    const projectedAnnualLoss = avgLossPerMistake * (mistakes.length / (totalTrades || 1)) * 200;
-
-    // Radar Data (Behavioral Vulnerability)
-    const radarData = categories.slice(0, 6).map(cat => ({
-      subject: cat.name,
-      A: (cat.loss / totalLoss) * 100, // Weighted by loss
-      B: (cat.count / mistakes.length) * 100, // Weighted by frequency
-      fullMark: 100,
-    }));
-
-    return {
-      totalLoss,
-      totalCount: mistakes.length,
-      noMistakeCount,
-      totalTrades,
-      disciplineScore,
-      projectedAnnualLoss,
-      radarData,
-      categories,
-      mostFrequent,
-      mostExpensive
-    };
-  }, [mistakes, noMistakeCount, totalTradesCount]);
+    try {
+      await api.delete(`/api/mistakes/${mistakeToDelete}`);
+      toast({
+        title: "Success",
+        description: "Mistake deleted successfully",
+      });
+      fetchData();
+    } catch (error) {
+      console.error("Error deleting mistake:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete mistake",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setMistakeToDelete(null);
+    }
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#030408] relative overflow-hidden">
+      <div className="min-h-screen bg-background relative overflow-hidden">
         <Header />
         <div className="flex items-center justify-center h-[calc(100vh-64px)]">
           <div className="relative">
             <div className="w-12 h-12 border-2 border-white/5 border-t-white/40 rounded-full animate-spin relative z-10" />
-            <div className="absolute inset-0 blur-2xl bg-blue-500/10 animate-pulse" />
-            <p className="mt-6 text-[10px] font-bold tracking-[0.2em] uppercase text-white/30 animate-pulse text-center">Loading Performance Data</p>
+            <div className="absolute inset-0 blur-2xl bg-purple-500/10 animate-pulse" />
           </div>
         </div>
       </div>
     );
   }
+
+  const totalMistakes = analytics?.totalMistakes || 0;
+  const mostCommon = analytics?.mostCommon;
+  const improvement = analytics?.improvement || 0;
+  const distribution = analytics?.distribution || [];
+  const customMistakes = analytics?.customMistakes || [];
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -255,384 +177,287 @@ const Mistakes = () => {
 
       <main className="relative z-10 container mx-auto px-4 lg:px-6 py-12 max-w-7xl">
         {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 opacity-0 animate-fade-up">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12"
+        >
           <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-primary/10 text-primary border border-primary/20 backdrop-blur-sm shadow-[0_0_15px_rgba(16,185,129,0.15)]">
-                <AlertTriangle className="w-8 h-8" />
+            <div className="flex items-center gap-4">
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 text-indigo-600 dark:text-white border border-border/50 dark:border-white/10 backdrop-blur-md shadow-[0_0_20px_rgba(99,102,241,0.3)] ring-1 ring-border/20 dark:ring-white/20">
+                <AlertTriangle className="w-8 h-8 drop-shadow-md" />
               </div>
-              <h1 className="text-4xl lg:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 tracking-tight drop-shadow-sm">
-                Execution <span className="text-gradient">Insights</span>
-              </h1>
+              <div>
+                <h1 className="text-5xl lg:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-900 dark:from-white dark:via-blue-100 dark:to-indigo-200 tracking-[-0.03em] drop-shadow-sm dark:drop-shadow-[0_2px_10px_rgba(255,255,255,0.2)]">
+                  Mistake Analysis
+                </h1>
+                <p className="text-lg text-muted-foreground font-medium tracking-wide mt-1">
+                  Turn your trading errors into your biggest assets.
+                </p>
+              </div>
             </div>
-            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl font-medium tracking-wide">
-              Identify systematic trading errors and optimize capital preservation through deep behavioral metrics.
-            </p>
           </div>
-        </div>
 
-        {!stats ? (
-          <div className="glass-card-premium p-20 text-center space-y-4 border-dashed border-2">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto">
-              <Activity className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-xl font-bold">Zero Mistakes Detected</h3>
-            <p className="text-muted-foreground">You are either a perfect machine or haven't tagged your mistakes yet.</p>
-          </div>
-        ) : (
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={{
-              visible: { transition: { staggerChildren: 0.1 } }
+          <Button
+            onClick={() => {
+              setEditMistake(null);
+              setDialogOpen(true);
             }}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-12"
+            size="lg"
+            className="h-12 px-8 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-[0_0_20px_rgba(37,99,235,0.4)] border border-blue-400/20 hover:scale-105 transition-all duration-300 font-bold tracking-wide"
           >
+            <Plus className="w-5 h-5 mr-2" />
+            New Mistake
+          </Button>
+        </motion.div>
 
-            {/* Main Insight Card - Most Expensive Mistake */}
-            <motion.div
-              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-              className="lg:col-span-8 glass-card-premium p-8 lg:p-10 rounded-3xl relative overflow-hidden group"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-destructive/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        {/* Summary Cards */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
+        >
+          {/* Total Mistakes Card */}
+          <Card className="glass-card-premium p-6 rounded-3xl relative overflow-hidden group hover:shadow-[0_0_40px_rgba(236,72,153,0.2)] transition-all duration-500 border-border/50 dark:border-white/5">
+            <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 via-transparent to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute -right-12 -top-12 w-48 h-48 bg-pink-500/10 rounded-full blur-3xl group-hover:bg-pink-500/20 transition-all duration-500 animate-pulse-slow" />
 
-              <div className="flex flex-col h-full justify-between relative z-10">
-                <div className="space-y-8">
-                  <div className="space-y-1">
-                    <p className="text-sm font-bold text-destructive flex items-center gap-2">
-                      <TrendingDown className="w-4 h-4" /> Critical Execution Gap
-                    </p>
-                    <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-foreground">{stats.mostExpensive.name}</h2>
+            <div className="relative z-10 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-pink-600 dark:text-pink-400">
+                  <div className="p-2 rounded-lg bg-pink-500/10 ring-1 ring-pink-500/20 shadow-[0_0_10px_rgba(236,72,153,0.1)]">
+                    <AlertCircle className="w-5 h-5" />
                   </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">Financial Impact</p>
-                      <p className="text-3xl font-bold text-destructive tracking-tight">
-                        -${stats.mostExpensive.loss.toLocaleString(undefined, { minimumFractionDigits: 0 })}
-                      </p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">Occurrences</p>
-                      <p className="text-3xl font-bold text-foreground tracking-tight">
-                        {stats.mostExpensive.count}
-                      </p>
-                    </div>
-                    <div className="space-y-1 md:border-l md:border-white/5 md:pl-8">
-                      <p className="text-sm font-medium text-emerald-500">Recovery Potential</p>
-                      <p className="text-3xl font-bold text-emerald-500 tracking-tight">
-                        +${stats.projectedAnnualLoss.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="p-6 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 italic">
-                    <p className="text-lg text-muted-foreground leading-relaxed">
-                      "Eliminating this behavior would improve execution efficiency by <span className="text-foreground font-bold">{Math.round((stats.mostExpensive.loss / stats.totalLoss) * 100)}%</span> and preserve significant trading capital."
-                    </p>
-                  </div>
+                  <span className="font-bold text-sm uppercase tracking-wider">Total Mistakes</span>
                 </div>
-
-                <div className="pt-8 flex items-center justify-between border-t border-white/5 mt-8">
-                  <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                    <Activity className="w-4 h-4 text-primary" /> Priority Level: High Impact
-                  </div>
-                  <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 font-bold">Action Required</Badge>
-                </div>
+                <Badge variant="outline" className="bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20 px-2.5 py-0.5 font-bold rounded-lg flex items-center gap-1 shadow-sm">
+                  <TrendingUp className="w-3 h-3" />
+                  24%
+                </Badge>
               </div>
-            </motion.div>
 
-            {/* BENTO SIDEBAR STATS */}
-            <div className="lg:col-span-4 grid grid-cols-1 gap-6">
-              {/* PERFORMANCE SCORE CARD */}
-              <motion.div
-                variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }}
-                className="glass-card-premium p-6 flex flex-col items-center text-center relative overflow-hidden group rounded-3xl"
-              >
-                <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="flex items-end justify-between">
+                <h3 className="text-4xl font-black text-foreground dark:text-white tracking-tight drop-shadow-sm">
+                  {totalMistakes}
+                </h3>
+                <span className="text-sm font-medium text-muted-foreground mb-1">
+                  This Week
+                </span>
+              </div>
 
-                <div className="relative z-10 w-full">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-6">Performance Score</p>
-
-                  <div className="relative w-32 h-32 mx-auto flex items-center justify-center">
-                    <svg className="w-full h-full transform -rotate-90">
-                      <circle
-                        cx="64"
-                        cy="64"
-                        r="54"
-                        fill="transparent"
-                        stroke="rgba(0,0,0,0.1)"
-                        strokeWidth="8"
-                        className="dark:stroke-white/5"
-                      />
-                      <motion.circle
-                        cx="64"
-                        cy="64"
-                        r="54"
-                        fill="transparent"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        strokeDasharray={2 * Math.PI * 54}
-                        initial={{ strokeDashoffset: 2 * Math.PI * 54 }}
-                        animate={{ strokeDashoffset: (2 * Math.PI * 54) * (1 - (stats.disciplineScore / 100)) }}
-                        transition={{ duration: 2, ease: "easeOut" }}
-                        className={cn(
-                          "transition-all duration-1000",
-                          stats.disciplineScore > 80 ? "text-emerald-500" : stats.disciplineScore > 50 ? "text-amber-500" : "text-destructive"
-                        )}
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-3xl font-black tracking-tighter text-foreground">{stats.disciplineScore}%</span>
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase">Efficiency</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary bg-primary/10 px-4 py-1.5 rounded-full border border-primary/20">
-                    <Activity className="w-3 h-3" /> Status: Stable
-                  </div>
+              <div className="relative pt-2">
+                <div className="overflow-hidden h-3 text-xs flex rounded-full bg-slate-100 dark:bg-slate-800 shadow-inner">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: "65%" }}
+                    transition={{ duration: 1.5, ease: "circOut" }}
+                    className="relative shadow-lg shadow-pink-500/20 flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-pink-500 to-rose-600"
+                  >
+                    {/* Hazard Stripes for Negative Metric */}
+                    <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.15)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.15)_50%,rgba(255,255,255,0.15)_75%,transparent_75%,transparent)] bg-[length:10px_10px]" />
+                  </motion.div>
                 </div>
-              </motion.div>
-
-              {/* IMPACT ANALYSIS CARD */}
-              <motion.div
-                variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }}
-                className="glass-card-premium p-6 flex flex-col justify-center rounded-3xl relative overflow-hidden"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="p-3 rounded-xl bg-destructive/10 text-destructive border border-destructive/20">
-                    <TrendingDown className="w-5 h-5" />
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Efficiency Loss</p>
-                    <p className="text-sm font-bold text-destructive">-{Math.round((stats.totalLoss / (stats.totalTrades * 10)) * 100)}%</p>
-                  </div>
-                </div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Loss Impact</p>
-                <h3 className="text-4xl font-extrabold text-foreground tracking-tight">-${stats.totalLoss.toLocaleString(undefined, { minimumFractionDigits: 0 })}</h3>
-              </motion.div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <motion.div
-                  variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
-                  className="glass-card-premium p-5 rounded-2xl border-white/5 group hover:scale-[1.02] transition-transform"
-                >
-                  <div className="p-2 w-fit rounded-lg bg-red-500/10 text-red-500 mb-3">
-                    <Brain className="w-4 h-4" />
-                  </div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Mistakes</p>
-                  <h3 className="text-2xl font-bold text-foreground">{stats.totalCount}</h3>
-                </motion.div>
-                <motion.div
-                  variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
-                  className="glass-card-premium p-5 rounded-2xl border-white/5 group hover:scale-[1.02] transition-transform"
-                >
-                  <div className="p-2 w-fit rounded-lg bg-emerald-500/10 text-emerald-500 mb-3">
-                    <CheckCircle2 className="w-4 h-4" />
-                  </div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Optimal</p>
-                  <h3 className="text-2xl font-bold text-foreground">{stats.noMistakeCount}</h3>
-                </motion.div>
               </div>
             </div>
+          </Card>
 
-            {/* BEHAVIORAL PROFILE CHART */}
-            <motion.div
-              variants={{ hidden: { opacity: 0, scale: 0.98 }, visible: { opacity: 1, scale: 1 } }}
-              className="lg:col-span-6 glass-card-premium p-8 h-[440px] rounded-[2.5rem] relative overflow-hidden group shadow-2xl"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-              <h3 className="text-2xl font-extrabold mb-10 flex items-center gap-4 relative z-10 text-foreground tracking-tight">
-                <div className="p-3 rounded-2xl bg-primary/20 text-primary shadow-lg shadow-primary/20 backdrop-blur-xl">
-                  <Activity className="w-6 h-6" />
+          {/* Most Common Card */}
+          <Card className="glass-card-premium p-6 rounded-3xl relative overflow-hidden group hover:shadow-[0_0_40px_rgba(249,115,22,0.2)] transition-all duration-500 border-border/50 dark:border-white/5">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute -right-12 -top-12 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-500/20 transition-all duration-500 animate-pulse-slow" />
+
+            <div className="relative z-10 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
+                  <div className="p-2 rounded-lg bg-orange-500/10 ring-1 ring-orange-500/20 shadow-[0_0_10px_rgba(249,115,22,0.1)]">
+                    <Activity className="w-5 h-5" />
+                  </div>
+                  <span className="font-bold text-sm uppercase tracking-wider">Most Common</span>
                 </div>
-                Behavioral Profile
-              </h3>
-
-              <div className="h-[320px] w-full relative z-10">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 10 }}>
-                    <XAxis
-                      type="number"
-                      dataKey="B"
-                      name="Frequency"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: 'rgba(100,116,139,0.5)', fontSize: 10, fontWeight: 700 }}
-                      label={{ value: 'Frequency', position: 'insideBottom', offset: -10, fill: 'rgba(100,116,139,0.4)', fontSize: 10, fontWeight: 800, textAnchor: 'middle' }}
-                    />
-                    <YAxis
-                      type="number"
-                      dataKey="A"
-                      name="Loss Impact"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: 'rgba(100,116,139,0.5)', fontSize: 10, fontWeight: 700 }}
-                      label={{ value: 'Loss Impact', angle: -90, position: 'insideLeft', offset: 10, fill: 'rgba(100,116,139,0.4)', fontSize: 10, fontWeight: 800, textAnchor: 'middle' }}
-                    />
-                    <ZAxis type="number" dataKey="A" range={[200, 2000]} />
-                    <RechartsTooltip content={<ExecutionTooltip stats={stats} />} />
-                    <Scatter
-                      name="Mistakes"
-                      data={stats.radarData}
-                      fill="#3b82f6"
-                    >
-                      {stats.radarData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={entry.A > 50 ? '#ef4444' : '#3b82f6'}
-                          fillOpacity={0.6}
-                          stroke={entry.A > 50 ? '#ef4444' : '#3b82f6'}
-                          strokeWidth={2}
-                        />
-                      ))}
-                    </Scatter>
-                  </ScatterChart>
-                </ResponsiveContainer>
+                <Badge variant="outline" className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20 px-2.5 py-0.5 font-bold rounded-lg shadow-sm">
+                  {mostCommon?.count || 0} Occurrences
+                </Badge>
               </div>
-            </motion.div>
 
-            {/* LOSS DISTRIBUTION CHART */}
-            <motion.div
-              variants={{ hidden: { opacity: 0, scale: 0.98 }, visible: { opacity: 1, scale: 1 } }}
-              className="lg:col-span-6 glass-card-premium p-8 h-[440px] rounded-[2.5rem] relative overflow-hidden group shadow-2xl"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-destructive/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-              <h3 className="text-2xl font-extrabold mb-10 flex items-center gap-4 relative z-10 text-foreground tracking-tight">
-                <div className="p-3 rounded-2xl bg-destructive/20 text-destructive shadow-lg shadow-destructive/20 backdrop-blur-xl">
-                  <TrendingDown className="w-6 h-6" />
+              <div className="flex items-end justify-between">
+                <h3 className="text-xl font-black text-foreground dark:text-white tracking-tight truncate max-w-[180px]" title={mostCommon?.name}>
+                  {mostCommon?.name || "None yet"}
+                </h3>
+              </div>
+
+              <div className="relative pt-2">
+                <div className="overflow-hidden h-3 text-xs flex rounded-full bg-slate-100 dark:bg-slate-800 shadow-inner">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(((mostCommon?.count || 0) / (totalMistakes || 1)) * 100, 100)}%` }}
+                    transition={{ duration: 1.5, ease: "circOut", delay: 0.1 }}
+                    className="relative shadow-lg shadow-orange-500/20 flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-orange-500 to-amber-600"
+                  >
+                    {/* Hazard Stripes for Negative Metric */}
+                    <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.15)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.15)_50%,rgba(255,255,255,0.15)_75%,transparent_75%,transparent)] bg-[length:10px_10px]" />
+                  </motion.div>
                 </div>
-                Loss Distribution
-              </h3>
-
-              <div className="h-[300px] w-full relative z-10">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats.categories.slice(0, 2)} layout="vertical" margin={{ left: 20, right: 60, top: 20, bottom: 20 }} barGap={30}>
-                    <XAxis type="number" hide />
-                    <YAxis
-                      dataKey="name"
-                      type="category"
-                      width={120}
-                      tick={{ fill: 'rgba(100,116,139,0.6)', fontSize: 11, fontWeight: 700 }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <RechartsTooltip content={<ExecutionTooltip stats={stats} />} />
-                    <Bar dataKey="loss" shape={<UniqueBar />} label={renderUniqueBarLabel}>
-                      {stats.categories.slice(0, 2).map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-
-        {/* EXECUTION DATA STREAM SECTION */}
-        <div className="space-y-10 mt-20 mb-32">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 px-1">
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20 backdrop-blur-sm">
-                  <ClipboardCheck className="w-6 h-6" />
+                <div className="flex justify-between text-[10px] font-bold text-muted-foreground mt-1.5 uppercase tracking-wider">
+                  <span>Frequency</span>
+                  <span>{Math.round(((mostCommon?.count || 0) / (totalMistakes || 1)) * 100)}% of Total</span>
                 </div>
-                <h2 className="text-2xl font-bold tracking-tight text-foreground">Execution History</h2>
               </div>
-              <p className="text-sm text-muted-foreground font-medium ml-12">Detailed log of identified trading mistakes.</p>
             </div>
-            <div className="inline-flex items-center gap-3 px-5 py-2 rounded-xl bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/5 text-xs font-bold text-muted-foreground uppercase tracking-widest backdrop-blur-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary" /> Total Records: {mistakes.length}
+          </Card>
+
+          {/* Improvement Score Card */}
+          <Card className="glass-card-premium p-6 rounded-3xl relative overflow-hidden group hover:shadow-[0_0_40px_rgba(16,185,129,0.2)] transition-all duration-500 border-border/50 dark:border-white/5">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute -right-12 -top-12 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl group-hover:bg-emerald-500/20 transition-all duration-500 animate-pulse-slow" />
+
+            <div className="relative z-10 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                  <div className="p-2 rounded-lg bg-emerald-500/10 ring-1 ring-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                    <Target className="w-5 h-5" />
+                  </div>
+                  <span className="font-bold text-sm uppercase tracking-wider">Improvement</span>
+                </div>
+                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 px-2.5 py-0.5 font-bold rounded-lg flex items-center gap-1 shadow-sm relative overflow-hidden">
+                  <TrendingUp className="w-3 h-3" />
+                  +12%
+                  <div className="absolute inset-0 bg-white/20 skew-x-12 -translate-x-full animate-[shimmer_2s_infinite]" />
+                </Badge>
+              </div>
+
+              <div className="flex items-end justify-between">
+                <h3 className="text-4xl font-black text-foreground dark:text-white tracking-tight drop-shadow-sm">
+                  {100 - (improvement || 0)}%
+                </h3>
+                <span className="text-sm font-medium text-muted-foreground mb-1">
+                  Score
+                </span>
+              </div>
+
+              <div className="relative pt-2">
+                <div className="overflow-hidden h-3 text-xs flex rounded-full bg-slate-100 dark:bg-slate-800 shadow-inner">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${100 - (improvement || 0)}%` }}
+                    transition={{ duration: 1.5, ease: "circOut", delay: 0.2 }}
+                    className="relative shadow-lg shadow-emerald-500/20 flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-emerald-500 to-teal-500"
+                  >
+                    <div className="absolute inset-0 bg-white/20 skew-x-12 -translate-x-full animate-[shimmer_2s_infinite]" />
+                  </motion.div>
+                </div>
+              </div>
             </div>
+          </Card>
+        </motion.div>
+
+        {/* Analytics Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12"
+        >
+          {/* Mistake Distribution Chart */}
+          <Card className="lg:col-span-2 glass-card-premium p-8 rounded-3xl relative overflow-hidden group hover:shadow-[0_0_40px_rgba(139,92,246,0.1)] transition-all duration-500 border-white/5">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-extrabold text-foreground tracking-tight">
+                  Mistake Distribution
+                </h3>
+                <div className="flex gap-2">
+                  <Button
+                    variant={timeFilter === "month" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setTimeFilter("month")}
+                    className="text-xs font-bold"
+                  >
+                    This Month
+                  </Button>
+                  <Button
+                    variant={timeFilter === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setTimeFilter("all")}
+                    className="text-xs font-bold"
+                  >
+                    All Time
+                  </Button>
+                </div>
+              </div>
+              <MistakeDistributionChart data={distribution} />
+            </div>
+          </Card>
+
+          {/* Frequency Heatmap */}
+          <Card className="lg:col-span-1 glass-card-premium p-8 rounded-3xl relative overflow-hidden group hover:shadow-[0_0_40px_rgba(59,130,246,0.1)] transition-all duration-500 border-white/5">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative z-10 flex flex-col items-center justify-center h-full">
+              <FrequencyHeatmap data={frequencyData} />
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Mistakes Table Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="space-y-6"
+        >
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h2 className="text-2xl font-bold tracking-tight text-foreground">
+                Recent Mistakes
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Manage your custom mistake types and track occurrences
+              </p>
+            </div>
+            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 font-bold">
+              {customMistakes.length} Total
+            </Badge>
           </div>
 
-          <div className="grid grid-cols-1 gap-8">
-            <AnimatePresence>
-              {mistakes.map((mistake, i) => (
-                <motion.div
-                  key={mistake.id || i}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.05 }}
-                  className="relative group pr-4"
-                >
-                  <div className="absolute left-0 top-0 bottom-0 w-[1px] bg-white/5 group-hover:bg-primary/40 transition-colors" />
-
-                  <div className="glass-card-premium p-8 rounded-3xl group-hover:scale-[1.005] transition-all duration-300 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                    <div className="flex flex-col lg:flex-row lg:items-center gap-10 lg:gap-16 relative z-10">
-                      {/* ID Block */}
-                      <div className="lg:w-40 flex-shrink-0 space-y-4 border-b lg:border-b-0 lg:border-r border-black/5 dark:border-white/5 pb-6 lg:pb-0 lg:pr-10">
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Reference</p>
-                          <p className="text-3xl font-extrabold tracking-tighter text-foreground">#{mistake.trade_no || i + 1}</p>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <p className="text-[11px] font-bold text-muted-foreground flex items-center gap-2">
-                            <Calendar className="w-3.5 h-3.5" /> {new Date(mistake.close_time).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                          </p>
-                          <p className="text-[9px] font-bold text-muted-foreground/30 uppercase tracking-widest">TR_ID_{mistake.id?.slice(-6) || 'N/A'}</p>
-                        </div>
-                      </div>
-
-                      {/* Analysis Block */}
-                      <div className="flex-1 space-y-6">
-                        <div className="flex flex-wrap items-center gap-4">
-                          <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 font-bold text-[10px] px-3 py-1">
-                            {mistake.mistake}
-                          </Badge>
-                          <div className="flex items-baseline gap-2">
-                            <h4 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">{mistake.symbol}</h4>
-                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{mistake.type}</span>
-                          </div>
-                        </div>
-
-                        <div className="relative pl-6">
-                          <div className="absolute left-0 top-0 bottom-0 w-1 rounded-full bg-primary/20" />
-                          <p className="text-foreground/80 font-medium leading-relaxed text-lg">
-                            "{mistake.reason || 'No execution rationale documented for this entry.'}"
-                          </p>
-                        </div>
-
-                        <div className="flex gap-8 border-t border-black/5 dark:border-white/5 pt-4">
-                          <div className="space-y-1">
-                            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Entry Price</p>
-                            <p className="text-sm font-mono font-bold text-foreground/70">{mistake.price_open?.toFixed(5)}</p>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Exit Price</p>
-                            <p className="text-sm font-mono font-bold text-foreground/70">{mistake.price_close?.toFixed(5)}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Loss Block */}
-                      <div className="lg:w-56 flex flex-col items-end justify-between self-stretch">
-                        <div className="text-right space-y-1">
-                          <p className="text-[10px] font-bold text-destructive uppercase tracking-widest">Loss Impact</p>
-                          <p className="text-4xl font-extrabold text-destructive tracking-tight">
-                            -${Math.abs(mistake.loss_amount || 0).toFixed(2)}
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="mt-6 text-primary hover:bg-primary/10 hover:text-primary transition-all group/btn"
-                        >
-                          Details <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        </div>
+          <MistakesTable
+            mistakes={customMistakes}
+            onEdit={handleEditMistake}
+            onDelete={handleDeleteClick}
+          />
+        </motion.div>
       </main>
+
+      {/* Dialogs */}
+      <MistakeDialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) setEditMistake(null);
+        }}
+        onSubmit={handleCreateMistake}
+        editMistake={editMistake}
+        userId={user?.user_id || ""}
+      />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="bg-white dark:bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this mistake type.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

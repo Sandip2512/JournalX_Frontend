@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowRightLeft, Search, Filter, Download, Plus, ArrowUpDown, TrendingUp, TrendingDown } from "lucide-react";
+import { ArrowRightLeft, Search, Filter, Download, Plus, ArrowUpDown, TrendingUp, TrendingDown, Edit2, Trash2, MoreHorizontal } from "lucide-react";
 import { TradeEntryForm } from "@/components/dashboard/TradeEntryForm";
+import { ExportDialog } from "@/components/dashboard/ExportDialog";
+import { Trade } from "@/types/trade-types";
 import {
   Table,
   TableBody,
@@ -20,16 +22,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const Trades = () => {
   const [showForm, setShowForm] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const { toast } = useToast();
   const [symbolFilter, setSymbolFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const { user } = useAuth();
   const [trades, setTrades] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 15;
 
   // Wrap fetchTrades in useCallback to allow passing it to TradeEntryForm
   const fetchTrades = React.useCallback(async () => {
@@ -47,9 +55,36 @@ const Trades = () => {
     fetchTrades();
   }, [fetchTrades]);
 
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, symbolFilter, typeFilter]);
+
+  const handlePageChange = (page: number) => {
+    console.log("Changing to page:", page);
+    setCurrentPage(page);
+  };
+
+  // Scroll to top of table when page changes
+  useEffect(() => {
+    const tableElement = document.getElementById('trades-table-container');
+    if (tableElement) {
+      const offset = 100; // Adjust for header
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = tableElement.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  }, [currentPage]);
+
   // Sorting state
   const [sortField, setSortField] = useState<string>("trade_no");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   // Handle sort click
   const handleSort = (field: string) => {
@@ -58,6 +93,32 @@ const Trades = () => {
     } else {
       setSortField(field);
       setSortDirection("desc"); // Default to desc (newest/highest first) for new fields
+    }
+    setCurrentPage(1); // Reset to first page on sort change
+  };
+
+  const handleEdit = (trade: Trade) => {
+    setEditingTrade(trade);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (tradeNo: number) => {
+    if (window.confirm(`Are you sure you want to delete trade #${tradeNo}?`)) {
+      try {
+        await api.delete(`/trades/trade/${tradeNo}`);
+        toast({
+          title: "Trade Deleted",
+          description: `Trade #${tradeNo} has been removed.`,
+        });
+        fetchTrades();
+      } catch (error) {
+        console.error("Error deleting trade:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete trade.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -97,7 +158,7 @@ const Trades = () => {
   }, [trades, searchQuery, symbolFilter, typeFilter, sortField, sortDirection]);
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <div className="min-h-screen bg-background relative">
       {/* Aurora Background */}
       <div className="absolute inset-0 aurora-bg pointer-events-none" />
       <div className="absolute inset-0 bg-grid-white/5 pointer-events-none" />
@@ -168,7 +229,11 @@ const Trades = () => {
                 <Filter className="w-4 h-4" />
                 Filters
               </Button>
-              <Button variant="outline" className="gap-2 bg-white/5 border-white/10 hover:bg-white/10">
+              <Button
+                variant="outline"
+                className="gap-2 bg-white/5 border-white/10 hover:bg-white/10"
+                onClick={() => setShowExportDialog(true)}
+              >
                 <Download className="w-4 h-4" />
                 Export
               </Button>
@@ -176,7 +241,11 @@ const Trades = () => {
           </div>
 
           {/* Trades Table */}
-          <div className="glass-card-premium rounded-2xl overflow-hidden opacity-0 animate-fade-up shadow-2xl border border-white/10" style={{ animationDelay: "0.2s" }}>
+          <div
+            id="trades-table-container"
+            className="glass-card-premium rounded-2xl overflow-hidden opacity-0 animate-fade-up shadow-2xl border border-white/10 !transform-none"
+            style={{ animationDelay: "0.2s" }}
+          >
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -203,9 +272,10 @@ const Trades = () => {
                       </div>
                     </TableHead>
                     <TableHead className="font-semibold text-muted-foreground whitespace-nowrap">Date & Time</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
+                <TableBody key={`page-${currentPage}`}>
                   {filteredAndSortedTrades.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
@@ -218,9 +288,9 @@ const Trades = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredAndSortedTrades.map((trade, idx) => (
+                    filteredAndSortedTrades.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map((trade, idx) => (
                       <TableRow
-                        key={trade.trade_no}
+                        key={`${trade.trade_no}-${currentPage}`}
                         className="cursor-pointer hover:bg-white/5 transition-colors border-b border-white/5 group"
                         style={{ animationDelay: `${0.1 + (idx * 0.05)}s` }}
                       >
@@ -245,6 +315,34 @@ const Trades = () => {
                           {new Date(trade.open_time).toLocaleDateString()}
                           <span className="ml-2 opacity-50">{new Date(trade.open_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="w-9 h-9 rounded-xl bg-primary/5 border border-primary/10 text-primary hover:bg-primary/20 hover:border-primary/30 transition-all duration-300 shadow-sm"
+                              title="Edit Trade"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEdit(trade);
+                              }}
+                            >
+                              <Edit2 className="w-4.5 h-4.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="w-9 h-9 rounded-xl bg-destructive/5 border border-destructive/10 text-destructive hover:bg-destructive/20 hover:border-destructive/30 transition-all duration-300 shadow-sm"
+                              title="Delete Trade"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(trade.trade_no);
+                              }}
+                            >
+                              <Trash2 className="w-4.5 h-4.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -252,9 +350,96 @@ const Trades = () => {
               </Table>
             </div>
 
+            {/* Pagination Controls */}
+            {filteredAndSortedTrades.length > ITEMS_PER_PAGE && (
+              <div className="px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-white/10 bg-black/5 relative z-50">
+                <div className="text-sm font-medium text-muted-foreground">
+                  Showing <span className="text-foreground font-bold">{((currentPage - 1) * ITEMS_PER_PAGE) + 1}</span> to <span className="text-foreground font-bold">{Math.min(filteredAndSortedTrades.length, currentPage * ITEMS_PER_PAGE)}</span> of <span className="text-foreground font-bold">{filteredAndSortedTrades.length}</span> trades
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="bg-white/5 border-white/10 text-muted-foreground hover:bg-white/10 hover:text-foreground disabled:opacity-50 cursor-pointer"
+                  >
+                    ‹ Prev
+                  </Button>
+
+                  <div className="hidden sm:flex items-center gap-1">
+                    {Array.from({ length: Math.ceil(filteredAndSortedTrades.length / ITEMS_PER_PAGE) }).map((_, i) => {
+                      const pageNum = i + 1;
+                      const totalPages = Math.ceil(filteredAndSortedTrades.length / ITEMS_PER_PAGE);
+
+                      // Logic to show only 1, current-1, current, current+1, and last page
+                      if (
+                        pageNum === 1 ||
+                        pageNum === totalPages ||
+                        (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                      ) {
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handlePageChange(pageNum)}
+                            className={cn(
+                              "w-9 h-9 p-0 font-bold transition-all cursor-pointer",
+                              currentPage === pageNum
+                                ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20"
+                                : "bg-white/5 border-white/10 text-muted-foreground hover:bg-white/10 hover:text-foreground"
+                            )}
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      }
+
+                      // Show ellipsis
+                      if (
+                        (pageNum === 2 && currentPage > 3) ||
+                        (pageNum === totalPages - 1 && currentPage < totalPages - 2)
+                      ) {
+                        return <span key={`ellipsis-${pageNum}`} className="text-muted-foreground px-1">...</span>;
+                      }
+
+                      return null;
+                    })}
+                  </div>
+
+                  <div className="sm:hidden font-bold text-sm text-muted-foreground">
+                    Page {currentPage} of {Math.ceil(filteredAndSortedTrades.length / ITEMS_PER_PAGE)}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(Math.min(currentPage + 1, Math.ceil(filteredAndSortedTrades.length / ITEMS_PER_PAGE)))}
+                    disabled={currentPage === Math.ceil(filteredAndSortedTrades.length / ITEMS_PER_PAGE)}
+                    className="bg-white/5 border-white/10 text-muted-foreground hover:bg-white/10 hover:text-foreground disabled:opacity-50 cursor-pointer"
+                  >
+                    Next ›
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
-          <TradeEntryForm open={showForm} onOpenChange={setShowForm} onSuccess={fetchTrades} />
+          <TradeEntryForm
+            open={showForm}
+            onOpenChange={(open) => {
+              setShowForm(open);
+              if (!open) setEditingTrade(null);
+            }}
+            onSuccess={fetchTrades}
+            initialData={editingTrade}
+          />
+          <ExportDialog
+            open={showExportDialog}
+            onOpenChange={setShowExportDialog}
+            data={filteredAndSortedTrades}
+          />
         </main>
       </div>
     </div>

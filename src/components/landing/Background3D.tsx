@@ -26,14 +26,14 @@ export default function Background3D() {
 
         // --- The Infinite Grid ---
         // Massive grid to cover "full page"
-        const gridSize = 200; // Much larger
-        const divisions = 50; // More density
+        const gridSize = 160; // Slightly reduced
+        const divisions = 40; // Reduced density for performance
         const step = gridSize / divisions;
 
         const gridMaterial = new THREE.LineBasicMaterial({
             color: 0xFFFFFF,
             transparent: true,
-            opacity: 0.015 // Ultra-subtle (1.5%) as requested
+            opacity: 0.012 // Slightly more subtle
         });
 
         const gridGeo = new THREE.BufferGeometry();
@@ -54,7 +54,7 @@ export default function Background3D() {
         group.add(gridMesh);
 
         // --- Blinking Boxes (Clusters & Independent) ---
-        const boxCount = 40; // More boxes
+        const boxCount = 30; // Reduced from 40 for performance
         const boxes: THREE.Mesh[] = [];
         const boxGeo = new THREE.PlaneGeometry(step * 0.95, step * 0.95);
 

@@ -48,7 +48,7 @@ const UniqueClockIcon = () => (
   </div>
 );
 
-const HeaderClock = () => {
+const HeaderClock = React.memo(() => {
   const [time, setTime] = React.useState(new Date());
 
   React.useEffect(() => {
@@ -78,7 +78,7 @@ const HeaderClock = () => {
       </div>
     </div>
   );
-};
+});
 
 export function Header() {
   const { user, logout, isAuthenticated } = useAuth();

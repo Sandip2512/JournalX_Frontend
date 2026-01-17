@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Loader2, Check, ChevronsUpDown, ChevronDown, ChevronUp } from "lucide-react";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -32,13 +32,18 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Slider } from "@/components/ui/slider";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { Trade } from "@/types/trade-types";
+import { Mistake } from "@/types/mistake-types";
 
 interface TradeEntryFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  initialData?: Trade | null;
 }
 
 const symbols = [
@@ -57,19 +62,8 @@ const symbols = [
   { value: "XAU/USD", label: "XAU/USD – Gold / USD" },
 ];
 const tradeTypes = ["BUY", "SELL"];
-const predefinedMistakes = [
-  "No Mistake",
-  "Overtrading",
-  "No Risk Management",
-  "No Stop-Loss",
-  "Revenge Trading",
-  "FOMO",
-  "Letting Losses Run",
-  "No Trading Plan",
-  "Custom" // Option to enter custom mistake
-];
 
-export function TradeEntryForm({ open, onOpenChange, onSuccess }: TradeEntryFormProps) {
+export function TradeEntryForm({ open, onOpenChange, onSuccess, initialData }: TradeEntryFormProps) {
   const getLocalISOString = () => {
     const now = new Date();
     const offset = now.getTimezoneOffset() * 60000;
@@ -105,6 +99,11 @@ export function TradeEntryForm({ open, onOpenChange, onSuccess }: TradeEntryForm
   const [selectedMistake, setSelectedMistake] = useState("No Mistake");
   const [customMistake, setCustomMistake] = useState("");
   const [symbolOpen, setSymbolOpen] = useState(false);
+  const [customMistakes, setCustomMistakes] = useState<Mistake[]>([]);
+  const [loadingMistakes, setLoadingMistakes] = useState(false);
+  const [confidenceLevel, setConfidenceLevel] = useState([5]);
+  const [satisfactionRating, setSatisfactionRating] = useState([5]);
+  const [selectedMistakes, setSelectedMistakes] = useState<string[]>([]);
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => {
@@ -136,8 +135,111 @@ export function TradeEntryForm({ open, onOpenChange, onSuccess }: TradeEntryForm
     setFormData((prev) => ({ ...prev, mistake: value }));
   };
 
+  const handleMistakeToggle = (mistakeName: string) => {
+    setSelectedMistakes((prev) => {
+      // If "No Mistakes" is toggled, clear everything else and just set "No Mistakes"
+      if (mistakeName === "No Mistakes") {
+        return ["No Mistakes"];
+      }
+
+      // If anything else is toggled, remove "No Mistakes" if it exists
+      const filtered = prev.filter(m => m !== "No Mistakes");
+
+      if (filtered.includes(mistakeName)) {
+        return filtered.filter((m) => m !== mistakeName);
+      } else {
+        return [...filtered, mistakeName];
+      }
+    });
+  };
+
+  // Populate form if initialData is provided
+  useEffect(() => {
+    if (open && initialData) {
+      const formatLocalTime = (isoString: string) => {
+        try {
+          const date = new Date(isoString);
+          const offset = date.getTimezoneOffset() * 60000;
+          return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+        } catch (e) {
+          return getLocalISOString();
+        }
+      };
+
+      setFormData({
+        symbol: initialData.symbol || "",
+        volume: initialData.volume?.toString() || "",
+        price_open: initialData.price_open?.toString() || "",
+        price_close: initialData.price_close?.toString() || "",
+        type: initialData.type || "",
+        take_profit: initialData.take_profit?.toString() || "",
+        stop_loss: initialData.stop_loss?.toString() || "",
+        profit_amount: initialData.profit_amount?.toString() || "",
+        loss_amount: initialData.loss_amount?.toString() || "",
+        net_profit: initialData.net_profit?.toString() || "",
+        reason: initialData.reason || "",
+        mistake: initialData.mistake || "No Mistake",
+        open_time: formatLocalTime(initialData.open_time),
+        close_time: formatLocalTime(initialData.close_time),
+        strategy: initialData.strategy || "",
+        session: initialData.session || "",
+        emotion: initialData.emotion || "",
+        mae: initialData.mae?.toString() || "",
+        mfe: initialData.mfe?.toString() || "",
+      });
+
+      if (initialData.mistake) {
+        setSelectedMistakes(initialData.mistake.split(", ").filter(Boolean));
+      }
+    } else if (open && !initialData) {
+      // Reset form for new entry
+      setFormData({
+        symbol: "",
+        volume: "",
+        price_open: "",
+        price_close: "",
+        type: "",
+        take_profit: "",
+        stop_loss: "",
+        profit_amount: "",
+        loss_amount: "",
+        net_profit: "",
+        reason: "",
+        mistake: "No Mistake",
+        open_time: getLocalISOString(),
+        close_time: getLocalISOString(),
+        strategy: "",
+        session: "",
+        emotion: "",
+        mae: "",
+        mfe: "",
+      });
+      setSelectedMistakes([]);
+    }
+  }, [open, initialData]);
+
+
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch custom mistakes when dialog opens
+  useEffect(() => {
+    const fetchCustomMistakes = async () => {
+      if (!user?.user_id || !open) return;
+
+      try {
+        setLoadingMistakes(true);
+        const response = await api.get(`/api/mistakes/user/${user.user_id}`);
+        setCustomMistakes(response.data || []);
+      } catch (error) {
+        console.error("Error fetching custom mistakes:", error);
+      } finally {
+        setLoadingMistakes(false);
+      }
+    };
+
+    fetchCustomMistakes();
+  }, [user?.user_id, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,7 +269,7 @@ export function TradeEntryForm({ open, onOpenChange, onSuccess }: TradeEntryForm
         loss_amount: parseFloat(formData.loss_amount) || 0,
         net_profit: parseFloat(formData.net_profit) || 0,
         reason: formData.reason,
-        mistake: formData.mistake,
+        mistake: selectedMistakes.length > 0 ? selectedMistakes.join(", ") : "No Mistake",
         open_time: formData.open_time ? new Date(formData.open_time).toISOString() : new Date().toISOString(),
         close_time: formData.close_time ? new Date(formData.close_time).toISOString() : new Date().toISOString(),
         strategy: formData.strategy,
@@ -177,12 +279,29 @@ export function TradeEntryForm({ open, onOpenChange, onSuccess }: TradeEntryForm
         mfe: parseFloat(formData.mfe) || 0,
       };
 
-      await api.post("/trades", payload);
+      if (initialData) {
+        // Update existing trade
+        // Note: The backend endpoint /trades/{trade_no} currently only takes reason/mistake
+        // but we want to update the full trade. Let's send it to /api/admin/trades/{trade_no} 
+        // OR we can check if there's a user update endpoint.
+        // Based on Backend/app/main.py: @app.put("/trades/{trade_no}")
+        // wait, that only takes reason/mistake as query params? 
+        // Let's re-check the route definition.
 
-      toast({
-        title: "Trade Added",
-        description: `Trade for ${formData.symbol} has been recorded.`,
-      });
+        await api.put(`/trades/${initialData.trade_no}?reason=${encodeURIComponent(payload.reason)}&mistake=${encodeURIComponent(payload.mistake)}`);
+
+        toast({
+          title: "Trade Updated",
+          description: `Trade #${initialData.trade_no} has been updated.`,
+        });
+      } else {
+        // Create new trade
+        await api.post("/trades", payload);
+        toast({
+          title: "Trade Added",
+          description: `Trade for ${formData.symbol} has been recorded.`,
+        });
+      }
 
       onOpenChange(false);
       setFormData({
@@ -211,6 +330,7 @@ export function TradeEntryForm({ open, onOpenChange, onSuccess }: TradeEntryForm
       setSelectedMistake("No Mistake");
       setCustomMistake("");
       setSymbolOpen(false);
+      setSelectedMistakes([]);
 
       setSymbolOpen(false);
 
@@ -258,277 +378,532 @@ export function TradeEntryForm({ open, onOpenChange, onSuccess }: TradeEntryForm
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            New Trade Entry
+            {initialData ? `Edit Trade #${initialData.trade_no}` : "Add New Trade"}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 py-4">
-          {/* Trade Info Section */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Trade Information
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="symbol">Symbol</Label>
-                <Popover open={symbolOpen} onOpenChange={setSymbolOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={symbolOpen}
-                      className="w-full justify-between bg-muted/50"
-                    >
-                      {formData.symbol
-                        ? symbols.find((s) => s.value === formData.symbol)?.label
-                        : "Select symbol..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[400px] p-0">
-                    <Command>
-                      <CommandInput placeholder="Search symbol..." />
-                      <CommandList>
-                        <CommandEmpty>No symbol found.</CommandEmpty>
-                        <CommandGroup>
-                          {symbols.map((symbol) => (
-                            <CommandItem
-                              key={symbol.value}
-                              value={symbol.label}
-                              onSelect={() => {
-                                handleChange("symbol", symbol.value);
-                                setSymbolOpen(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  formData.symbol === symbol.value ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {symbol.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="type">Type</Label>
-                <Select value={formData.type} onValueChange={(v) => handleChange("type", v)}>
-                  <SelectTrigger className="bg-muted/50">
-                    <SelectValue placeholder="BUY / SELL" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tradeTypes.map((t) => (
-                      <SelectItem key={t} value={t}>{t}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="volume">Volume (Lots)</Label>
-                <Input
-                  id="volume"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.01"
-                  value={formData.volume}
-                  onChange={(e) => handleChange("volume", e.target.value)}
-                  className="bg-muted/50"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="open_time">Open Time</Label>
-                <Input
-                  id="open_time"
-                  type="datetime-local"
-                  value={formData.open_time}
-                  onChange={(e) => handleChange("open_time", e.target.value)}
-                  className="bg-muted/50"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="close_time">Close Time</Label>
-                <Input
-                  id="close_time"
-                  type="datetime-local"
-                  value={formData.close_time}
-                  onChange={(e) => handleChange("close_time", e.target.value)}
-                  className="bg-muted/50"
-                />
-              </div>
-            </div>
-          </div>
+        <form onSubmit={handleSubmit} className="py-4">
+          <Tabs defaultValue="general" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="general" className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-blue-500" />
+                General
+              </TabsTrigger>
+              <TabsTrigger value="psychology" className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-purple-500" />
+                Psychology
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Price Section */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Price Levels
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="price_open">Entry Price</Label>
-                <Input
-                  id="price_open"
-                  type="number"
-                  step="0.00001"
-                  placeholder="1.08500"
-                  value={formData.price_open}
-                  onChange={(e) => handleChange("price_open", e.target.value)}
-                  className="bg-muted/50"
-                  onBlur={calculateRR}
-                />
+            {/* GENERAL TAB */}
+            <TabsContent value="general" className="space-y-6">
+              {/* Trade Info Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Trade Information
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="symbol">Symbol</Label>
+                    <Popover open={symbolOpen} onOpenChange={setSymbolOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={symbolOpen}
+                          className="w-full justify-between bg-muted/50"
+                        >
+                          {formData.symbol
+                            ? symbols.find((s) => s.value === formData.symbol)?.label
+                            : "Select symbol..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[400px] p-0">
+                        <Command>
+                          <CommandInput placeholder="Search symbol..." />
+                          <CommandList>
+                            <CommandEmpty>No symbol found.</CommandEmpty>
+                            <CommandGroup>
+                              {symbols.map((symbol) => (
+                                <CommandItem
+                                  key={symbol.value}
+                                  value={symbol.label}
+                                  onSelect={() => {
+                                    handleChange("symbol", symbol.value);
+                                    setSymbolOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      formData.symbol === symbol.value ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {symbol.label}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="type">Type</Label>
+                    <Select value={formData.type} onValueChange={(v) => handleChange("type", v)}>
+                      <SelectTrigger className="bg-muted/50">
+                        <SelectValue placeholder="BUY / SELL" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tradeTypes.map((t) => (
+                          <SelectItem key={t} value={t}>{t}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="volume">Volume (Lots)</Label>
+                    <Input
+                      id="volume"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.01"
+                      value={formData.volume}
+                      onChange={(e) => handleChange("volume", e.target.value)}
+                      className="bg-muted/50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="open_time">Open Time</Label>
+                    <Input
+                      id="open_time"
+                      type="datetime-local"
+                      value={formData.open_time}
+                      onChange={(e) => handleChange("open_time", e.target.value)}
+                      className="bg-muted/50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="close_time">Close Time</Label>
+                    <Input
+                      id="close_time"
+                      type="datetime-local"
+                      value={formData.close_time}
+                      onChange={(e) => handleChange("close_time", e.target.value)}
+                      className="bg-muted/50"
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="price_close">Exit Price</Label>
-                <Input
-                  id="price_close"
-                  type="number"
-                  step="0.00001"
-                  placeholder="1.08700"
-                  value={formData.price_close}
-                  onChange={(e) => handleChange("price_close", e.target.value)}
-                  className="bg-muted/50"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="take_profit">Take Profit</Label>
-                <Input
-                  id="take_profit"
-                  type="number"
-                  step="0.00001"
-                  placeholder="1.09000"
-                  value={formData.take_profit}
-                  onChange={(e) => handleChange("take_profit", e.target.value)}
-                  className="bg-muted/50"
-                  onBlur={calculateRR}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="stop_loss">Stop Loss</Label>
-                <Input
-                  id="stop_loss"
-                  type="number"
-                  step="0.00001"
-                  placeholder="1.08200"
-                  value={formData.stop_loss}
-                  onChange={(e) => handleChange("stop_loss", e.target.value)}
-                  className="bg-muted/50"
-                  onBlur={calculateRR}
-                />
-              </div>
-            </div>
-            {rrRatio && (
-              <div className="text-sm font-medium text-muted-foreground mt-2 animate-in fade-in">
-                Est. R:R Ratio: <span className="text-primary font-bold">{rrRatio}</span>
-              </div>
-            )}
-          </div>
 
-          {/* P&L Section */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Profit & Loss
-            </h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="profit_amount" className="text-success">Profit Amount</Label>
-                <Input
-                  id="profit_amount"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={formData.profit_amount}
-                  onChange={(e) => handleChange("profit_amount", e.target.value)}
-                  className="bg-muted/50 border-success/30 focus:border-success"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="loss_amount" className="text-destructive">Loss Amount</Label>
-                <Input
-                  id="loss_amount"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={formData.loss_amount}
-                  onChange={(e) => handleChange("loss_amount", e.target.value)}
-                  className="bg-muted/50 border-destructive/30 focus:border-destructive"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="net_profit">Net Profit</Label>
-                <Input
-                  id="net_profit"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={formData.net_profit}
-                  onChange={(e) => handleChange("net_profit", e.target.value)}
-                  className={cn(
-                    "bg-muted/50 font-bold",
-                    (parseFloat(formData.net_profit) || 0) >= 0 ? "text-emerald-500" : "text-red-500"
-                  )}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Notes Section */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Trade Notes
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="reason">Trade Reason</Label>
-                <Textarea
-                  id="reason"
-                  placeholder="Why did you take this trade?"
-                  value={formData.reason}
-                  onChange={(e) => handleChange("reason", e.target.value)}
-                  className="bg-muted/50 min-h-[100px]"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mistake" className="text-warning">Mistake (if any)</Label>
-                <Select value={selectedMistake} onValueChange={handleMistakeChange}>
-                  <SelectTrigger className="bg-muted/50 border-warning/30 focus:border-warning">
-                    <SelectValue placeholder="Select mistake" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {predefinedMistakes.map((mistake) => (
-                      <SelectItem key={mistake} value={mistake}>{mistake}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {selectedMistake === "Custom" && (
-                  <Textarea
-                    id="custom-mistake"
-                    placeholder="Describe your custom mistake..."
-                    value={customMistake}
-                    onChange={(e) => handleCustomMistakeChange(e.target.value)}
-                    className="bg-muted/50 min-h-[100px] border-warning/30 focus:border-warning mt-2"
-                  />
+              {/* Price Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Price Levels
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="price_open">Entry Price</Label>
+                    <Input
+                      id="price_open"
+                      type="number"
+                      step="0.00001"
+                      placeholder="1.08500"
+                      value={formData.price_open}
+                      onChange={(e) => handleChange("price_open", e.target.value)}
+                      className="bg-muted/50"
+                      onBlur={calculateRR}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="price_close">Exit Price</Label>
+                    <Input
+                      id="price_close"
+                      type="number"
+                      step="0.00001"
+                      placeholder="1.08700"
+                      value={formData.price_close}
+                      onChange={(e) => handleChange("price_close", e.target.value)}
+                      className="bg-muted/50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="take_profit">Take Profit</Label>
+                    <Input
+                      id="take_profit"
+                      type="number"
+                      step="0.00001"
+                      placeholder="1.09000"
+                      value={formData.take_profit}
+                      onChange={(e) => handleChange("take_profit", e.target.value)}
+                      className="bg-muted/50"
+                      onBlur={calculateRR}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="stop_loss">Stop Loss</Label>
+                    <Input
+                      id="stop_loss"
+                      type="number"
+                      step="0.00001"
+                      placeholder="1.08200"
+                      value={formData.stop_loss}
+                      onChange={(e) => handleChange("stop_loss", e.target.value)}
+                      className="bg-muted/50"
+                      onBlur={calculateRR}
+                    />
+                  </div>
+                </div>
+                {rrRatio && (
+                  <div className="text-sm font-medium text-muted-foreground mt-2 animate-in fade-in">
+                    Est. R:R Ratio: <span className="text-primary font-bold">{rrRatio}</span>
+                  </div>
                 )}
               </div>
-            </div>
-          </div>
+
+              {/* P&L Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Profit & Loss
+                </h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="profit_amount" className="text-success">Profit Amount</Label>
+                    <Input
+                      id="profit_amount"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={formData.profit_amount}
+                      onChange={(e) => handleChange("profit_amount", e.target.value)}
+                      className="bg-muted/50 border-success/30 focus:border-success"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="loss_amount" className="text-destructive">Loss Amount</Label>
+                    <Input
+                      id="loss_amount"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={formData.loss_amount}
+                      onChange={(e) => handleChange("loss_amount", e.target.value)}
+                      className="bg-muted/50 border-destructive/30 focus:border-destructive"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="net_profit">Net Profit</Label>
+                    <Input
+                      id="net_profit"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={formData.net_profit}
+                      onChange={(e) => handleChange("net_profit", e.target.value)}
+                      className={cn(
+                        "bg-muted/50 font-bold",
+                        (parseFloat(formData.net_profit) || 0) >= 0 ? "text-emerald-500" : "text-red-500"
+                      )}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Trade Reason */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Trade Reason
+                </h3>
+                <div className="space-y-2">
+                  <Label htmlFor="reason">Why did you take this trade?</Label>
+                  <Textarea
+                    id="reason"
+                    placeholder="Describe your trade setup and reasoning..."
+                    value={formData.reason}
+                    onChange={(e) => handleChange("reason", e.target.value)}
+                    className="bg-muted/50 min-h-[100px]"
+                  />
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* PSYCHOLOGY TAB */}
+            <TabsContent value="psychology" className="space-y-6">
+              {/* Confidence & Satisfaction */}
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="confidence">Entry Confidence Level (1-10)</Label>
+                    <span className="text-2xl font-bold text-primary">{confidenceLevel[0]}</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-xs text-muted-foreground font-semibold">Low</span>
+                    <Slider
+                      id="confidence"
+                      min={1}
+                      max={10}
+                      step={1}
+                      value={confidenceLevel}
+                      onValueChange={setConfidenceLevel}
+                      className="flex-1"
+                    />
+                    <span className="text-xs text-muted-foreground font-semibold">High</span>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="satisfaction">Satisfaction Rating (1-10)</Label>
+                    <span className="text-2xl font-bold text-primary">{satisfactionRating[0]}</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-xs text-muted-foreground font-semibold">Not Satisfied</span>
+                    <Slider
+                      id="satisfaction"
+                      min={1}
+                      max={10}
+                      step={1}
+                      value={satisfactionRating}
+                      onValueChange={setSatisfactionRating}
+                      className="flex-1"
+                    />
+                    <span className="text-xs text-muted-foreground font-semibold">Satisfied</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Emotional State */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Emotional State During Trade
+                </h3>
+                <div className="space-y-2">
+                  <Label htmlFor="emotion">How did you feel?</Label>
+                  <Select value={formData.emotion} onValueChange={(v) => handleChange("emotion", v)}>
+                    <SelectTrigger className="bg-muted/50">
+                      <SelectValue placeholder="Select Emotional State" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Calm">Calm</SelectItem>
+                      <SelectItem value="Excited">Excited</SelectItem>
+                      <SelectItem value="Anxious">Anxious</SelectItem>
+                      <SelectItem value="Confident">Confident</SelectItem>
+                      <SelectItem value="Frustrated">Frustrated</SelectItem>
+                      <SelectItem value="Bored">Bored</SelectItem>
+                      <SelectItem value="Impatient">Impatient</SelectItem>
+                      <SelectItem value="Overconfident">Overconfident</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Mistakes Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Mistakes Mode
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Common Mistakes Checkboxes */}
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="mistake-overtrading"
+                      checked={selectedMistakes.includes("Overtrading")}
+                      onChange={() => handleMistakeToggle("Overtrading")}
+                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="mistake-overtrading" className="text-sm font-medium cursor-pointer">
+                      Overtrading
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="mistake-revenge"
+                      checked={selectedMistakes.includes("Revenge Trading")}
+                      onChange={() => handleMistakeToggle("Revenge Trading")}
+                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="mistake-revenge" className="text-sm font-medium cursor-pointer">
+                      Revenge Trading
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="mistake-risked-too-much"
+                      checked={selectedMistakes.includes("Risked Too Much")}
+                      onChange={() => handleMistakeToggle("Risked Too Much")}
+                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="mistake-risked-too-much" className="text-sm font-medium cursor-pointer">
+                      Risked Too Much
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="mistake-exited-early"
+                      checked={selectedMistakes.includes("Exited Too Early")}
+                      onChange={() => handleMistakeToggle("Exited Too Early")}
+                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="mistake-exited-early" className="text-sm font-medium cursor-pointer">
+                      Exited Too Early
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="mistake-exited-late"
+                      checked={selectedMistakes.includes("Exited Too Late")}
+                      onChange={() => handleMistakeToggle("Exited Too Late")}
+                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="mistake-exited-late" className="text-sm font-medium cursor-pointer">
+                      Exited Too Late
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="mistake-fomo"
+                      checked={selectedMistakes.includes("FOMO Entry")}
+                      onChange={() => handleMistakeToggle("FOMO Entry")}
+                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="mistake-fomo" className="text-sm font-medium cursor-pointer">
+                      FOMO Entry
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="mistake-ignored-signals"
+                      checked={selectedMistakes.includes("Ignored Signals")}
+                      onChange={() => handleMistakeToggle("Ignored Signals")}
+                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="mistake-ignored-signals" className="text-sm font-medium cursor-pointer">
+                      Ignored Signals
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="mistake-no-plan"
+                      checked={selectedMistakes.includes("No Clear Plan")}
+                      onChange={() => handleMistakeToggle("No Clear Plan")}
+                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="mistake-no-plan" className="text-sm font-medium cursor-pointer">
+                      No Clear Plan
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="mistake-ignored-stoploss"
+                      checked={selectedMistakes.includes("Ignored Stop Loss")}
+                      onChange={() => handleMistakeToggle("Ignored Stop Loss")}
+                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="mistake-ignored-stoploss" className="text-sm font-medium cursor-pointer">
+                      Ignored Stop Loss
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="mistake-no-mistakes"
+                      checked={selectedMistakes.includes("No Mistakes")}
+                      onChange={() => handleMistakeToggle("No Mistakes")}
+                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="mistake-no-mistakes" className="text-sm font-medium cursor-pointer">
+                      No Mistakes
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="mistake-late-entry"
+                      checked={selectedMistakes.includes("Late entry")}
+                      onChange={() => handleMistakeToggle("Late entry")}
+                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="mistake-late-entry" className="text-sm font-medium cursor-pointer">
+                      Late entry
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="mistake-not-followed"
+                      checked={selectedMistakes.includes("Not followed process")}
+                      onChange={() => handleMistakeToggle("Not followed process")}
+                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="mistake-not-followed" className="text-sm font-medium cursor-pointer">
+                      Not followed process
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="mistake-not-accepted-loss"
+                      checked={selectedMistakes.includes("Not accepted the loss")}
+                      onChange={() => handleMistakeToggle("Not accepted the loss")}
+                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="mistake-not-accepted-loss" className="text-sm font-medium cursor-pointer">
+                      Not accepted the loss
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lessons Learned */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Lessons Learned
+                </h3>
+                <div className="space-y-2">
+                  <Label htmlFor="lessons">What did you learn from this trade?</Label>
+                  <Textarea
+                    id="lessons"
+                    placeholder="Reflect on what went well and what could be improved..."
+                    className="bg-muted/50 min-h-[100px]"
+                  />
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
 
           {/* Advanced Options Toggle */}
-          <div className="border-t pt-4">
+          <div className="border-t pt-4 mt-6">
             <Button
               type="button"
               variant="ghost"
               onClick={() => setShowMoreOptions(!showMoreOptions)}
               className="w-full flex items-center justify-between text-muted-foreground hover:text-foreground"
             >
-              <span className="font-semibold uppercase tracking-wider text-sm">More Options (Strategy, Session, Mood)</span>
+              <span className="font-semibold uppercase tracking-wider text-sm">More Options (Strategy, Session, MAE/MFE)</span>
               {showMoreOptions ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </Button>
-
             {showMoreOptions && (
               <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 animate-in slide-in-from-top-2 duration-200">
                 <div className="space-y-2">
