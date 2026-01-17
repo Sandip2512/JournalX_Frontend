@@ -8,33 +8,35 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import ProtectedAdminRoute from "./components/layout/ProtectedAdminRoute";
 import { LoadingScreen } from "./components/LoadingScreen";
-// Lazy load pages for Suspense
-const Landing = React.lazy(() => import("./pages/Landing"));
-const Index = React.lazy(() => import("./pages/Index"));
-const Trades = React.lazy(() => import("./pages/Trades"));
-const Analytics = React.lazy(() => import("./pages/Analytics"));
-const Mistakes = React.lazy(() => import("./pages/Mistakes"));
-const Leaderboard = React.lazy(() => import("./pages/Leaderboard"));
-const Settings = React.lazy(() => import("./pages/Settings"));
-const Profile = React.lazy(() => import("./pages/Profile"));
-const Goals = React.lazy(() => import("./pages/Goals"));
-const DisciplineDiary = React.lazy(() => import("./pages/DisciplineDiary"));
-const TradersDiary = React.lazy(() => import("./pages/TradersDiary"));
-const Community = React.lazy(() => import("./pages/Community"));
-const TradersLounge = React.lazy(() => import("./pages/TradersLounge"));
-const BrokerConnections = React.lazy(() => import("./pages/BrokerConnections"));
-const NotFound = React.lazy(() => import("./pages/NotFound"));
-const Login = React.lazy(() => import("./pages/Login"));
-const Register = React.lazy(() => import("./pages/Register"));
+import { lazyWithRetry } from "./lib/lazy-with-retry";
+
+// Lazy load pages with retry logic for production stability
+const Landing = lazyWithRetry(() => import("./pages/Landing"));
+const Index = lazyWithRetry(() => import("./pages/Index"));
+const Trades = lazyWithRetry(() => import("./pages/Trades"));
+const Analytics = lazyWithRetry(() => import("./pages/Analytics"));
+const Mistakes = lazyWithRetry(() => import("./pages/Mistakes"));
+const Leaderboard = lazyWithRetry(() => import("./pages/Leaderboard"));
+const Settings = lazyWithRetry(() => import("./pages/Settings"));
+const Profile = lazyWithRetry(() => import("./pages/Profile"));
+const Goals = lazyWithRetry(() => import("./pages/Goals"));
+const DisciplineDiary = lazyWithRetry(() => import("./pages/DisciplineDiary"));
+const TradersDiary = lazyWithRetry(() => import("./pages/TradersDiary"));
+const Community = lazyWithRetry(() => import("./pages/Community"));
+const TradersLounge = lazyWithRetry(() => import("./pages/TradersLounge"));
+const BrokerConnections = lazyWithRetry(() => import("./pages/BrokerConnections"));
+const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
+const Login = lazyWithRetry(() => import("./pages/Login"));
+const Register = lazyWithRetry(() => import("./pages/Register"));
 
 // Admin Pages
-const AdminDashboard = React.lazy(() => import("./pages/AdminDashboard"));
-const UserManagement = React.lazy(() => import("./pages/admin/UserManagement"));
-const TradeManagement = React.lazy(() => import("./pages/admin/TradeManagement"));
-const SystemLogs = React.lazy(() => import("./pages/admin/SystemLogs"));
-const Announcements = React.lazy(() => import("./pages/admin/Announcements"));
-const AdminAnalytics = React.lazy(() => import("./pages/admin/AdminAnalytics"));
-const Sales = React.lazy(() => import("./pages/admin/Sales"));
+const AdminDashboard = lazyWithRetry(() => import("./pages/AdminDashboard"));
+const UserManagement = lazyWithRetry(() => import("./pages/admin/UserManagement"));
+const TradeManagement = lazyWithRetry(() => import("./pages/admin/TradeManagement"));
+const SystemLogs = lazyWithRetry(() => import("./pages/admin/SystemLogs"));
+const Announcements = lazyWithRetry(() => import("./pages/admin/Announcements"));
+const AdminAnalytics = lazyWithRetry(() => import("./pages/admin/AdminAnalytics"));
+const Sales = lazyWithRetry(() => import("./pages/admin/Sales"));
 
 import { ThemeProvider } from "./context/ThemeContext";
 
