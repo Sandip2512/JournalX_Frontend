@@ -60,7 +60,7 @@ const Mistakes = () => {
       console.error("Error fetching mistake data:", error);
       toast({
         title: "Error",
-        description: "Failed to load mistake data",
+        description: `Failed to load mistake data: ${error.response?.data?.detail || error.message || 'Unknown Error'}`,
         variant: "destructive",
       });
     } finally {
