@@ -43,11 +43,11 @@ const getImpactColor = (impact: string) => {
 export function MistakesTable({ mistakes, onEdit, onDelete }: MistakesTableProps) {
     if (mistakes.length === 0) {
         return (
-            <div className="glass-card-premium p-12 text-center rounded-3xl border border-white/5 bg-gradient-to-b from-white/5 to-transparent">
-                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+            <div className="glass-card-premium p-12 text-center rounded-3xl border border-border dark:border-white/5 bg-gradient-to-b from-card to-transparent dark:from-white/5">
+                <div className="w-16 h-16 rounded-full bg-muted dark:bg-white/5 flex items-center justify-center mx-auto mb-4">
                     <span className="text-2xl">✨</span>
                 </div>
-                <p className="text-lg font-bold text-white mb-2">No custom mistakes yet</p>
+                <p className="text-lg font-bold text-foreground dark:text-white mb-2">No custom mistakes yet</p>
                 <p className="text-muted-foreground">
                     Click "New Mistake" to start tracking your trading errors.
                 </p>
@@ -105,7 +105,7 @@ export function MistakesTable({ mistakes, onEdit, onDelete }: MistakesTableProps
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
-                        className="grid grid-cols-12 gap-4 px-6 py-5 items-center rounded-2xl bg-card dark:bg-[#0f172a]/40 border border-border/50 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-500/30 hover:bg-slate-50/80 dark:hover:bg-[#0f172a]/80 backdrop-blur-md transition-all duration-300 group hover:shadow-[0_4px_20px_rgba(0,0,0,0.02)] dark:hover:shadow-[0_0_20px_rgba(59,130,246,0.1)] hover:scale-[1.01]"
+                        className="grid grid-cols-12 gap-4 px-6 py-5 items-center rounded-2xl bg-card dark:bg-[#0f172a]/40 border border-border/50 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-500/30 hover:bg-muted/50 dark:hover:bg-[#0f172a]/80 backdrop-blur-md transition-all duration-300 group hover:shadow-[0_4px_20px_rgba(0,0,0,0.02)] dark:hover:shadow-[0_0_20px_rgba(59,130,246,0.1)] hover:scale-[1.01]"
                     >
                         <div className="col-span-3 flex items-center gap-4 pl-2">
                             <div className={`w-3 h-3 rounded-full shadow-[0_0_8px_currentColor] ${mistake.category === 'Psychological' ? 'text-pink-500 bg-pink-500' :

@@ -101,6 +101,8 @@ export default {
       boxShadow: {
         glow: "0 0 20px hsl(var(--primary) / 0.3)",
         "glow-success": "0 0 20px hsl(var(--success) / 0.3)",
+        "glow-blue": "0 0 20px rgba(59, 130, 246, 0.5)",
+        "glow-cyan": "0 0 20px rgba(6, 182, 212, 0.5)",
       },
     },
   },

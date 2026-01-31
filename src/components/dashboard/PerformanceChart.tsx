@@ -18,7 +18,7 @@ interface PerformanceChartProps {
     } | null;
 }
 
-export function PerformanceChart({ analyticsData }: PerformanceChartProps) {
+export function PerformanceChart({ analyticsData, className }: PerformanceChartProps & { className?: string }) {
     const [period, setPeriod] = React.useState<string>("1M");
     const { theme } = useTheme();
 
@@ -156,11 +156,14 @@ export function PerformanceChart({ analyticsData }: PerformanceChartProps) {
     const off = getGradientOffset();
 
     return (
-        <div className="glass-card-premium p-6 rounded-2xl relative overflow-hidden h-full min-h-[350px] animate-fade-up transition-all duration-300" style={{ animationDelay: "0.1s" }}>
+        <div className={cn(
+            "glass-card-premium card-glow-blue p-6 rounded-2xl relative overflow-hidden h-full min-h-[350px] animate-fade-up transition-all duration-300",
+            className
+        )} style={{ animationDelay: "0.1s" }}>
             {/* Ambient Glow */}
             <div className={cn(
                 "absolute -top-20 -right-20 w-64 h-64 rounded-full blur-[100px] opacity-20 transition-colors duration-500 pointer-events-none",
-                isPositive ? "bg-emerald-500" : "bg-red-500"
+                isPositive ? "bg-emerald-500" : "bg-primary"
             )} />
             {/* Header Content */}
             <div className="flex justify-between items-start mb-6 relative z-10">
@@ -210,12 +213,16 @@ export function PerformanceChart({ analyticsData }: PerformanceChartProps) {
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={chartData} margin={{ top: 10, right: 40, left: 0, bottom: 0 }}>
                             <defs>
+                                <filter id="lineGlow" x="-20%" y="-20%" width="140%" height="140%">
+                                    <feGaussianBlur stdDeviation="3" result="blur" />
+                                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                </filter>
                                 <linearGradient id="splitColor" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset={off} stopColor="#10b981" stopOpacity={0.15} />
+                                    <stop offset={off} stopColor="#3b82f6" stopOpacity={0.15} />
                                     <stop offset={off} stopColor="#ef4444" stopOpacity={0.15} />
                                 </linearGradient>
                                 <linearGradient id="splitStroke" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset={off} stopColor="#10b981" stopOpacity={1} />
+                                    <stop offset={off} stopColor="#3b82f6" stopOpacity={1} />
                                     <stop offset={off} stopColor="#ef4444" stopOpacity={1} />
                                 </linearGradient>
                             </defs>
@@ -241,7 +248,7 @@ export function PerformanceChart({ analyticsData }: PerformanceChartProps) {
                                         fill={payload.value >= chartData[0].value ? '#10b981' : '#ef4444'}
                                         dx={10}
                                     >
-                                        ${(payload.value / 1000).toFixed(1)}K
+                                        ${payload.value.toLocaleString()}
                                     </text>
                                 )}
                                 width={50}
@@ -280,15 +287,18 @@ export function PerformanceChart({ analyticsData }: PerformanceChartProps) {
                                 type="monotone"
                                 dataKey="value"
                                 stroke="url(#splitStroke)"
-                                strokeWidth={3}
+                                strokeWidth={4}
                                 fill="url(#splitColor)"
+                                filter="url(#lineGlow)"
                                 activeDot={({ cx, cy, payload }) => (
                                     <circle
                                         cx={cx}
                                         cy={cy}
-                                        r={5}
-                                        fill={payload.value >= chartData[0].value ? "#10b981" : "#ef4444"}
-                                        stroke="none"
+                                        r={6}
+                                        fill={payload.value >= chartData[0].value ? "#3b82f6" : "#ef4444"}
+                                        stroke="#fff"
+                                        strokeWidth={2}
+                                        className="animate-pulse"
                                     />
                                 )}
                                 animationDuration={1000}

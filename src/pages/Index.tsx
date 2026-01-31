@@ -1,7 +1,7 @@
-import { Header } from "@/components/layout/Header";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate } from "react-router-dom";
+import UserLayout from "@/components/layout/UserLayout";
 
 const Index = () => {
   const { user } = useAuth();
@@ -11,10 +11,9 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen">
-      <Header />
+    <UserLayout>
       <Dashboard />
-    </div>
+    </UserLayout>
   );
 };
 

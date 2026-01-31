@@ -1,4 +1,4 @@
-import { Header } from "@/components/layout/Header";
+import UserLayout from "@/components/layout/UserLayout";
 import { Plug, Plus, RefreshCw, Trash2, CheckCircle, XCircle, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,8 +40,7 @@ const BrokerConnections = () => {
   };
 
   return (
-    <div className="min-h-screen">
-      <Header />
+    <UserLayout>
       <main className="container mx-auto px-4 lg:px-6 py-8 max-w-4xl">
         {/* Page Header */}
         <div className="space-y-2 mb-8 opacity-0 animate-fade-up">
@@ -62,7 +61,7 @@ const BrokerConnections = () => {
             {connectedBrokers.map((broker, i) => (
               <div
                 key={broker.id}
-                className="glass-card p-6 border-l-4 border-l-success opacity-0 animate-fade-up"
+                className="glass-card-premium p-6 border-l-4 border-l-success opacity-0 animate-fade-up border-border dark:border-white/10"
                 style={{ animationDelay: `${0.1 + i * 0.05}s` }}
               >
                 <div className="flex flex-col lg:flex-row lg:items-center gap-4">
@@ -115,7 +114,7 @@ const BrokerConnections = () => {
             {availableBrokers.map((broker, i) => (
               <div
                 key={broker.id}
-                className="glass-card p-6 cursor-pointer hover:border-primary/50 transition-all opacity-0 animate-fade-up"
+                className="glass-card-premium p-6 cursor-pointer hover:border-primary/50 transition-all opacity-0 animate-fade-up border-border dark:border-white/10"
                 style={{ animationDelay: `${0.2 + i * 0.05}s` }}
               >
                 <div className="flex items-start gap-4">
@@ -136,7 +135,7 @@ const BrokerConnections = () => {
         </div>
 
         {/* API Key Section */}
-        <div className="mt-8 glass-card p-6 opacity-0 animate-fade-up" style={{ animationDelay: "0.4s" }}>
+        <div className="mt-8 glass-card-premium p-6 opacity-0 animate-fade-up border-border dark:border-white/10" style={{ animationDelay: "0.4s" }}>
           <h3 className="font-semibold mb-4">Manual API Connection</h3>
           <p className="text-sm text-muted-foreground mb-4">
             Can't find your broker? You can manually connect using API credentials.
@@ -147,7 +146,7 @@ const BrokerConnections = () => {
           </Button>
         </div>
       </main>
-    </div>
+    </UserLayout>
   );
 };
 

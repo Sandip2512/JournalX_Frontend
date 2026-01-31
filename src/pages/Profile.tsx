@@ -1,6 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { Header } from "@/components/layout/Header";
-import { User, Save, CreditCard, Download, History, Sparkles, FileText, Loader2, RotateCw, Trash2 } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import UserLayout from "@/components/layout/UserLayout";
+import {
+    User, Save, CreditCard, Download, History, Sparkles, FileText,
+    Loader2, RotateCw, Trash2, ShieldCheck, Activity, Target,
+    Settings, Lock, Wallet, Edit3, Globe, DollarSign, Clock,
+    Zap, AlertTriangle, Scale, Repeat
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,20 +13,40 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import ReportGenerationModal from "@/components/profile/ReportGenerationModal";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 const Profile = () => {
     const { user, login, token } = useAuth();
 
+    // Standard profile fields
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [mobileNumber, setMobileNumber] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
+    const [username, setUsername] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Trading Rules & Preferences fields
+    const [maxRisk, setMaxRisk] = useState(2.0);
+    const [maxTrades, setMaxTrades] = useState(5);
+    const [maxDailyLoss, setMaxDailyLoss] = useState(4.5);
+    const [maxLosingStreak, setMaxLosingStreak] = useState(3);
+    const [rrRatio, setRrRatio] = useState("1:2");
+    const [sessions, setSessions] = useState<string[]>([]);
+    const [pairs, setPairs] = useState<string[]>([]);
+    const [currency, setCurrency] = useState("USD");
+    const [timezone, setTimezone] = useState("UTC");
+
+    // Existing feature states
     const [subscription, setSubscription] = useState<any>(null);
     const [transactions, setTransactions] = useState<any[]>([]);
     const [isBillingLoading, setIsBillingLoading] = useState(true);
     const [reports, setReports] = useState<any[]>([]);
     const [isReportsLoading, setIsReportsLoading] = useState(true);
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [stats, setStats] = useState<any>(null);
+    const [isStatsLoading, setIsStatsLoading] = useState(true);
 
     useEffect(() => {
         if (user) {
@@ -29,26 +54,35 @@ const Profile = () => {
             setLastName(user.last_name || "");
             // @ts-ignore
             setMobileNumber(user.mobile_number || "");
+            setUsername(user.username || user.email?.split('@')[0] || "");
+
+            // Initialize new fields
+            setMaxRisk(user.max_risk_per_trade ?? 2.0);
+            setMaxTrades(user.max_daily_trades ?? 5);
+            setMaxDailyLoss(user.daily_loss_limit ?? 4.5);
+            setMaxLosingStreak(user.max_losing_streak ?? 3);
+            setRrRatio(user.risk_reward_ratio || "1:2");
+            setSessions(user.preferred_sessions || []);
+            setPairs(user.favorite_pairs || []);
+            setCurrency(user.currency || "USD");
+            setTimezone(user.timezone || "UTC");
+
             fetchBillingData();
             fetchReports();
+            fetchUserStats();
         }
     }, [user]);
 
-    // Polling for pending reports
-    useEffect(() => {
-        const hasPending = reports.some(r => r.status === 'pending');
-        let interval: NodeJS.Timeout;
-
-        if (hasPending) {
-            interval = setInterval(() => {
-                fetchReports();
-            }, 3000); // Poll every 3 seconds
+    const fetchUserStats = async () => {
+        try {
+            const res = await api.get(`/trades/stats/user/${user.user_id}`);
+            setStats(res.data);
+        } catch (e) {
+            console.error("Error fetching stats:", e);
+        } finally {
+            setIsStatsLoading(false);
         }
-
-        return () => {
-            if (interval) clearInterval(interval);
-        };
-    }, [reports]);
+    };
 
     const fetchReports = async (showInitialLoading = false) => {
         if (showInitialLoading) setIsReportsLoading(true);
@@ -75,6 +109,54 @@ const Profile = () => {
             console.error("Error fetching billing data:", error);
         } finally {
             setIsBillingLoading(false);
+        }
+    };
+
+    const handleSave = async (silent = false) => {
+        if (!user) return;
+
+        if (!silent) setIsSaving(true);
+        try {
+            const updateData = {
+                first_name: firstName,
+                last_name: lastName,
+                mobile_number: mobileNumber,
+                username: username,
+                max_risk_per_trade: maxRisk,
+                max_daily_trades: maxTrades,
+                daily_loss_limit: maxDailyLoss,
+                max_losing_streak: maxLosingStreak,
+                risk_reward_ratio: rrRatio,
+                preferred_sessions: sessions,
+                favorite_pairs: pairs,
+                currency: currency,
+                timezone: timezone
+            };
+
+            const response = await api.put(`/api/users/profile/${user.user_id}`, updateData);
+
+            if (token && response.data) {
+                const updatedUser = { ...user, ...response.data };
+                login(token, updatedUser);
+            }
+
+            if (!silent) {
+                toast({
+                    title: "Profile Updated",
+                    description: "Your session settings have been saved successfully.",
+                });
+            }
+        } catch (error) {
+            console.error("Error updating profile:", error);
+            if (!silent) {
+                toast({
+                    title: "Update Failed",
+                    description: "Could not update profile. Please try again.",
+                    variant: "destructive"
+                });
+            }
+        } finally {
+            if (!silent) setIsSaving(false);
         }
     };
 
@@ -122,51 +204,6 @@ const Profile = () => {
         }
     };
 
-    const handleSave = async () => {
-        if (!user) return;
-
-        setIsLoading(true);
-        try {
-            const response = await api.put(`/api/users/profile/${user.user_id}`, {
-                first_name: firstName,
-                last_name: lastName,
-                mobile_number: mobileNumber
-            });
-
-            if (token && response.data) {
-                const updatedUser = { ...user, ...response.data };
-                login(token, updatedUser);
-            }
-
-            toast({
-                title: "Profile Updated",
-                description: "Your personal information has been saved.",
-            });
-        } catch (error) {
-            console.error("Error updating profile:", error);
-            toast({
-                title: "Update Failed",
-                description: "Could not update profile. Please try again.",
-                variant: "destructive"
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleCancel = () => {
-        if (user) {
-            setFirstName(user.first_name || "");
-            setLastName(user.last_name || "");
-            // @ts-ignore
-            setMobileNumber(user.mobile_number || "");
-            toast({
-                title: "Changes Reset",
-                description: "Form reset to current profile data."
-            });
-        }
-    };
-
     const handleDeleteReport = async (reportId: string) => {
         if (!window.confirm("Are you sure you want to delete this report? This action cannot be undone.")) return;
 
@@ -188,267 +225,298 @@ const Profile = () => {
         }
     };
 
+    const [activeTab, setActiveTab] = useState("profile");
+
     return (
-        <div className="min-h-screen">
-            <Header />
-            <main className="container mx-auto px-4 lg:px-6 py-8 max-w-4xl">
-                <div className="space-y-2 mb-8 opacity-0 animate-fade-up">
-                    <div className="flex items-center gap-3">
-                        <User className="w-8 h-8 text-primary" />
-                        <h1 className="text-3xl lg:text-4xl font-bold text-foreground">Profile</h1>
+        <UserLayout>
+            <main className="container mx-auto px-4 lg:px-6 py-12 max-w-6xl space-y-8 animate-fade-up">
+                {/* Premium Header */}
+                <div className="glass-card-premium p-8 rounded-[40px] relative overflow-hidden group bg-card dark:bg-[#0c0c0e]">
+                    <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/4 pointer-events-none group-hover:bg-primary/10 transition-colors duration-1000" />
+
+                    <div className="flex flex-col md:flex-row items-center justify-between relative z-10 gap-8">
+                        <div className="flex items-center gap-6">
+                            <div className="relative">
+                                <div className="w-24 h-24 rounded-[32px] bg-gradient-to-br from-primary/20 to-primary/5 p-1">
+                                    <div className="w-full h-full rounded-[28px] bg-muted dark:bg-[#0c0c0e] flex items-center justify-center border border-border dark:border-white/5 overflow-hidden text-foreground dark:text-primary/40">
+                                        <User className="w-10 h-10" />
+                                    </div>
+                                </div>
+                                <button className="absolute -bottom-1 -right-1 w-8 h-8 rounded-2xl bg-primary text-white flex items-center justify-center border-4 border-background dark:border-[#0c0c0e] hover:scale-110 transition-transform shadow-lg">
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+
+                            <div className="space-y-4 text-center md:text-left">
+                                <div className="space-y-1">
+                                    <h1 className="text-3xl font-black text-foreground dark:text-white tracking-tight">{firstName} {lastName}</h1>
+                                    <div className="flex items-center gap-2 text-muted-foreground/60">
+                                        <p className="text-xs font-bold tracking-wider">@{username}</p>
+                                        <span className="text-[10px] opacity-30">•</span>
+                                        <p className="text-[10px] font-black uppercase tracking-widest">Joined {user?.created_at ? new Date(user.created_at).getFullYear() : "2026"}</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2">
+                                    <Badge variant="default" className="bg-primary/20 text-primary border-primary/20 rounded-xl px-3 py-1 text-[10px] font-black uppercase tracking-widest">
+                                        {subscription?.plan_name || 'Free'}
+                                    </Badge>
+                                    <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 rounded-xl px-3 py-1 text-[10px] font-black uppercase tracking-widest gap-1.5">
+                                        <ShieldCheck className="w-3 h-3" /> Verified
+                                    </Badge>
+                                    <Badge variant="outline" className="text-foreground/60 dark:text-white/60 border-border dark:border-white/10 rounded-xl px-3 py-1 text-[10px] font-black uppercase tracking-widest">
+                                        {stats?.total_trades || 0} Trades
+                                    </Badge>
+                                    <Badge variant="outline" className="text-foreground/60 dark:text-white/60 border-border dark:border-white/10 rounded-xl px-3 py-1 text-[10px] font-black uppercase tracking-widest">
+                                        {stats?.win_rate?.toFixed(0) || 0}% Win Rate
+                                    </Badge>
+                                </div>
+                            </div>
+                        </div>
+
+                        <Button
+                            variant="hero"
+                            className="rounded-[20px] px-8 h-12 gap-2 text-[11px] font-black uppercase tracking-widest shadow-[0_0_20px_rgba(11,102,228,0.3)]"
+                            onClick={() => setActiveTab("settings")}
+                        >
+                            <Edit3 className="w-4 h-4" /> Edit Profile
+                        </Button>
                     </div>
-                    <p className="text-muted-foreground">Manage your personal information</p>
                 </div>
 
-                <div className="space-y-8">
-                    <div className="glass-card p-6 overflow-hidden opacity-0 animate-fade-up" style={{ animationDelay: "0.1s" }}>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
-                            <User className="w-5 h-5 text-primary" />
-                            <h2 className="text-lg font-semibold">Personal Details</h2>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <Label htmlFor="firstName">First Name</Label>
-                                <Input
-                                    id="firstName"
-                                    value={firstName}
-                                    onChange={(e) => setFirstName(e.target.value)}
-                                    className="bg-muted/50"
-                                    placeholder="Enter your first name"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="lastName">Last Name</Label>
-                                <Input
-                                    id="lastName"
-                                    value={lastName}
-                                    onChange={(e) => setLastName(e.target.value)}
-                                    className="bg-muted/50"
-                                    placeholder="Enter your last name"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email Address</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    value={user?.email || ""}
-                                    disabled
-                                    className="bg-muted/50 opacity-70 cursor-not-allowed"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="phone">Mobile Number</Label>
-                                <Input
-                                    id="phone"
-                                    type="tel"
-                                    value={mobileNumber}
-                                    onChange={(e) => setMobileNumber(e.target.value)}
-                                    placeholder="+1 (555) 000-0000"
-                                    className="bg-muted/50"
-                                />
-                            </div>
-                        </div>
-                        <div className="flex justify-end gap-4 mt-6">
-                            <Button variant="outline" type="button" onClick={handleCancel}>Cancel</Button>
-                            <Button variant="hero" className="gap-2" onClick={handleSave} disabled={isLoading}>
-                                <Save className="w-4 h-4" />
-                                {isLoading ? "Saving..." : "Save Profile"}
-                            </Button>
-                        </div>
-                    </div>
+                {/* Sub Navigation Tabs */}
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full text-foreground">
+                    <TabsList className="bg-muted/50 dark:bg-white/[0.02] p-1.5 rounded-[22px] border border-border dark:border-white/5 h-auto mb-8 flex-wrap justify-start">
+                        <TabsTrigger value="profile" className="rounded-[18px] px-6 py-3 data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white gap-2 transition-all duration-300 text-muted-foreground hover:text-foreground dark:hover:text-white">
+                            <User className="w-4 h-4" /> <span className="text-[11px] font-black uppercase tracking-widest">Profile</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="reports" className="rounded-[18px] px-6 py-3 data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white gap-2 transition-all duration-300 text-muted-foreground hover:text-foreground dark:hover:text-white">
+                            <FileText className="w-4 h-4" /> <span className="text-[11px] font-black uppercase tracking-widest">Reports</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="mt5" className="rounded-[18px] px-6 py-3 data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white gap-2 transition-all duration-300 text-muted-foreground hover:text-foreground dark:hover:text-white">
+                            <Zap className="w-4 h-4" /> <span className="text-[11px] font-black uppercase tracking-widest">MT5/MT4</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="settings" className="rounded-[18px] px-6 py-3 data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white gap-2 transition-all duration-300 text-muted-foreground hover:text-foreground dark:hover:text-white">
+                            <Settings className="w-4 h-4" /> <span className="text-[11px] font-black uppercase tracking-widest">Settings</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="billing" className="rounded-[18px] px-6 py-3 data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white gap-2 transition-all duration-300 text-muted-foreground hover:text-foreground dark:hover:text-white">
+                            <Wallet className="w-4 h-4" /> <span className="text-[11px] font-black uppercase tracking-widest">Billing</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="security" className="rounded-[18px] px-6 py-3 data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white gap-2 transition-all duration-300 text-muted-foreground hover:text-foreground dark:hover:text-white">
+                            <Lock className="w-4 h-4" /> <span className="text-[11px] font-black uppercase tracking-widest">Security</span>
+                        </TabsTrigger>
+                    </TabsList>
 
-                    <div className="glass-card p-6 overflow-hidden opacity-0 animate-fade-up" style={{ animationDelay: "0.3s" }}>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
-                            <CreditCard className="w-5 h-5 text-primary" />
-                            <h2 className="text-lg font-semibold">Billing & Subscription</h2>
-                        </div>
+                    <TabsContent value="profile" className="space-y-10">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                            {/* AI Report Banner (Pro-Level) */}
+                            <div className="lg:col-span-12 glass-card-premium p-10 rounded-[40px] border-primary/10 bg-gradient-to-br from-primary/5 via-[#0c0c0e] to-transparent relative overflow-hidden group min-h-[200px] flex items-center">
+                                <div className="absolute inset-0 bg-primary/2 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
+                                <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-colors duration-700" />
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                            <div className="p-4 rounded-lg bg-primary/5 border border-primary/10">
-                                <p className="text-sm text-muted-foreground mb-1">Current Plan</p>
-                                <p className="text-xl font-bold capitalize text-primary">{subscription?.plan_name || 'Free'}</p>
+                                <div className="w-full flex flex-col md:flex-row items-center justify-between gap-8 relative z-10 px-4">
+                                    <div className="flex items-center gap-8">
+                                        <div className="w-20 h-20 rounded-[28px] bg-primary/10 flex items-center justify-center border border-primary/20 shadow-[0_0_40px_rgba(11,102,228,0.15)] group-hover:scale-105 transition-transform duration-500">
+                                            <Sparkles className="w-10 h-10 text-primary animate-pulse" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h3 className="text-3xl font-black text-foreground dark:text-white tracking-tighter">AI Analysis Engine</h3>
+                                            <p className="text-xs text-muted-foreground/50 font-bold uppercase tracking-[0.2em]">Personalized behavioral insights and edge discovery</p>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        className="bg-primary hover:bg-primary/90 text-white rounded-2xl px-12 h-14 text-[11px] font-black uppercase tracking-widest shadow-[0_0_30px_rgba(11,102,228,0.3)] transition-all hover:scale-105 active:scale-95 shrink-0"
+                                        onClick={() => subscription?.plan_name === 'Free' ? toast({ title: "Pro Feature", description: "This feature is available for Pro members." }) : setIsReportModalOpen(true)}
+                                    >
+                                        {subscription?.plan_name === 'Free' ? 'Unlock Full Potential' : 'Generate Intelligence Report'}
+                                    </Button>
+                                </div>
                             </div>
-                            <div className="p-4 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
-                                <p className="text-sm text-muted-foreground mb-1">Status</p>
-                                <p className="text-xl font-bold capitalize text-emerald-500">{subscription?.status || 'Active'}</p>
+
+                            {/* Main Performance Bento */}
+                            <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {/* Trading Identity Card */}
+                                <div className="glass-card-premium p-10 rounded-[40px] border border-border dark:border-white/5 flex flex-col justify-between min-h-[280px] bg-card/10 dark:bg-white/[0.01]">
+                                    <div className="flex items-center justify-between">
+                                        <div className="space-y-1.5">
+                                            <h4 className="text-sm font-black text-foreground/40 dark:text-white/40 uppercase tracking-[0.2em]">Efficiency Rating</h4>
+                                            <p className="text-5xl font-black text-foreground dark:text-white tracking-tighter">{stats?.win_rate?.toFixed(0) || 0}%</p>
+                                        </div>
+                                        <div className="w-16 h-16 rounded-[22px] bg-primary/10 flex items-center justify-center border border-primary/20">
+                                            <Activity className="w-8 h-8 text-primary" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-primary shadow-[0_0_15px_rgba(11,102,228,0.6)] transition-all duration-1000"
+                                                style={{ width: `${stats?.win_rate || 0}%` }}
+                                            />
+                                        </div>
+                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                                            <span>Combat Experience</span>
+                                            <span className="text-foreground/60 dark:text-white/60">{stats?.total_trades || 0} Professional Trades</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Operational Parameters Card */}
+                                <div className="glass-card-premium p-10 rounded-[40px] border border-border dark:border-white/5 flex flex-col justify-between min-h-[280px] bg-card/10 dark:bg-white/[0.01]">
+                                    <div className="flex items-center justify-between">
+                                        <div className="space-y-1.5">
+                                            <h4 className="text-sm font-black text-foreground/40 dark:text-white/40 uppercase tracking-[0.2em]">Market Window</h4>
+                                            <p className="text-2xl font-black text-foreground dark:text-white tracking-tight">{timezone}</p>
+                                        </div>
+                                        <div className="w-16 h-16 rounded-[22px] bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                                            <Globe className="w-8 h-8 text-emerald-500" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="flex flex-wrap gap-2">
+                                            {sessions.length > 0 ? sessions.map(s => (
+                                                <Badge key={s} className="bg-emerald-500/10 text-emerald-500 border-none rounded-lg px-4 py-2 text-[9px] font-black uppercase tracking-widest">{s}</Badge>
+                                            )) : <span className="text-[10px] text-muted-foreground/20 font-bold uppercase tracking-widest">Global Market Access</span>}
+                                        </div>
+                                        <p className="text-[9px] text-muted-foreground/30 font-bold uppercase tracking-[0.2em] pt-2">Active Operational Sessions</p>
+                                    </div>
+                                </div>
+
+                                {/* Universe of Assets */}
+                                <div className="md:col-span-2 glass-card-premium p-10 rounded-[40px] border border-border dark:border-white/5 bg-card/10 dark:bg-white/[0.01]">
+                                    <div className="flex items-center gap-4 mb-8">
+                                        <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                                            <Target className="w-6 h-6 text-blue-500" />
+                                        </div>
+                                        <h3 className="text-base font-black text-foreground dark:text-white uppercase tracking-widest">Target Asset Universe</h3>
+                                    </div>
+                                    <div className="flex flex-wrap gap-3">
+                                        {pairs.length > 0 ? pairs.map(p => (
+                                            <div key={p} className="px-6 py-3 bg-muted dark:bg-white/[0.03] border border-border dark:border-white/5 rounded-2xl text-[11px] font-black text-foreground/80 dark:text-white/80 uppercase tracking-widest hover:bg-primary/10 hover:border-primary/30 transition-all cursor-default group/asset">
+                                                {p}
+                                                <span className="ml-2 opacity-0 group-hover/asset:opacity-100 transition-opacity text-primary">•</span>
+                                            </div>
+                                        )) : <p className="text-xs text-muted-foreground/20 font-bold uppercase py-4">Scanning for opportunities...</p>}
+                                    </div>
+                                </div>
                             </div>
-                            <div className="p-4 rounded-lg bg-blue-500/5 border border-blue-500/10">
-                                <p className="text-sm text-muted-foreground mb-1">Renewal Date</p>
-                                <p className="text-xl font-bold">
-                                    {subscription?.renewal_date ? new Date(subscription.renewal_date).toLocaleDateString() : 'N/A'}
-                                </p>
+
+                            {/* Sidebar: Guardrails & Environment */}
+                            <div className="lg:col-span-4 space-y-8">
+                                {/* Guardrails / Rules Card */}
+                                <div className="glass-card-premium p-10 rounded-[40px] border border-border dark:border-white/5 bg-card/10 dark:bg-white/[0.01] h-full space-y-8">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
+                                            <ShieldCheck className="w-6 h-6 text-amber-500" />
+                                        </div>
+                                        <h3 className="text-base font-black text-foreground dark:text-white uppercase tracking-widest">Operational Guardrails</h3>
+                                    </div>
+
+                                    <div className="space-y-8">
+                                        {[
+                                            { label: "Equity Risk", value: `${maxRisk}%`, color: "text-red-500" },
+                                            { label: "Daily Ceiling", value: maxTrades, color: "text-blue-500" },
+                                            { label: "Loss Limit", value: `${maxDailyLoss}%`, color: "text-amber-500" },
+                                            { label: "Sequence Limit", value: maxLosingStreak, color: "text-purple-500" },
+                                        ].map((rule, idx) => (
+                                            <div key={idx} className="flex justify-between items-end border-b border-border dark:border-white/5 pb-4 last:border-0 last:pb-0">
+                                                <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest">{rule.label}</span>
+                                                <span className={cn("text-xl font-black tracking-tight", rule.color)}>{rule.value}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="pt-6">
+                                        <div className="p-4 rounded-2xl bg-muted dark:bg-white/[0.02] border border-border dark:border-white/5 flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <DollarSign className="w-4 h-4 text-emerald-500" />
+                                                <span className="text-[10px] font-black text-foreground/40 dark:text-white/40 uppercase tracking-widest">Environment</span>
+                                            </div>
+                                            <span className="text-sm font-black text-foreground dark:text-white">{currency}</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                    </TabsContent>
 
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-2 mb-2">
-                                <History className="w-4 h-4 text-primary" />
-                                <h3 className="font-medium">Transaction History</h3>
-                            </div>
-                            <div className="w-full rounded-md border overflow-x-auto">
-                                <table className="w-full text-sm min-w-[600px] table-auto">
-                                    <thead className="bg-muted/50 border-b">
-                                        <tr>
-                                            <th className="text-left p-3 font-medium">Invoice #</th>
-                                            <th className="text-left p-3 font-medium">Date</th>
-                                            <th className="text-left p-3 font-medium">Amount</th>
-                                            <th className="text-left p-3 font-medium">Status</th>
-                                            <th className="text-right p-3 font-medium">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {isBillingLoading ? (
-                                            <tr>
-                                                <td colSpan={5} className="p-4 text-center text-muted-foreground">Loading history...</td>
-                                            </tr>
-                                        ) : transactions.length === 0 ? (
-                                            <tr>
-                                                <td colSpan={5} className="p-4 text-center text-muted-foreground">No transactions found.</td>
-                                            </tr>
-                                        ) : (
-                                            transactions.map((tx) => (
-                                                <tr key={tx.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                                                    <td className="p-3 font-medium">{tx.invoice_number}</td>
-                                                    <td className="p-3">{new Date(tx.payment_date).toLocaleDateString()}</td>
-                                                    <td className="p-3 font-semibold">${tx.total_amount?.toFixed(2)}</td>
-                                                    <td className="p-3">
-                                                        <span className={`px-2 py-1 rounded-full text-[10px] uppercase font-bold ${tx.status === 'paid' ? 'bg-emerald-500/10 text-emerald-500' :
-                                                            tx.status === 'failed' ? 'bg-destructive/10 text-destructive' :
-                                                                'bg-muted text-muted-foreground'
-                                                            }`}>
-                                                            {tx.status}
-                                                        </span>
-                                                    </td>
-                                                    <td className="p-3 text-right">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="h-8 w-8 p-0"
-                                                            onClick={() => handleDownloadInvoice(tx.id, tx.invoice_number)}
-                                                        >
-                                                            <Download className="w-4 h-4" />
-                                                        </Button>
-                                                    </td>
-                                                </tr>
-                                            ))
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Performance Reports Section */}
-                    <div className="glass-card p-6 overflow-hidden opacity-0 animate-fade-up" style={{ animationDelay: "0.4s" }}>
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                            <div className="flex items-center gap-3">
-                                <Sparkles className="w-5 h-5 text-primary" />
-                                <h2 className="text-lg font-semibold">Performance Reports</h2>
-                            </div>
-                            <div className="flex items-center gap-2">
+                    <TabsContent value="reports" className="space-y-6">
+                        <div className="glass-card-premium p-8 rounded-[32px] border border-border dark:border-white/5 space-y-6 bg-card/50 dark:bg-card">
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                                        <FileText className="w-5 h-5 text-primary" />
+                                    </div>
+                                    <h3 className="text-lg font-black text-foreground dark:text-white uppercase tracking-wider">Historical Reports</h3>
+                                </div>
                                 <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0"
-                                    onClick={() => fetchReports(true)}
-                                    disabled={isReportsLoading}
-                                >
-                                    <RotateCw className={`w-4 h-4 ${isReportsLoading ? 'animate-spin' : ''}`} />
-                                </Button>
-                                <Button
+                                    className="bg-primary hover:bg-primary/90 text-white rounded-xl px-6 h-10 text-[10px] font-black uppercase tracking-widest"
                                     onClick={() => setIsReportModalOpen(true)}
-                                    className="gap-2"
-                                    size="sm"
                                 >
-                                    <FileText className="w-4 h-4" />
-                                    Generate New Report
+                                    Generate New
                                 </Button>
                             </div>
-                        </div>
 
-                        <div className="space-y-4">
-                            <div className="w-full rounded-md border overflow-x-auto">
-                                <table className="w-full text-sm min-w-[600px] table-auto">
-                                    <thead className="bg-muted/50 border-b">
-                                        <tr>
-                                            <th className="text-left p-3 font-medium">Report Type</th>
-                                            <th className="text-left p-3 font-medium">Date Range</th>
-                                            <th className="text-left p-3 font-medium">Created At</th>
-                                            <th className="text-right p-3 font-medium">Action</th>
+                            <div className="w-full rounded-2xl border border-border dark:border-white/5 overflow-hidden">
+                                <table className="w-full text-sm table-auto border-separate border-spacing-0">
+                                    <thead>
+                                        <tr className="bg-muted/50 dark:bg-white/[0.02]">
+                                            <th className="text-left p-4 font-black uppercase tracking-widest text-[10px] text-muted-foreground/60">Type</th>
+                                            <th className="text-left p-4 font-black uppercase tracking-widest text-[10px] text-muted-foreground/60">Range</th>
+                                            <th className="text-left p-4 font-black uppercase tracking-widest text-[10px] text-muted-foreground/60">Status</th>
+                                            <th className="text-right p-4 font-black uppercase tracking-widest text-[10px] text-muted-foreground/60">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {isReportsLoading ? (
                                             <tr>
-                                                <td colSpan={4} className="p-4 text-center text-muted-foreground">Loading reports...</td>
+                                                <td colSpan={4} className="p-12 text-center text-muted-foreground font-bold text-[11px] uppercase tracking-widest opacity-50">
+                                                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
+                                                    Loading reports...
+                                                </td>
                                             </tr>
                                         ) : reports.length === 0 ? (
                                             <tr>
-                                                <td colSpan={4} className="p-4 text-center text-muted-foreground">No reports generated yet.</td>
+                                                <td colSpan={4} className="p-12 text-center text-muted-foreground font-bold text-[11px] uppercase tracking-widest opacity-50">No reports generated yet</td>
                                             </tr>
                                         ) : (
                                             reports.map((report) => (
-                                                <tr key={report.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                                                    <td className="p-3">
-                                                        <div className="flex flex-col">
-                                                            <span className="capitalize font-medium text-primary">
-                                                                {report.report_type} Report
-                                                            </span>
-                                                            <div className="flex items-center gap-1.5 mt-1">
-                                                                <span className={`w-2 h-2 rounded-full ${report.status === 'completed' ? 'bg-emerald-500' :
-                                                                    report.status === 'failed' ? 'bg-destructive' :
-                                                                        'bg-amber-500 animate-pulse'
-                                                                    }`} />
-                                                                <span className="text-[10px] uppercase font-bold text-muted-foreground">
-                                                                    {report.status}
-                                                                </span>
-                                                            </div>
-                                                        </div>
+                                                <tr key={report.id} className="hover:bg-muted/50 dark:hover:bg-white/[0.02] transition-colors group">
+                                                    <td className="p-4 border-t border-border dark:border-white/5">
+                                                        <span className="capitalize font-black text-foreground dark:text-white tracking-tight">{report.report_type}</span>
                                                     </td>
-                                                    <td className="p-3 text-muted-foreground whitespace-nowrap">
+                                                    <td className="p-4 text-muted-foreground font-bold text-[11px] border-t border-border dark:border-white/5">
                                                         {new Date(report.start_date).toLocaleDateString()} - {new Date(report.end_date).toLocaleDateString()}
                                                     </td>
-                                                    <td className="p-3 text-muted-foreground whitespace-nowrap text-xs">
-                                                        {new Date(report.created_at).toLocaleString()}
+                                                    <td className="p-4 border-t border-border dark:border-white/5">
+                                                        <span className={cn(
+                                                            "px-3 py-1 rounded-[8px] text-[9px] uppercase font-black tracking-widest",
+                                                            report.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500' :
+                                                                report.status === 'failed' ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/10 text-amber-500'
+                                                        )}>
+                                                            {report.status}
+                                                        </span>
                                                     </td>
-                                                    <td className="p-3 text-right">
-                                                        {report.status === 'completed' ? (
-                                                            <div className="flex justify-end gap-2">
+                                                    <td className="p-4 text-right border-t border-border dark:border-white/5">
+                                                        <div className="flex justify-end gap-2">
+                                                            {report.status === 'completed' && (
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="sm"
-                                                                    className="h-8 w-8 p-0"
+                                                                    className="h-9 w-9 p-0 rounded-xl hover:bg-primary/20 hover:text-primary"
                                                                     onClick={() => handleDownloadReport(report.id, report.filename)}
                                                                 >
                                                                     <Download className="w-4 h-4" />
                                                                 </Button>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                                    onClick={() => handleDeleteReport(report.id)}
-                                                                >
-                                                                    <Trash2 className="w-4 h-4" />
-                                                                </Button>
-                                                            </div>
-                                                        ) : report.status === 'pending' ? (
-                                                            <div className="flex justify-end p-2">
-                                                                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                                                            </div>
-                                                        ) : (
-                                                            <div className="flex justify-end items-center gap-2">
-                                                                <span className="text-xs text-destructive">Error</span>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                                    onClick={() => handleDeleteReport(report.id)}
-                                                                >
-                                                                    <Trash2 className="w-4 h-4" />
-                                                                </Button>
-                                                            </div>
-                                                        )}
+                                                            )}
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-9 w-9 p-0 rounded-xl hover:bg-destructive/20 hover:text-destructive"
+                                                                onClick={() => handleDeleteReport(report.id)}
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </Button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))
@@ -457,8 +525,174 @@ const Profile = () => {
                                 </table>
                             </div>
                         </div>
-                    </div>
-                </div>
+                    </TabsContent>
+
+                    <TabsContent value="mt5" className="max-w-xl mx-auto py-12 text-center space-y-6 opacity-30">
+                        <Zap className="w-16 h-16 text-primary/40 mx-auto" />
+                        <div className="space-y-1">
+                            <h3 className="text-xl font-black text-foreground dark:text-white tracking-tight uppercase">MT5/MT4 Integration</h3>
+                            <p className="text-xs text-muted-foreground font-bold tracking-widest">Connect your trading accounts for automated journaling (Coming Soon)</p>
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="settings">
+                        <div className="glass-card-premium p-8 rounded-[32px] border border-border dark:border-white/5 space-y-8 max-w-2xl mx-auto bg-card/50 dark:bg-card">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                                    <User className="w-6 h-6 text-primary" />
+                                </div>
+                                <h3 className="text-xl font-black text-foreground dark:text-white uppercase tracking-tight">Personal Details</h3>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-3">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1" htmlFor="firstName">First Name</Label>
+                                    <Input
+                                        id="firstName"
+                                        value={firstName}
+                                        onChange={(e) => setFirstName(e.target.value)}
+                                        className="bg-muted dark:bg-white/[0.03] border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 focus:border-primary/50 text-foreground dark:text-white font-bold"
+                                        placeholder="Enter your first name"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1" htmlFor="lastName">Last Name</Label>
+                                    <Input
+                                        id="lastName"
+                                        value={lastName}
+                                        onChange={(e) => setLastName(e.target.value)}
+                                        className="bg-muted dark:bg-white/[0.03] border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 focus:border-primary/50 text-foreground dark:text-white font-bold"
+                                        placeholder="Enter your last name"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1" htmlFor="email">Email Address</Label>
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        value={user?.email || ""}
+                                        disabled
+                                        className="bg-muted/50 dark:bg-white/[0.01] border-border dark:border-white/5 h-12 rounded-xl opacity-50 cursor-not-allowed text-foreground/50 dark:text-white/50"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1" htmlFor="phone">Mobile Number</Label>
+                                    <Input
+                                        id="phone"
+                                        type="tel"
+                                        value={mobileNumber}
+                                        onChange={(e) => setMobileNumber(e.target.value)}
+                                        placeholder="+1 (555) 000-0000"
+                                        className="bg-muted dark:bg-white/[0.03] border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 focus:border-primary/50 text-foreground dark:text-white font-bold"
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex justify-end pt-4">
+                                <Button
+                                    variant="hero"
+                                    className="rounded-[18px] px-10 h-12 gap-2 text-[11px] font-black uppercase tracking-widest shadow-[0_0_20px_rgba(11,102,228,0.3)] w-full sm:w-auto"
+                                    onClick={() => handleSave()}
+                                    disabled={isSaving}
+                                >
+                                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                    {isSaving ? "Saving..." : "Save Changes"}
+                                </Button>
+                            </div>
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="billing">
+                        <div className="space-y-8 max-w-4xl mx-auto">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="glass-card-premium p-6 rounded-[24px] bg-primary/10 border border-primary/20">
+                                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">Current Plan</p>
+                                    <p className="text-3xl font-black capitalize text-foreground dark:text-white tracking-tight">{subscription?.plan_name || 'Free'}</p>
+                                </div>
+                                <div className="glass-card-premium p-6 rounded-[24px] bg-emerald-500/10 border border-emerald-500/20">
+                                    <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-2">Status</p>
+                                    <p className="text-3xl font-black capitalize text-foreground dark:text-white tracking-tight">{subscription?.status || 'Active'}</p>
+                                </div>
+                                <div className="glass-card-premium p-6 rounded-[24px] bg-blue-500/10 border border-blue-500/20">
+                                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mb-2">Renewal Date</p>
+                                    <p className="text-3xl font-black text-foreground dark:text-white tracking-tight">
+                                        {subscription?.renewal_date ? new Date(subscription.renewal_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="glass-card-premium p-8 rounded-[32px] border border-white/5 space-y-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                                        <History className="w-5 h-5 text-primary" />
+                                    </div>
+                                    <h3 className="text-lg font-black text-foreground dark:text-white uppercase tracking-wider">Transaction History</h3>
+                                </div>
+
+                                <div className="w-full rounded-2xl border border-border dark:border-white/5 overflow-hidden">
+                                    <table className="w-full text-sm table-auto border-separate border-spacing-0">
+                                        <thead>
+                                            <tr className="bg-muted/50 dark:bg-white/[0.02]">
+                                                <th className="text-left p-4 font-black uppercase tracking-widest text-[10px] text-muted-foreground/60">Invoice #</th>
+                                                <th className="text-left p-4 font-black uppercase tracking-widest text-[10px] text-muted-foreground/60">Date</th>
+                                                <th className="text-left p-4 font-black uppercase tracking-widest text-[10px] text-muted-foreground/60">Amount</th>
+                                                <th className="text-left p-4 font-black uppercase tracking-widest text-[10px] text-muted-foreground/60">Status</th>
+                                                <th className="text-right p-4 font-black uppercase tracking-widest text-[10px] text-muted-foreground/60">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {isBillingLoading ? (
+                                                <tr>
+                                                    <td colSpan={5} className="p-12 text-center text-muted-foreground font-bold text-[11px] uppercase tracking-widest opacity-50">
+                                                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
+                                                        Loading history...
+                                                    </td>
+                                                </tr>
+                                            ) : transactions.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={5} className="p-12 text-center text-muted-foreground font-bold text-[11px] uppercase tracking-widest opacity-50">No transactions recorded</td>
+                                                </tr>
+                                            ) : (
+                                                transactions.map((tx) => (
+                                                    <tr key={tx.id} className="hover:bg-muted/50 dark:hover:bg-white/[0.02] transition-colors group">
+                                                        <td className="p-4 font-black text-foreground dark:text-white tracking-tight border-t border-border dark:border-white/5">{tx.invoice_number}</td>
+                                                        <td className="p-4 text-muted-foreground font-bold text-[11px] border-t border-border dark:border-white/5">{new Date(tx.payment_date).toLocaleDateString()}</td>
+                                                        <td className="p-4 font-black text-foreground dark:text-white tracking-tight border-t border-border dark:border-white/5">${tx.total_amount?.toFixed(2)}</td>
+                                                        <td className="p-4 border-t border-border dark:border-white/5">
+                                                            <span className={cn(
+                                                                "px-3 py-1 bg-muted rounded-[8px] text-[9px] uppercase font-black tracking-widest",
+                                                                tx.status === 'paid' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-destructive/10 text-destructive'
+                                                            )}>
+                                                                {tx.status}
+                                                            </span>
+                                                        </td>
+                                                        <td className="p-4 text-right border-t border-border dark:border-white/5">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-9 w-9 p-0 rounded-xl hover:bg-primary/20 hover:text-primary"
+                                                                onClick={() => { }}
+                                                            >
+                                                                <Download className="w-4 h-4" />
+                                                            </Button>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="security" className="max-w-xl mx-auto py-12 text-center space-y-6 opacity-30">
+                        <Lock className="w-16 h-16 text-primary/40 mx-auto" />
+                        <div className="space-y-1">
+                            <h3 className="text-xl font-black text-foreground dark:text-white uppercase tracking-tight">Security Center</h3>
+                            <p className="text-xs text-muted-foreground font-bold tracking-widest">Enhanced security configurations coming soon</p>
+                        </div>
+                    </TabsContent>
+                </Tabs>
             </main>
 
             <ReportGenerationModal
@@ -466,7 +700,7 @@ const Profile = () => {
                 onClose={() => setIsReportModalOpen(false)}
                 onSuccess={fetchReports}
             />
-        </div>
+        </UserLayout>
     );
 };
 

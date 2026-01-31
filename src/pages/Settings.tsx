@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Header } from "@/components/layout/Header";
+import UserLayout from "@/components/layout/UserLayout";
 import { Settings as SettingsIcon, User, Bell, Shield, Palette, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,8 +74,7 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen">
-      <Header />
+    <UserLayout>
       <main className="container mx-auto px-4 lg:px-6 py-8 max-w-4xl">
         {/* Page Header */}
         <div className="space-y-2 mb-8 opacity-0 animate-fade-up">
@@ -88,7 +87,7 @@ const Settings = () => {
 
         <div className="space-y-8">
           {/* Notifications Section */}
-          <div className="glass-card p-6 opacity-0 animate-fade-up" style={{ animationDelay: "0.1s" }}>
+          <div className="glass-card-premium p-6 opacity-0 animate-fade-up" style={{ animationDelay: "0.1s" }}>
             <div className="flex items-center gap-3 mb-6">
               <Bell className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Notifications</h2>
@@ -112,7 +111,7 @@ const Settings = () => {
           </div>
 
           {/* Preferences Section */}
-          <div className="glass-card p-6 opacity-0 animate-fade-up" style={{ animationDelay: "0.15s" }}>
+          <div className="glass-card-premium p-6 opacity-0 animate-fade-up" style={{ animationDelay: "0.15s" }}>
             <div className="flex items-center gap-3 mb-6">
               <Palette className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Preferences</h2>
@@ -120,7 +119,7 @@ const Settings = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label>Theme</Label>
-                <div className="flex bg-muted/50 p-1 rounded-lg">
+                <div className="flex bg-muted dark:bg-muted/50 p-1 rounded-lg border border-border dark:border-transparent">
                   <Button
                     variant={theme === "light" ? "default" : "ghost"}
                     className="flex-1 h-8 rounded-md"
@@ -140,7 +139,7 @@ const Settings = () => {
               <div className="space-y-2">
                 <Label>Currency</Label>
                 <Select defaultValue="usd">
-                  <SelectTrigger className="bg-muted/50">
+                  <SelectTrigger className="bg-card dark:bg-muted/50 border-border dark:border-transparent">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -154,7 +153,7 @@ const Settings = () => {
               <div className="space-y-2">
                 <Label>Timezone</Label>
                 <Select defaultValue="ist">
-                  <SelectTrigger className="bg-muted/50">
+                  <SelectTrigger className="bg-card dark:bg-muted/50 border-border dark:border-transparent">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -168,7 +167,7 @@ const Settings = () => {
               <div className="space-y-2">
                 <Label>Date Format</Label>
                 <Select defaultValue="dmy">
-                  <SelectTrigger className="bg-muted/50">
+                  <SelectTrigger className="bg-card dark:bg-muted/50 border-border dark:border-transparent">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -181,7 +180,7 @@ const Settings = () => {
               <div className="space-y-2">
                 <Label>Language</Label>
                 <Select defaultValue="en">
-                  <SelectTrigger className="bg-muted/50">
+                  <SelectTrigger className="bg-card dark:bg-muted/50 border-border dark:border-transparent">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -195,7 +194,7 @@ const Settings = () => {
           </div>
 
           {/* Security Section */}
-          <div className="glass-card p-6 opacity-0 animate-fade-up" style={{ animationDelay: "0.2s" }}>
+          <div className="glass-card-premium p-6 opacity-0 animate-fade-up" style={{ animationDelay: "0.2s" }}>
             <div className="flex items-center gap-3 mb-6">
               <Shield className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Security</h2>
@@ -268,7 +267,7 @@ const Settings = () => {
           </div>
         </div>
       </main >
-    </div >
+    </UserLayout>
   );
 };
 

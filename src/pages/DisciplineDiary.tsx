@@ -1,356 +1,69 @@
-import { useState, useEffect } from "react";
-import { Header } from "@/components/layout/Header";
-import { useAuth } from "@/context/AuthContext";
-import api from "@/lib/api";
-import { Loader2, Calendar, TrendingUp, TrendingDown, CheckCircle2, XCircle, Award, Trophy } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import React from "react";
+import UserLayout from "@/components/layout/UserLayout";
+import { ClipboardList, CheckCircle2, AlertCircle, BookOpen } from "lucide-react";
 
-interface DisciplineDay {
-    date: string;
-    followed_loss_limit: boolean;
-    followed_trade_limit: boolean;
-    on_track_profit: boolean;
-    total_trades: number;
-    daily_pnl: number;
-    all_rules_followed: boolean;
-}
-
-interface DisciplineStats {
-    total_days: number;
-    compliant_days: number;
-    violation_days: number;
-    compliance_rate: number;
-    current_streak: number;
-    best_streak: number;
-    worst_streak: number;
-}
-
-interface AchievedGoal {
-    id: string;
-    goal_type: string;
-    target_amount: number;
-    created_at: string;
-    achieved_date: string;
-    final_amount?: number;
-}
-
-export default function DisciplineDiary() {
-    const { user } = useAuth();
-    const navigate = useNavigate();
-    const [loading, setLoading] = useState(true);
-    const [history, setHistory] = useState<DisciplineDay[]>([]);
-    const [stats, setStats] = useState<DisciplineStats | null>(null);
-    const [achievedGoals, setAchievedGoals] = useState<AchievedGoal[]>([]);
-    const [selectedDay, setSelectedDay] = useState<DisciplineDay | null>(null);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            if (user?.user_id) {
-                try {
-                    const [historyRes, statsRes, achievedRes] = await Promise.all([
-                        api.get(`/api/discipline/history/${user.user_id}?days=30`),
-                        api.get(`/api/discipline/stats/${user.user_id}?days=30`),
-                        api.get(`/api/goals/user/${user.user_id}/achieved`)
-                    ]);
-                    setHistory(historyRes.data);
-                    setStats(statsRes.data);
-                    setAchievedGoals(achievedRes.data);
-                } catch (error) {
-                    console.error("Error fetching discipline data", error);
-                } finally {
-                    setLoading(false);
-                }
-            }
-        };
-        fetchData();
-    }, [user?.user_id]);
-
-    if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
-
+const DisciplineDiary = () => {
     return (
-        <div className="min-h-screen bg-background pb-20">
-            <Header />
-            <main className="container mx-auto px-4 lg:px-6 py-8 md:py-12">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-8 opacity-0 animate-fade-up">
-                    <div className="flex items-center gap-3">
-                        <Calendar className="w-8 h-8 text-primary" />
-                        <h1 className="text-3xl font-bold">Discipline Diary</h1>
+        <UserLayout>
+            <div className="container mx-auto px-4 py-8">
+                <div className="flex flex-col gap-8">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                                <ClipboardList className="w-8 h-8" />
+                            </div>
+                            <h1 className="text-3xl font-extrabold text-white">Discipline Diary</h1>
+                        </div>
+                        <p className="text-muted-foreground">Track your psychological state and rule adherence for every session.</p>
                     </div>
-                    <button
-                        onClick={() => navigate('/goals')}
-                        className="px-4 py-2 text-sm bg-muted hover:bg-muted/80 rounded-lg transition-colors"
-                    >
-                        ← Back to Goals
-                    </button>
-                </div>
 
-                {/* Stats Cards */}
-                {stats && (
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 opacity-0 animate-fade-up" style={{ animationDelay: '0.1s' }}>
-                        <div className="glass-card p-6">
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="p-2 bg-primary/10 rounded-lg">
-                                    <TrendingUp className="w-5 h-5 text-primary" />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="glass-card-premium p-8 rounded-3xl border border-border dark:border-white/5 space-y-6">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                                    <CheckCircle2 className="w-6 h-6" />
                                 </div>
-                                <span className="text-sm text-muted-foreground">Compliance Rate</span>
-                            </div>
-                            <div className="text-3xl font-bold">{stats.compliance_rate}%</div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                                {stats.compliant_days}/{stats.compliant_days + stats.violation_days} active days
-                            </div>
-                        </div>
-
-                        <div className="glass-card p-6">
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="p-2 bg-success/10 rounded-lg">
-                                    <CheckCircle2 className="w-5 h-5 text-success" />
+                                <div>
+                                    <h3 className="text-lg font-bold text-foreground dark:text-white">Rule Checklist</h3>
+                                    <p className="text-sm text-muted-foreground">Did you follow your plan today?</p>
                                 </div>
-                                <span className="text-sm text-muted-foreground">Current Streak</span>
                             </div>
-                            <div className="text-3xl font-bold text-success">{stats.current_streak}</div>
-                            <div className="text-xs text-muted-foreground mt-1">days in a row ✅</div>
-                        </div>
 
-                        <div className="glass-card p-6">
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="p-2 bg-warning/10 rounded-lg">
-                                    <Award className="w-5 h-5 text-warning" />
-                                </div>
-                                <span className="text-sm text-muted-foreground">Best Streak</span>
-                            </div>
-                            <div className="text-3xl font-bold text-warning">{stats.best_streak}</div>
-                            <div className="text-xs text-muted-foreground mt-1">personal record 🔥</div>
-                        </div>
-
-                        <div className="glass-card p-6">
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="p-2 bg-destructive/10 rounded-lg">
-                                    <TrendingDown className="w-5 h-5 text-destructive" />
-                                </div>
-                                <span className="text-sm text-muted-foreground">Violations</span>
-                            </div>
-                            <div className="text-3xl font-bold text-destructive">{stats.violation_days}</div>
-                            <div className="text-xs text-muted-foreground mt-1">days with issues</div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Achieved Goals Gallery */}
-                {achievedGoals.length > 0 && (
-                    <div className="mb-8 opacity-0 animate-fade-up" style={{ animationDelay: '0.15s' }}>
-                        <div className="flex items-center gap-2 mb-4">
-                            <Trophy className="w-5 h-5 text-amber-500" />
-                            <h2 className="text-xl font-bold">Hall of Fame</h2>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {achievedGoals.map((goal) => (
-                                <div
-                                    key={goal.id}
-                                    className="relative group overflow-hidden rounded-xl border border-white/5 p-4 transition-all duration-500 hover:scale-[1.02]"
-                                    style={{
-                                        background: "rgba(30, 41, 59, 0.4)",
-                                        backdropFilter: "blur(8px)"
-                                    }}
-                                >
-                                    {/* 3D Prism Glow */}
-                                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
-
-                                    <div className="relative z-10 flex items-center justify-between">
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">
-                                                {goal.goal_type} Achieved
-                                            </span>
-                                            <span className="text-lg font-black text-white tabular-nums">
-                                                ${goal.target_amount.toLocaleString()}
-                                            </span>
-                                        </div>
-                                        <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
-                                            <Trophy className="w-5 h-5" />
-                                        </div>
+                            <div className="space-y-4">
+                                {[
+                                    "Wait for setup to complete",
+                                    "Risk no more than 1% per trade",
+                                    "No revenge trading",
+                                    "Stick to session hours"
+                                ].map((rule, i) => (
+                                    <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-muted dark:bg-white/5 border border-border dark:border-white/5">
+                                        <div className="w-5 h-5 rounded border border-border dark:border-white/20" />
+                                        <span className="text-sm text-foreground/80 dark:text-white/80">{rule}</span>
                                     </div>
-
-                                    <div className="mt-4 flex flex-col gap-1 border-t border-white/5 pt-3">
-                                        <div className="flex items-center justify-between text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
-                                            <span>Period</span>
-                                            <span className="text-white">
-                                                {new Date(goal.created_at).toLocaleDateString()} - {new Date(goal.achieved_date).toLocaleDateString()}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
-                                            <span>Final Result</span>
-                                            <span className="text-emerald-500">
-                                                +${(goal.final_amount || goal.target_amount).toLocaleString()}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Decorative background glow */}
-                                    <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-amber-500/5 blur-3xl rounded-full group-hover:bg-amber-500/10 transition-all duration-700" />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-                <div className="glass-card p-4 opacity-0 animate-fade-up max-w-2xl mx-auto" style={{ animationDelay: '0.2s' }}>
-                    <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-primary" />
-                        Last 30 Days
-                    </h2>
-
-                    {/* Day headers */}
-                    <div className="grid grid-cols-7 gap-1 mb-2">
-                        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-                            <div key={i} className="text-center text-[10px] font-bold text-primary py-1 bg-primary/5 rounded">
-                                {day}
+                                ))}
                             </div>
-                        ))}
-                    </div>
-
-                    {/* Calendar days */}
-                    <div className="grid grid-cols-7 gap-1">
-                        {history.slice().reverse().map((day, index) => {
-                            const date = new Date(day.date);
-                            const isToday = new Date().toDateString() === date.toDateString();
-                            const hasNoTrades = day.total_trades === 0;
-
-                            return (
-                                <div
-                                    key={index}
-                                    className={`
-                                        group relative aspect-square rounded cursor-pointer transition-all duration-200
-                                        ${hasNoTrades
-                                            ? 'bg-muted/20 border border-muted/40 hover:border-muted'
-                                            : day.all_rules_followed
-                                                ? 'bg-gradient-to-br from-success/20 to-success/10 border border-success/40 hover:border-success'
-                                                : 'bg-gradient-to-br from-destructive/20 to-destructive/10 border border-destructive/40 hover:border-destructive'
-                                        }
-                                        ${selectedDay?.date === day.date ? 'ring-1 ring-primary scale-105' : 'hover:scale-105'}
-                                        ${isToday ? 'ring-1 ring-warning' : ''}
-                                    `}
-                                    onClick={() => setSelectedDay(day)}
-                                >
-                                    {/* Content */}
-                                    <div className="relative h-full flex flex-col items-center justify-center gap-0.5">
-                                        {/* Date */}
-                                        <div className={`text-[11px] font-bold ${isToday ? 'text-warning' : hasNoTrades ? 'text-muted-foreground' : ''}`}>
-                                            {date.getDate()}
-                                        </div>
-
-                                        {/* Icon - only show if there are trades */}
-                                        {!hasNoTrades && (
-                                            day.all_rules_followed ? (
-                                                <CheckCircle2 className="w-3.5 h-3.5 text-success" />
-                                            ) : (
-                                                <XCircle className="w-3.5 h-3.5 text-destructive" />
-                                            )
-                                        )}
-                                    </div>
-
-                                    {/* Today indicator */}
-                                    {isToday && (
-                                        <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-warning rounded-full" />
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-
-                    {/* Legend */}
-                    <div className="mt-3 flex items-center justify-center gap-4 p-2 bg-muted/30 rounded text-[10px]">
-                        <div className="flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3 text-success" />
-                            <span>Followed</span>
                         </div>
-                        <div className="flex items-center gap-1">
-                            <XCircle className="w-3 h-3 text-destructive" />
-                            <span>Violated</span>
+
+                        <div className="glass-card-premium p-8 rounded-3xl border border-white/5 space-y-6">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                                    <BookOpen className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-foreground dark:text-white">Psychology Log</h3>
+                                    <p className="text-sm text-muted-foreground">Record your emotions and mindset.</p>
+                                </div>
+                            </div>
+
+                            <div className="h-40 w-full rounded-2xl bg-muted dark:bg-white/5 border border-border dark:border-white/5 p-4 italic text-muted-foreground text-sm">
+                                "Coming soon: A dedicated space to journal your mental state before, during, and after trades..."
+                            </div>
                         </div>
                     </div>
                 </div>
-
-                {/* Day Detail */}
-                {selectedDay && (
-                    <div className="glass-card p-8 mt-6 opacity-0 animate-fade-up" style={{ animationDelay: '0.3s' }}>
-                        <h2 className="text-xl font-semibold mb-6">
-                            {new Date(selectedDay.date).toLocaleDateString('en-US', {
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                            })}
-                        </h2>
-
-                        {selectedDay.total_trades === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-12 text-center animate-fade-up">
-                                <div className="p-4 bg-muted/20 rounded-full mb-4">
-                                    <Calendar className="w-8 h-8 text-muted-foreground" />
-                                </div>
-                                <h3 className="text-xl font-medium text-muted-foreground">No Trades Recorded</h3>
-                                <p className="text-muted-foreground/60 mt-2">
-                                    There is no trading activity recorded for this date.
-                                </p>
-                            </div>
-                        ) : (
-                            <>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div className={`p-4 rounded-lg border-2 ${selectedDay.followed_loss_limit ? 'border-success/30 bg-success/5' : 'border-destructive/30 bg-destructive/5'}`}>
-                                        <div className="flex items-center gap-2 mb-2">
-                                            {selectedDay.followed_loss_limit ? (
-                                                <CheckCircle2 className="w-5 h-5 text-success" />
-                                            ) : (
-                                                <XCircle className="w-5 h-5 text-destructive" />
-                                            )}
-                                            <span className="font-medium">Daily Loss Limit</span>
-                                        </div>
-                                        <div className="text-sm font-bold mt-1">
-                                            P&L: <span className={selectedDay.daily_pnl >= 0 ? "text-emerald-500" : "text-red-500"}>
-                                                {selectedDay.daily_pnl >= 0 ? "+" : ""}${selectedDay.daily_pnl.toFixed(2)}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className={`p-4 rounded-lg border-2 ${selectedDay.followed_trade_limit ? 'border-success/30 bg-success/5' : 'border-destructive/30 bg-destructive/5'}`}>
-                                        <div className="flex items-center gap-2 mb-2">
-                                            {selectedDay.followed_trade_limit ? (
-                                                <CheckCircle2 className="w-5 h-5 text-success" />
-                                            ) : (
-                                                <XCircle className="w-5 h-5 text-destructive" />
-                                            )}
-                                            <span className="font-medium">Trade Limit</span>
-                                        </div>
-                                        <div className="text-sm text-muted-foreground">
-                                            Trades: {selectedDay.total_trades}
-                                        </div>
-                                    </div>
-
-                                    <div className={`p-4 rounded-lg border-2 ${selectedDay.on_track_profit ? 'border-success/30 bg-success/5' : 'border-destructive/30 bg-destructive/5'}`}>
-                                        <div className="flex items-center gap-2 mb-2">
-                                            {selectedDay.on_track_profit ? (
-                                                <CheckCircle2 className="w-5 h-5 text-success" />
-                                            ) : (
-                                                <XCircle className="w-5 h-5 text-destructive" />
-                                            )}
-                                            <span className="font-medium">Profitable Day</span>
-                                        </div>
-                                        <div className="text-sm text-muted-foreground">
-                                            {selectedDay.on_track_profit ? 'Positive' : 'Negative'}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="mt-6 p-4 bg-muted/30 rounded-lg">
-                                    <div className="text-center">
-                                        <span className="text-lg font-semibold">
-                                            Overall: {[selectedDay.followed_loss_limit, selectedDay.followed_trade_limit, selectedDay.on_track_profit].filter(Boolean).length}/3 Rules Followed
-                                        </span>
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                )}
-            </main>
-        </div>
+            </div>
+        </UserLayout>
     );
-}
+};
+
+export default DisciplineDiary;

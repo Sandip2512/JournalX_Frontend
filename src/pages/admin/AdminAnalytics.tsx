@@ -89,17 +89,17 @@ const AdminAnalytics = () => {
         if (active && payload && payload.length) {
             return (
                 <div style={{
-                    backgroundColor: '#0f172a',
-                    border: '1px solid #334155',
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
                     borderRadius: '8px',
                     padding: '12px',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
                 }}>
-                    <p style={{ color: '#ffffff', fontWeight: 'bold', marginBottom: '8px' }}>
+                    <p style={{ color: 'hsl(var(--foreground))', fontWeight: 'bold', marginBottom: '8px' }}>
                         Trader: {label}
                     </p>
                     {payload.map((entry: any, index: number) => (
-                        <p key={index} style={{ color: '#ffffff', margin: '4px 0' }}>
+                        <p key={index} style={{ color: 'hsl(var(--foreground))', margin: '4px 0' }}>
                             <span style={{ color: entry.color }}>{entry.name}</span>: ${entry.value.toFixed(2)}
                         </p>
                     ))}
@@ -225,17 +225,17 @@ const AdminAnalytics = () => {
                                             <Tooltip
                                                 formatter={(value: number) => `$${value.toFixed(2)}`}
                                                 contentStyle={{
-                                                    backgroundColor: '#0f172a',
-                                                    border: '1px solid #334155',
+                                                    backgroundColor: 'hsl(var(--card))',
+                                                    border: '1px solid hsl(var(--border))',
                                                     borderRadius: '8px',
                                                     boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                                                    color: '#ffffff'
+                                                    color: 'hsl(var(--foreground))'
                                                 }}
                                                 labelStyle={{
-                                                    color: '#ffffff'
+                                                    color: 'hsl(var(--foreground))'
                                                 }}
                                                 itemStyle={{
-                                                    color: '#ffffff'
+                                                    color: 'hsl(var(--foreground))'
                                                 }}
                                             />
                                             <Legend

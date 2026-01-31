@@ -262,55 +262,57 @@ const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted, onImageClick, 
         const isDeleting = deletingCommentId === comment.comment_id;
 
         return (
-            <div className={cn("flex gap-3 items-start group/comment", isReply && "pl-8 mt-3")}>
-                <Avatar className={cn("mt-0.5 shrink-0", isReply ? "w-6 h-6" : "w-8 h-8")}>
+            <div className={cn("flex gap-4 items-start group/comment", isReply && "pl-10 mt-4")}>
+                <Avatar className={cn("mt-1 shrink-0 border border-border dark:border-white/5 shadow-xl", isReply ? "w-7 h-7" : "w-10 h-10")}>
                     <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${comment.user_name}`} />
-                    <AvatarFallback className="text-[10px] bg-muted text-muted-foreground">{comment.user_name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback className="text-[10px] bg-muted dark:bg-[#1a1a1a] text-muted-foreground dark:text-slate-400 font-bold">{comment.user_name.substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                    <div className="text-[13px] leading-tight break-words">
-                        <span className="font-semibold text-foreground mr-1.5">{comment.user_name}</span>
-                        <span className="text-foreground/90 font-normal">{comment.content}</span>
+                    <div className="text-[13.5px] leading-relaxed break-words">
+                        <span className="font-black text-foreground dark:text-white mr-2 tracking-tight">{comment.user_name}</span>
+                        <span className="text-muted-foreground dark:text-slate-300 font-medium opacity-90">{comment.content}</span>
                     </div>
 
-                    <div className="flex gap-3 mt-1.5 items-center">
-                        <span className="text-[11px] text-muted-foreground/60 font-medium">
+                    <div className="flex gap-4 mt-2 items-center">
+                        <span className="text-[10px] text-muted-foreground/50 font-black uppercase tracking-widest">
                             {formatShortTime(comment.created_at)}
                         </span>
-                        <span className="text-[11px] text-muted-foreground/60 font-bold">
-                            {comment.like_count > 0 && `${comment.like_count} likes`}
-                        </span>
-                        <span
-                            className="text-[11px] text-muted-foreground/60 font-bold cursor-pointer hover:text-muted-foreground"
+                        {comment.like_count > 0 && (
+                            <span className="text-[10px] text-primary/80 font-black uppercase tracking-widest bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
+                                {comment.like_count} likes
+                            </span>
+                        )}
+                        <button
+                            className="text-[10px] text-muted-foreground/50 font-black uppercase tracking-widest hover:text-primary transition-colors"
                             onClick={() => handleReplyClick(comment)}
                         >
                             Reply
-                        </span>
+                        </button>
 
                         {/* Delete Option for Own Comments */}
                         {isMyComment && (
-                            <span
+                            <button
                                 className={cn(
-                                    "text-[11px] font-bold cursor-pointer transition-colors",
-                                    isDeleting ? "text-destructive" : "text-muted-foreground/60 hover:text-destructive"
+                                    "text-[10px] font-black uppercase tracking-widest transition-colors",
+                                    isDeleting ? "text-red-500" : "text-muted-foreground/40 hover:text-red-500"
                                 )}
                                 onClick={() => !isDeleting && handleDeleteComment(comment.comment_id)}
                             >
                                 {isDeleting ? "Deleting..." : "Delete"}
-                            </span>
+                            </button>
                         )}
                     </div>
                 </div>
 
                 {/* Like Heart Button */}
-                <div className="pt-1.5 pr-1 transition-opacity">
+                <div className="pt-2 pr-1 transition-opacity">
                     <Heart
                         size={comment.user_has_liked ? 14 : 12}
                         className={cn(
                             "cursor-pointer transition-all active:scale-90",
                             comment.user_has_liked
-                                ? "fill-red-500 text-red-500"
-                                : "text-muted-foreground/50 hover:text-red-500 opacity-0 group-hover/comment:opacity-100"
+                                ? "fill-red-500 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]"
+                                : "text-muted-foreground/30 hover:text-red-500 opacity-0 group-hover/comment:opacity-100"
                         )}
                         onClick={() => handlesCommentLike(comment.comment_id, !!comment.user_has_liked)}
                     />
@@ -354,19 +356,20 @@ const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted, onImageClick, 
                     )}
 
                     <div className={cn(
-                        "relative px-4 py-2.5 md:px-5 md:py-3 shadow-sm break-words transition-all duration-200",
+                        "relative px-4 py-3 md:px-6 md:py-4 shadow-xl break-words transition-all duration-300 group-hover:shadow-[0_10px_30px_rgba(0,0,0,0.3)]",
                         isOwnPost
-                            ? "bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-[20px] rounded-tr-sm shadow-md shadow-primary/10"
-                            : "bg-card/80 backdrop-blur-md border border-white/5 text-card-foreground rounded-[20px] rounded-tl-sm shadow-sm hover:bg-card/90 hover:shadow-md"
+                            ? "bg-gradient-to-br from-primary via-primary/90 to-blue-700 text-white rounded-[24px] rounded-tr-sm border border-white/10 shadow-primary/20"
+                            : "glass-card-premium border-border dark:border-white/5 text-foreground dark:text-slate-200 rounded-[24px] rounded-tl-sm hover:shadow-primary/5"
                     )}>
                         {post.image_file_id && (
-                            <div className="mb-3 rounded-xl overflow-hidden bg-black/5 ring-1 ring-black/5 relative z-10">
+                            <div className="mb-4 rounded-2xl overflow-hidden bg-black/20 ring-1 ring-white/10 relative z-10 shadow-2xl">
                                 <img
                                     src={getImageUrl(post.image_file_id)}
                                     alt="Attachment"
-                                    className="w-full h-auto max-h-[400px] object-cover hover:scale-[1.02] transition-transform duration-500 cursor-zoom-in"
+                                    className="w-full h-auto max-h-[420px] object-cover hover:scale-[1.03] transition-transform duration-700 cursor-zoom-in"
                                     onClick={() => onImageClick?.(getImageUrl(post.image_file_id!))}
                                 />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                             </div>
                         )}
                         {isEditing ? (
@@ -374,7 +377,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted, onImageClick, 
                                 <textarea
                                     value={editContent}
                                     onChange={(e) => setEditContent(e.target.value)}
-                                    className="w-full bg-background/50 border border-white/20 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-foreground/50 text-foreground resize-none"
+                                    className="w-full bg-card dark:bg-background/50 border border-border dark:border-white/20 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-foreground/50 text-foreground resize-none"
                                     rows={Math.min(5, editContent.split('\n').length + 1)}
                                     autoFocus
                                 />
@@ -545,8 +548,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted, onImageClick, 
                                                                     className="flex items-center gap-2 cursor-pointer group/line"
                                                                     onClick={() => toggleRepliesInfo(comment.comment_id)}
                                                                 >
-                                                                    <div className="h-[1px] w-8 bg-muted-foreground/30 group-hover/line:bg-muted-foreground/60 transition-colors"></div>
-                                                                    <span className="text-[11px] font-semibold text-muted-foreground/80 group-hover/line:text-muted-foreground transition-colors">
+                                                                    <div className="h-[1px] w-8 bg-border dark:bg-muted-foreground/30 group-hover/line:bg-muted-foreground/60 transition-colors"></div>
+                                                                    <span className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
                                                                         {isExpanded ? "Hide replies" : `View replies (${replies.length})`}
                                                                     </span>
                                                                 </div>

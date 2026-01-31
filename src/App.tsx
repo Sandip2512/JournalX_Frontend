@@ -24,6 +24,8 @@ const DisciplineDiary = lazyWithRetry(() => import("./pages/DisciplineDiary"));
 const TradersDiary = lazyWithRetry(() => import("./pages/TradersDiary"));
 const Community = lazyWithRetry(() => import("./pages/Community"));
 const TradersLounge = lazyWithRetry(() => import("./pages/TradersLounge"));
+const TraderRoom = lazyWithRetry(() => import("./pages/TraderRoom"));
+const Friends = lazyWithRetry(() => import("./pages/Friends"));
 const BrokerConnections = lazyWithRetry(() => import("./pages/BrokerConnections"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 const Login = lazyWithRetry(() => import("./pages/Login"));
@@ -68,11 +70,10 @@ const App = () => (
                   <Route path="/goals" element={<Goals />} />
                   <Route path="/discipline-diary" element={<DisciplineDiary />} />
                   <Route path="/traders-diary" element={<TradersDiary />} />
-                  <Route path="/goals" element={<Goals />} />
-                  <Route path="/discipline-diary" element={<DisciplineDiary />} />
-                  <Route path="/traders-diary" element={<TradersDiary />} />
                   <Route path="/community" element={<Community />} />
                   <Route path="/community/lounge" element={<TradersLounge />} />
+                  <Route path="/trader-room" element={<TraderRoom />} />
+                  <Route path="/friends" element={<Friends />} />
                   <Route path="/broker-connections" element={<BrokerConnections />} />
                 </Route>
 

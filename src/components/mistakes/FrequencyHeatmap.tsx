@@ -98,7 +98,7 @@ export function FrequencyHeatmap({ data }: FrequencyHeatmapProps) {
                                             </TooltipTrigger>
                                             <TooltipContent
                                                 side="top"
-                                                className="glass-card-premium px-3 py-2 rounded-lg shadow-xl border border-white/10"
+                                                className="glass-card-premium px-3 py-2 rounded-lg shadow-xl border border-border dark:border-white/10"
                                             >
                                                 <div className="text-center">
                                                     <p className="text-xs font-bold text-foreground mb-0.5">{formattedDate}</p>

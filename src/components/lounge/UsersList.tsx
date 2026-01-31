@@ -49,8 +49,8 @@ export const UsersList: React.FC<UsersListProps> = ({ className }) => {
     };
 
     return (
-        <div className={cn("w-60 bg-muted/30 border-l border-border/40 flex flex-col h-full", className)}>
-            <div className="p-4 border-b border-border/40 h-14 flex items-center justify-between">
+        <div className={cn("w-60 bg-muted/30 border-l border-border dark:border-border/40 flex flex-col h-full", className)}>
+            <div className="p-4 border-b border-border dark:border-border/40 h-14 flex items-center justify-between">
                 <h2 className="font-bold text-sm tracking-tight text-muted-foreground">Members</h2>
                 <div className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                     {onlineUsers.length}

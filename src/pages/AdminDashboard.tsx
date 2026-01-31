@@ -62,35 +62,37 @@ const AdminDashboard = () => {
 
     return (
         <AdminLayout>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-                <Card className="bg-primary/5 border-primary/10">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8 relative z-10">
+                <Card className="bg-card border-border hover:border-primary/50 transition-all duration-300 card-glow-blue group overflow-hidden">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                        <Users className="h-4 w-4 text-primary" />
+                        <CardTitle className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider group-hover:text-primary transition-colors">Total Users</CardTitle>
+                        <Users className="h-4 w-4 text-primary animate-pulse-glow" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{stats?.total_users}</div>
-                        <p className="text-xs text-muted-foreground">{stats?.new_users_24h} new in last 24h</p>
+                        <div className="text-3xl font-bold text-white text-glow-blue">+{stats?.total_users}</div>
+                        <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                            <span className="text-primary font-bold">1 trades</span> in last 24h
+                        </p>
                     </CardContent>
                 </Card>
-                <Card className="bg-primary/5 border-primary/10">
+                <Card className="bg-card border-border hover:border-green-500/50 transition-all duration-300 group overflow-hidden">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-                        <Activity className="h-4 w-4 text-green-500" />
+                        <CardTitle className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider group-hover:text-green-500 transition-colors">Active Users</CardTitle>
+                        <Activity className="h-4 w-4 text-green-500 drop-shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{stats?.active_users}</div>
-                        <p className="text-xs text-muted-foreground">Currently active accounts</p>
+                        <div className="text-3xl font-bold text-white">+{stats?.active_users}</div>
+                        <p className="text-[10px] text-muted-foreground mt-1">Currently active accounts</p>
                     </CardContent>
                 </Card>
-                <Card className="bg-primary/5 border-primary/10">
+                <Card className="bg-card border-border hover:border-primary/50 transition-all duration-300 group overflow-hidden card-glow-blue">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Trades</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-blue-500" />
+                        <CardTitle className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider group-hover:text-primary transition-colors">Total Trades</CardTitle>
+                        <TrendingUp className="h-4 w-4 text-primary animate-pulse-glow" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{stats?.total_trades}</div>
-                        <p className="text-xs text-muted-foreground">{stats?.trades_24h} trades in last 24h</p>
+                        <div className="text-3xl font-bold text-white text-glow-blue">{stats?.total_trades}</div>
+                        <p className="text-[10px] text-muted-foreground mt-1">Total recorded trades</p>
                     </CardContent>
                 </Card>
             </div>
@@ -127,48 +129,51 @@ const AdminDashboard = () => {
                                         >
                                             <defs>
                                                 <linearGradient id="activityGradient" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
-                                                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1} />
+                                                    <stop offset="5%" stopColor="#0b66e4" stopOpacity={0.8} />
+                                                    <stop offset="95%" stopColor="#0b66e4" stopOpacity={0.05} />
                                                 </linearGradient>
                                                 <filter id="shadow">
-                                                    <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#8b5cf6" floodOpacity="0.5" />
+                                                    <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#0b66e4" floodOpacity="0.8" />
+                                                </filter>
+                                                <filter id="lineGlow">
+                                                    <feGaussianBlur stdDeviation="3" result="blur" />
+                                                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
                                                 </filter>
                                             </defs>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.15} vertical={false} />
                                             <XAxis dataKey="date" hide={true} />
                                             <YAxis hide={true} />
                                             <Tooltip
                                                 contentStyle={{
-                                                    backgroundColor: '#0f172a',
-                                                    border: '1px solid #334155',
-                                                    borderRadius: '8px',
-                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                                                    color: '#ffffff'
+                                                    backgroundColor: 'rgba(11, 11, 14, 0.95)',
+                                                    border: '1px solid rgba(11, 102, 228, 0.3)',
+                                                    borderRadius: '12px',
+                                                    boxShadow: '0 8px 32px rgba(0,0,0,0.8)',
+                                                    color: '#ffffff',
+                                                    backdropFilter: 'blur(8px)'
                                                 }}
-                                                labelStyle={{
-                                                    color: '#ffffff'
-                                                }}
-                                                itemStyle={{
-                                                    color: '#ffffff'
-                                                }}
+                                                labelStyle={{ color: '#ffffff', fontWeight: 'bold' }}
+                                                itemStyle={{ color: '#ffffff' }}
                                             />
                                             <Area
                                                 type="monotone"
                                                 dataKey="trades"
-                                                stroke="#8b5cf6"
-                                                strokeWidth={4}
+                                                stroke="#0b66e4"
+                                                strokeWidth={5}
                                                 fill="url(#activityGradient)"
+                                                filter="url(#shadow)"
                                                 dot={{
-                                                    fill: '#8b5cf6',
+                                                    fill: '#0b66e4',
                                                     strokeWidth: 2,
-                                                    r: 5,
+                                                    r: 4,
                                                     filter: 'url(#shadow)'
                                                 }}
                                                 activeDot={{
-                                                    r: 8,
-                                                    fill: '#a78bfa',
-                                                    stroke: '#8b5cf6',
-                                                    strokeWidth: 3
+                                                    r: 7,
+                                                    fill: '#ffffff',
+                                                    stroke: '#0b66e4',
+                                                    strokeWidth: 3,
+                                                    filter: 'url(#shadow)'
                                                 }}
                                             />
                                         </AreaChart>

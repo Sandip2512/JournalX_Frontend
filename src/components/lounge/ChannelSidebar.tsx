@@ -17,8 +17,8 @@ const channels = [
 
 export const ChannelSidebar: React.FC<ChannelSidebarProps> = ({ className }) => {
     return (
-        <div className={cn("w-60 bg-muted/30 border-r border-border/40 flex flex-col h-full", className)}>
-            <div className="p-4 border-b border-border/40 h-14 flex items-center">
+        <div className={cn("w-60 bg-muted/30 border-r border-border dark:border-border/40 flex flex-col h-full", className)}>
+            <div className="p-4 border-b border-border dark:border-border/40 h-14 flex items-center">
                 <h2 className="font-bold text-sm tracking-tight">Traders Lounge</h2>
             </div>
 

@@ -64,7 +64,7 @@ export function MistakeDialog({ open, onOpenChange, onSubmit, editMistake, userI
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto bg-white dark:bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl p-0 gap-0">
+            <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto bg-white dark:bg-black/40 backdrop-blur-xl border border-border dark:border-white/10 shadow-2xl p-0 gap-0">
                 <div className="p-6">
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-bold">

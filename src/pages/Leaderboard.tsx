@@ -1,19 +1,13 @@
-import { Header } from "@/components/layout/Header";
-import { Trophy, Medal, TrendingUp, Crown, Star, Flame, ArrowUp, ArrowDown, RefreshCw, Filter } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import UserLayout from "@/components/layout/UserLayout";
+import { Trophy, Medal, Crown, ArrowUp, ArrowDown, RefreshCw, Filter, User } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useEffect, useState } from "react";
 import { leaderboardApi } from "@/lib/api";
 import { LeaderboardEntry, SortByMetric, TimePeriod } from "@/types/leaderboard-types";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const Leaderboard = () => {
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>([]);
@@ -45,321 +39,266 @@ const Leaderboard = () => {
     fetchLeaderboard();
   }, [sortBy, timePeriod]);
 
-  // Auto-refresh every 30 seconds
   useEffect(() => {
     if (!autoRefresh) return;
-
-    const interval = setInterval(() => {
-      fetchLeaderboard();
-    }, 30000);
-
+    const interval = setInterval(fetchLeaderboard, 60000);
     return () => clearInterval(interval);
   }, [autoRefresh, sortBy, timePeriod]);
 
   const getInitials = (username: string) => {
-    const names = username.trim().split(' ');
-    if (names.length >= 2) {
-      return `${names[0][0]}${names[1][0]}`.toUpperCase();
-    }
     return username.substring(0, 2).toUpperCase();
-  };
-
-  const getMedalIcon = (rank: number) => {
-    switch (rank) {
-      case 1:
-        return <Crown className="w-6 h-6 text-yellow-500" />;
-      case 2:
-        return <Medal className="w-6 h-6 text-gray-400" />;
-      case 3:
-        return <Medal className="w-6 h-6 text-amber-600" />;
-      default:
-        return null;
-    }
   };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 2,
+      compactDisplay: 'short',
+      maximumFractionDigits: 1
     }).format(value);
   };
 
   const topThree = leaderboardData.slice(0, 3);
-  const restOfLeaderboard = leaderboardData.slice(3);
+  const others = leaderboardData.slice(3);
+
+  const timeOptions = [
+    { label: "Today", value: "daily" as TimePeriod },
+    { label: "This Week", value: "weekly" as TimePeriod },
+    { label: "This Month", value: "monthly" as TimePeriod },
+    { label: "This Year", value: "all_time" as TimePeriod }, // Mapping 'This Year' to 'all_time' for now
+  ];
 
   return (
-    <div className="min-h-screen">
-      <Header />
-      <main className="container mx-auto px-4 lg:px-6 py-8">
-        {/* Page Header */}
-        <div className="space-y-2 mb-8 opacity-0 animate-fade-up">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Trophy className="w-8 h-8 text-yellow-500" />
-              <h1 className="text-3xl lg:text-4xl font-bold text-foreground">Leaderboard</h1>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchLeaderboard}
-              disabled={loading}
-              className="gap-2"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-          </div>
-          <p className="text-muted-foreground">See how you rank against other traders</p>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap gap-4 mb-8 opacity-0 animate-fade-up" style={{ animationDelay: "0.1s" }}>
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Sort by:</span>
-            <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortByMetric)}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="net_profit">Net Profit</SelectItem>
-                <SelectItem value="win_rate">Win Rate</SelectItem>
-                <SelectItem value="total_trades">Total Trades</SelectItem>
-                <SelectItem value="profit_factor">Profit Factor</SelectItem>
-              </SelectContent>
-            </Select>
+    <UserLayout>
+      <main className="max-w-7xl mx-auto px-4 py-6 space-y-8 animate-fade-in text-foreground">
+        {/* Header & Filter Section */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-1">
+            <h1 className="text-4xl font-black tracking-tight text-foreground dark:text-white">Leaderboard</h1>
+            <p className="text-muted-foreground font-medium">Top performing traders this {timeOptions.find(o => o.value === timePeriod)?.label.toLowerCase() || 'week'}</p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Time Period:</span>
-            <Select value={timePeriod} onValueChange={(value) => setTimePeriod(value as TimePeriod)}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all_time">All Time</SelectItem>
-                <SelectItem value="monthly">This Month</SelectItem>
-                <SelectItem value="weekly">This Week</SelectItem>
-                <SelectItem value="daily">Today</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-2 ml-auto">
-            <input
-              type="checkbox"
-              id="auto-refresh"
-              checked={autoRefresh}
-              onChange={(e) => setAutoRefresh(e.target.checked)}
-              className="rounded"
-            />
-            <label htmlFor="auto-refresh" className="text-sm text-muted-foreground cursor-pointer">
-              Auto-refresh (30s)
-            </label>
+          <div className="flex bg-muted/50 dark:bg-[#111114] border border-border dark:border-white/5 p-1 rounded-2xl">
+            {timeOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => setTimePeriod(option.value)}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300",
+                  timePeriod === option.value
+                    ? "bg-white text-black shadow-lg"
+                    : "text-muted-foreground hover:text-white"
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {loading && leaderboardData.length === 0 ? (
-          <div className="flex items-center justify-center p-12 glass-card">
-            <RefreshCw className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        ) : leaderboardData.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-12 glass-card text-center">
-            <div className="p-6 rounded-full bg-primary/10 mb-6">
-              <Trophy className="w-16 h-16 text-primary" />
-            </div>
-            <h2 className="text-2xl font-bold mb-3">No Data Available</h2>
-            <p className="text-muted-foreground max-w-md">
-              No traders have recorded any trades yet. Start trading to appear on the leaderboard!
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* Top 3 Podium */}
-            {/* Top 3 Podium */}
-            {topThree.length > 0 && (
-              <div className="mb-12 opacity-0 animate-fade-up" style={{ animationDelay: "0.2s" }}>
-                <h2 className="text-xl md:text-2xl font-bold mb-6 text-center">Top Performers</h2>
-                <div className="flex items-end justify-center w-full max-w-4xl mx-auto gap-1.5 px-1 md:gap-6">
-                  {/* 2nd Place */}
-                  {topThree[1] && (
-                    <div className={`glass-card p-2 md:p-6 text-center flex-1 min-w-0 transform relative ${topThree[1].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
-                      <div className="flex justify-center mb-1 md:mb-4">
-                        <div className="scale-75 md:scale-100">{getMedalIcon(2)}</div>
-                      </div>
-                      <Avatar className="w-10 h-10 sm:w-12 sm:h-12 md:w-20 md:h-20 mx-auto mb-2 ring-2 ring-gray-400">
-                        <AvatarFallback className="text-xs md:text-lg font-bold bg-gradient-to-br from-gray-300 to-gray-500 text-white">
-                          {getInitials(topThree[1].username)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <h3 className="font-bold text-[10px] sm:text-xs md:text-lg mb-0.5 truncate px-1">{topThree[1].username}</h3>
-                      <p className="text-[8px] md:text-sm text-muted-foreground mb-2">Rank #{topThree[1].rank}</p>
-                      <div className="hidden sm:block space-y-1 md:space-y-2 mt-auto">
-                        <div className="flex justify-between text-[9px] md:text-sm">
-                          <span className="text-muted-foreground">Profit:</span>
-                          <span className={`font-semibold ${topThree[1].net_profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                            {formatCurrency(topThree[1].net_profit)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="sm:hidden font-bold text-[9px] text-emerald-500 truncate">
-                        {formatCurrency(topThree[1].net_profit)}
-                      </div>
-                    </div>
-                  )}
+        {/* Podium Section */}
+        <div className="relative glass-card-premium rounded-[3rem] border border-border dark:border-white/5 p-6 md:p-10 overflow-hidden bg-card/50 dark:bg-[#0c0c0e]">
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute -top-24 -left-24 w-64 h-64 bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
 
-                  {/* 1st Place */}
-                  {topThree[0] && (
-                    <div className={`glass-card p-2.5 md:p-6 text-center flex-1 min-w-0 pb-4 md:pb-6 border-b-4 border-yellow-500/50 shadow-lg shadow-yellow-500/10 ${topThree[0].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
-                      <div className="flex justify-center mb-1 md:mb-4">
-                        <div className="scale-90 md:scale-110">{getMedalIcon(1)}</div>
-                      </div>
-                      <Avatar className="w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 mx-auto mb-2 ring-2 ring-yellow-500 ring-offset-2 ring-offset-background">
-                        <AvatarFallback className="text-sm md:text-xl font-bold bg-gradient-to-br from-yellow-400 to-yellow-600 text-white">
-                          {getInitials(topThree[0].username)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <h3 className="font-bold text-[11px] sm:text-sm md:text-xl mb-0.5 truncate px-1 text-yellow-500">{topThree[0].username}</h3>
-                      <p className="text-[8px] md:text-sm text-muted-foreground mb-2 font-medium">Champion</p>
-                      <div className="hidden sm:block space-y-1 md:space-y-2 mt-auto">
-                        <div className="flex justify-between text-[9px] md:text-sm">
-                          <span className="text-muted-foreground">Profit:</span>
-                          <span className={`font-semibold ${topThree[0].net_profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                            {formatCurrency(topThree[0].net_profit)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="sm:hidden font-bold text-[10px] text-emerald-500 truncate">
-                        {formatCurrency(topThree[0].net_profit)}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 3rd Place */}
-                  {topThree[2] && (
-                    <div className={`glass-card p-2 md:p-6 text-center flex-1 min-w-0 transform relative ${topThree[2].user_id === user?.user_id ? 'ring-2 ring-primary' : ''}`}>
-                      <div className="flex justify-center mb-1 md:mb-4">
-                        <div className="scale-75 md:scale-100">{getMedalIcon(3)}</div>
-                      </div>
-                      <Avatar className="w-10 h-10 sm:w-12 sm:h-12 md:w-20 md:h-20 mx-auto mb-2 ring-2 ring-amber-600">
-                        <AvatarFallback className="text-xs md:text-lg font-bold bg-gradient-to-br from-amber-500 to-amber-700 text-white">
-                          {getInitials(topThree[2].username)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <h3 className="font-bold text-[10px] sm:text-xs md:text-lg mb-0.5 truncate px-1">{topThree[2].username}</h3>
-                      <p className="text-[8px] md:text-sm text-muted-foreground mb-2">Rank #{topThree[2].rank}</p>
-                      <div className="hidden sm:block space-y-1 md:space-y-2 mt-auto">
-                        <div className="flex justify-between text-[9px] md:text-sm">
-                          <span className="text-muted-foreground">Profit:</span>
-                          <span className={`font-semibold ${topThree[2].net_profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                            {formatCurrency(topThree[2].net_profit)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="sm:hidden font-bold text-[9px] text-emerald-500 truncate">
-                        {formatCurrency(topThree[2].net_profit)}
-                      </div>
-                    </div>
-                  )}
-                </div>
+          <div className="flex flex-col md:flex-row items-end justify-center gap-6 md:gap-4 max-w-5xl mx-auto relative z-10">
+            {/* 2nd Place */}
+            {topThree[1] && (
+              <div className="flex-1 w-full order-2 md:order-1 animate-fade-up" style={{ animationDelay: '0.1s' }}>
+                <PodiumCard
+                  entry={topThree[1]}
+                  rank={2}
+                  formatCurrency={formatCurrency}
+                  getInitials={getInitials}
+                  isUser={topThree[1].user_id === user?.user_id}
+                />
               </div>
             )}
 
-            {/* Full Leaderboard Table */}
-            <div className="glass-card overflow-hidden opacity-0 animate-fade-up" style={{ animationDelay: "0.3s" }}>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[800px]">
-                  <thead className="bg-muted/50 border-b">
-                    <tr>
-                      <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold">Rank</th>
-                      <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold">Trader</th>
-                      <th className="px-4 md:px-6 py-3 md:py-4 text-right text-xs md:text-sm font-semibold">Net Profit</th>
-                      <th className="px-4 md:px-6 py-3 md:py-4 text-right text-xs md:text-sm font-semibold">Win Rate</th>
-                      <th className="px-4 md:px-6 py-3 md:py-4 text-right text-xs md:text-sm font-semibold">Total Trades</th>
-                      <th className="px-4 md:px-6 py-3 md:py-4 text-right text-xs md:text-sm font-semibold">Profit Factor</th>
-                      <th className="px-4 md:px-6 py-3 md:py-4 text-right text-xs md:text-sm font-semibold">Best Trade</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y text-xs md:text-sm">
-                    {leaderboardData.map((entry, index) => (
-                      <tr
-                        key={entry.user_id}
-                        className={`hover:bg-muted/30 transition-colors ${entry.user_id === user?.user_id ? 'bg-primary/10 ring-1 ring-primary' : ''
-                          }`}
-                      >
-                        <td className="px-4 md:px-6 py-3 md:py-4">
-                          <div className="flex items-center gap-2">
-                            {entry.rank <= 3 && getMedalIcon(entry.rank)}
-                            <span className="font-semibold">#{entry.rank}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 md:px-6 py-3 md:py-4">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="w-8 h-8 md:w-10 md:h-10">
-                              <AvatarFallback className="text-xs md:text-sm font-semibold">
-                                {getInitials(entry.username)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="font-medium flex items-center gap-2">
-                                {entry.username}
-                                {entry.user_id === user?.user_id && (
-                                  <span className="text-[10px] bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                                    You
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-[10px] md:text-xs text-muted-foreground whitespace-nowrap">
-                                {entry.winning_trades}W / {entry.losing_trades}L
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 md:px-6 py-3 md:py-4 text-right whitespace-nowrap">
-                          <span className={`font-semibold ${entry.net_profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                            {formatCurrency(entry.net_profit)}
-                          </span>
-                        </td>
-                        <td className="px-4 md:px-6 py-3 md:py-4 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <span className="font-medium">{entry.win_rate.toFixed(1)}%</span>
-                            {entry.win_rate >= 50 ? (
-                              <ArrowUp className="w-3 h-3 md:w-4 md:h-4 text-emerald-500" />
-                            ) : (
-                              <ArrowDown className="w-3 h-3 md:w-4 md:h-4 text-red-500" />
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 md:px-6 py-3 md:py-4 text-right font-medium">{entry.total_trades}</td>
-                        <td className="px-4 md:px-6 py-3 md:py-4 text-right">
-                          <span className={`font-medium ${entry.profit_factor >= 1 ? 'text-emerald-500' : 'text-red-500'}`}>
-                            {entry.profit_factor.toFixed(2)}
-                          </span>
-                        </td>
-                        <td className="px-4 md:px-6 py-3 md:py-4 text-right whitespace-nowrap">
-                          <span className="font-medium text-emerald-500">
-                            {formatCurrency(entry.best_trade)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {/* 1st Place */}
+            {topThree[0] && (
+              <div className="flex-1 w-full order-1 md:order-2 scale-105 z-20 animate-fade-up">
+                <PodiumCard
+                  entry={topThree[0]}
+                  rank={1}
+                  formatCurrency={formatCurrency}
+                  getInitials={getInitials}
+                  isUser={topThree[0].user_id === user?.user_id}
+                />
               </div>
-            </div>
+            )}
 
-            {/* Stats Summary */}
-            <div className="mt-8 text-center text-sm text-muted-foreground opacity-0 animate-fade-up" style={{ animationDelay: "0.4s" }}>
-              <p>Showing {leaderboardData.length} trader{leaderboardData.length !== 1 ? 's' : ''}</p>
-              {autoRefresh && <p className="mt-1">Auto-refreshing every 30 seconds</p>}
-            </div>
-          </>
-        )}
+            {/* 3rd Place */}
+            {topThree[2] && (
+              <div className="flex-1 w-full order-3 md:order-3 animate-fade-up" style={{ animationDelay: '0.2s' }}>
+                <PodiumCard
+                  entry={topThree[2]}
+                  rank={3}
+                  formatCurrency={formatCurrency}
+                  getInitials={getInitials}
+                  isUser={topThree[2].user_id === user?.user_id}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Leaderboard Table */}
+        <div className="glass-card-premium rounded-[2.5rem] border border-border dark:border-white/5 overflow-hidden bg-card/30 dark:bg-[#0c0c0e]/50 backdrop-blur-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border dark:border-white/5 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                  <th className="px-4 py-3">RANK</th>
+                  <th className="px-4 py-3">TRADER</th>
+                  <th className="px-4 py-3 text-right">TRADES</th>
+                  <th className="px-4 py-3 text-right">WIN RATE</th>
+                  <th className="px-4 py-3 text-right">PROFIT</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {loading && others.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center">
+                      <RefreshCw className="w-5 h-5 animate-spin text-primary mx-auto" />
+                    </td>
+                  </tr>
+                ) : others.length > 0 ? (
+                  others.map((entry) => (
+                    <tr key={entry.user_id} className={cn(
+                      "group hover:bg-muted/50 dark:hover:bg-white/[0.02] transition-colors",
+                      entry.user_id === user?.user_id && "bg-primary/5 dark:bg-primary/10"
+                    )}>
+                      <td className="px-4 py-3 font-black text-muted-foreground pr-0">#{entry.rank}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-8 h-8 border border-border dark:border-white/10">
+                            <AvatarFallback className="bg-muted dark:bg-white/5 text-[9px] font-bold text-foreground dark:text-white">
+                              {getInitials(entry.username)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-black text-foreground dark:text-white text-xs uppercase">{entry.username}</div>
+                            <div className="text-[9px] font-bold text-muted-foreground">@{entry.username.toLowerCase()}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right font-black text-foreground dark:text-white text-xs">{entry.total_trades}</td>
+                      <td className="px-4 py-3 text-right font-black text-foreground dark:text-white text-xs">{entry.win_rate.toFixed(1)}%</td>
+                      <td className="px-4 py-3 text-right font-black text-emerald-500 text-xs">+{formatCurrency(entry.net_profit)}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-8 py-12 text-center text-muted-foreground font-medium">No more traders yet.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </main>
+    </UserLayout>
+  );
+};
+
+interface PodiumCardProps {
+  entry: LeaderboardEntry;
+  rank: 1 | 2 | 3;
+  formatCurrency: (v: number) => string;
+  getInitials: (n: string) => string;
+  isUser: boolean;
+}
+
+const PodiumCard = ({ entry, rank, formatCurrency, getInitials, isUser }: PodiumCardProps) => {
+  const rankConfig = {
+    1: {
+      icon: Crown,
+      color: "text-amber-500",
+      bg: "bg-amber-500/10",
+      border: "border-amber-500/20",
+      glow: "shadow-[0_0_30px_-10px_rgba(245,158,11,0.2)]",
+      size: "p-4 md:p-5 pt-8 md:pt-10",
+      avatarSize: "w-14 h-14 md:w-16 md:h-16"
+    },
+    2: {
+      icon: Medal,
+      color: "text-slate-400",
+      bg: "bg-slate-400/10",
+      border: "border-slate-400/20",
+      glow: "",
+      size: "p-3 md:p-4 pt-6 md:pt-8",
+      avatarSize: "w-12 h-12 md:w-14 md:h-14"
+    },
+    3: {
+      icon: Medal,
+      color: "text-amber-700",
+      bg: "bg-amber-700/10",
+      border: "border-amber-700/20",
+      glow: "",
+      size: "p-3 md:p-4 pt-6 md:pt-8",
+      avatarSize: "w-12 h-12 md:w-14 md:h-14"
+    },
+  };
+
+  const config = rankConfig[rank];
+
+  return (
+    <div className={cn(
+      "relative group flex flex-col items-center bg-card dark:bg-[#0a0a0c] border rounded-[1.5rem] transition-all duration-500 hover:scale-[1.02]",
+      config.size,
+      "border-border dark:border-white/10",
+      config.glow,
+      isUser && "border-primary/50"
+    )}>
+      {/* Rank Badge */}
+      <div className={cn(
+        "absolute -top-3 px-3 py-1 rounded-full flex items-center gap-1.5 border font-black text-[9px] uppercase tracking-widest",
+        config.bg,
+        config.border,
+        config.color
+      )}>
+        <config.icon className="w-3 h-3" />
+        {rank}{rank === 1 ? 'st' : rank === 2 ? 'nd' : 'rd'}
+      </div>
+
+      {/* Avatar */}
+      <div className="relative mb-3">
+        <div className={cn(
+          "absolute inset-0 rounded-full blur-lg opacity-20",
+          rank === 1 ? "bg-amber-500" : "bg-primary/30"
+        )} />
+        <Avatar className={cn("border-2 border-border dark:border-white/10 ring-2 ring-background dark:ring-black", config.avatarSize)}>
+          <AvatarFallback className="bg-muted dark:bg-[#1a1a1e] text-xs font-black text-foreground dark:text-white">
+            {getInitials(entry.username)}
+          </AvatarFallback>
+        </Avatar>
+      </div>
+
+      {/* Info */}
+      <div className="text-center space-y-2.5 w-full">
+        <div>
+          <h3 className={cn("font-black text-foreground dark:text-white uppercase tracking-tight", rank === 1 ? "text-sm md:text-base" : "text-xs")}>{entry.username}</h3>
+          <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest">@{entry.username.toLowerCase()}</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-1.5 pt-1.5 border-t border-border dark:border-white/5">
+          <div className="text-center">
+            <div className={cn("font-black text-foreground dark:text-white", rank === 1 ? "text-base" : "text-sm")}>{entry.total_trades}</div>
+            <div className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Trades</div>
+          </div>
+          <div className="text-center">
+            <div className={cn("font-black text-foreground dark:text-white", rank === 1 ? "text-base" : "text-sm")}>{entry.win_rate.toFixed(0)}%</div>
+            <div className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Win Rate</div>
+          </div>
+        </div>
+
+        <div className={cn("font-black text-emerald-500 pt-1 tracking-tight", rank === 1 ? "text-xl" : "text-lg")}>
+          +{formatCurrency(entry.net_profit)}
+        </div>
+      </div>
     </div>
   );
 };
 
 export default Leaderboard;
-

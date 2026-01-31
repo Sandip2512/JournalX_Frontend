@@ -1,4 +1,4 @@
-import { Header } from "@/components/layout/Header";
+import UserLayout from "@/components/layout/UserLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,8 @@ import {
   Activity,
   Target,
   AlertCircle,
+  History as HistoryIcon,
+  CheckCircle2,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -149,15 +151,14 @@ const Mistakes = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background relative overflow-hidden">
-        <Header />
+      <UserLayout>
         <div className="flex items-center justify-center h-[calc(100vh-64px)]">
           <div className="relative">
             <div className="w-12 h-12 border-2 border-white/5 border-t-white/40 rounded-full animate-spin relative z-10" />
             <div className="absolute inset-0 blur-2xl bg-purple-500/10 animate-pulse" />
           </div>
         </div>
-      </div>
+      </UserLayout>
     );
   }
 
@@ -168,13 +169,7 @@ const Mistakes = () => {
   const customMistakes = analytics?.customMistakes || [];
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Aurora Background */}
-      <div className="absolute inset-0 aurora-bg pointer-events-none" />
-      <div className="absolute inset-0 bg-grid-white/5 pointer-events-none" />
-
-      <Header />
-
+    <UserLayout>
       <main className="relative z-10 container mx-auto px-4 lg:px-6 py-12 max-w-7xl">
         {/* Page Header */}
         <motion.div
@@ -219,133 +214,135 @@ const Mistakes = () => {
           className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
         >
           {/* Total Mistakes Card */}
-          <Card className="glass-card-premium p-6 rounded-3xl relative overflow-hidden group hover:shadow-[0_0_40px_rgba(236,72,153,0.2)] transition-all duration-500 border-border/50 dark:border-white/5">
+          <Card className="glass-card-premium p-6 rounded-3xl relative overflow-hidden group hover:shadow-[0_20px_40px_rgba(236,72,153,0.15)] transition-all duration-500 border-border dark:border-white/5 bg-card dark:bg-[#0a0a0c]">
             <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 via-transparent to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="absolute -right-12 -top-12 w-48 h-48 bg-pink-500/10 rounded-full blur-3xl group-hover:bg-pink-500/20 transition-all duration-500 animate-pulse-slow" />
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/10 dark:via-white/10 to-transparent pointer-events-none" />
 
-            <div className="relative z-10 space-y-4">
+            <div className="relative z-10 space-y-6">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-pink-600 dark:text-pink-400">
-                  <div className="p-2 rounded-lg bg-pink-500/10 ring-1 ring-pink-500/20 shadow-[0_0_10px_rgba(236,72,153,0.1)]">
-                    <AlertCircle className="w-5 h-5" />
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-2xl bg-pink-500/10 text-pink-400 border border-pink-500/20 shadow-[0_0_15px_rgba(236,72,153,0.1)] group-hover:scale-110 transition-transform duration-500">
+                    <AlertCircle className="w-5 h-5 animate-pulse" />
                   </div>
-                  <span className="font-bold text-sm uppercase tracking-wider">Total Mistakes</span>
+                  <span className="font-black text-[10px] uppercase tracking-[0.25em] text-muted-foreground/50 group-hover:text-pink-400 transition-colors">Total Mistakes</span>
                 </div>
-                <Badge variant="outline" className="bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20 px-2.5 py-0.5 font-bold rounded-lg flex items-center gap-1 shadow-sm">
+                <Badge variant="outline" className="bg-pink-500/10 text-pink-400 border-pink-500/20 px-3 py-1 font-black rounded-full flex items-center gap-1 shadow-inner text-[10px] tracking-widest">
                   <TrendingUp className="w-3 h-3" />
                   24%
                 </Badge>
               </div>
 
               <div className="flex items-end justify-between">
-                <h3 className="text-4xl font-black text-foreground dark:text-white tracking-tight drop-shadow-sm">
+                <h3 className="text-5xl font-black text-foreground dark:text-white tracking-tighter drop-shadow-2xl">
                   {totalMistakes}
                 </h3>
-                <span className="text-sm font-medium text-muted-foreground mb-1">
-                  This Week
+                <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest mb-1.5">
+                  This Period
                 </span>
               </div>
 
-              <div className="relative pt-2">
-                <div className="overflow-hidden h-3 text-xs flex rounded-full bg-slate-100 dark:bg-slate-800 shadow-inner">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: "65%" }}
-                    transition={{ duration: 1.5, ease: "circOut" }}
-                    className="relative shadow-lg shadow-pink-500/20 flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-pink-500 to-rose-600"
-                  >
-                    {/* Hazard Stripes for Negative Metric */}
-                    <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.15)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.15)_50%,rgba(255,255,255,0.15)_75%,transparent_75%,transparent)] bg-[length:10px_10px]" />
-                  </motion.div>
-                </div>
+              <div className="relative h-2.5 w-full bg-pink-900/10 dark:bg-pink-900/20 rounded-full overflow-hidden border border-border dark:border-white/5 shadow-inner">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: "65%" }}
+                  transition={{ duration: 1.5, ease: "circOut" }}
+                  className="h-full bg-gradient-to-r from-pink-600 to-rose-500 relative"
+                >
+                  <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.1)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.1)_50%,rgba(255,255,255,0.1)_75%,transparent_75%,transparent)] bg-[length:20px_20px] animate-shimmer-fast" />
+                </motion.div>
               </div>
             </div>
           </Card>
 
           {/* Most Common Card */}
-          <Card className="glass-card-premium p-6 rounded-3xl relative overflow-hidden group hover:shadow-[0_0_40px_rgba(249,115,22,0.2)] transition-all duration-500 border-border/50 dark:border-white/5">
+          <Card className="glass-card-premium p-6 rounded-3xl relative overflow-hidden group hover:shadow-[0_20px_40px_rgba(249,115,22,0.15)] transition-all duration-500 border-border dark:border-white/5 bg-card dark:bg-[#0a0a0c]">
             <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="absolute -right-12 -top-12 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-500/20 transition-all duration-500 animate-pulse-slow" />
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/10 dark:via-white/10 to-transparent pointer-events-none" />
 
-            <div className="relative z-10 space-y-4">
+            <div className="relative z-10 space-y-6">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
-                  <div className="p-2 rounded-lg bg-orange-500/10 ring-1 ring-orange-500/20 shadow-[0_0_10px_rgba(249,115,22,0.1)]">
-                    <Activity className="w-5 h-5" />
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-2xl bg-orange-500/10 text-orange-400 border border-orange-500/20 shadow-[0_0_15px_rgba(249,115,22,0.1)] group-hover:scale-110 transition-transform duration-500">
+                    <HistoryIcon className="w-5 h-5 animate-pulse" />
                   </div>
-                  <span className="font-bold text-sm uppercase tracking-wider">Most Common</span>
+                  <span className="font-black text-[10px] uppercase tracking-[0.25em] text-muted-foreground/50 group-hover:text-orange-400 transition-colors">Most Common</span>
                 </div>
-                <Badge variant="outline" className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20 px-2.5 py-0.5 font-bold rounded-lg shadow-sm">
-                  {mostCommon?.count || 0} Occurrences
+                <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/20 px-3 py-1 font-black rounded-full text-[10px] tracking-widest shadow-inner">
+                  {mostCommon?.count || 0} Hits
                 </Badge>
               </div>
 
-              <div className="flex items-end justify-between">
-                <h3 className="text-xl font-black text-foreground dark:text-white tracking-tight truncate max-w-[180px]" title={mostCommon?.name}>
+              <div className="space-y-1">
+                <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest opacity-80">Highest Frequency</p>
+                <h3 className="text-2xl font-black text-foreground dark:text-white tracking-tight line-clamp-1 group-hover:text-orange-200 transition-colors" title={mostCommon?.name}>
                   {mostCommon?.name || "None yet"}
                 </h3>
               </div>
 
               <div className="relative pt-2">
-                <div className="overflow-hidden h-3 text-xs flex rounded-full bg-slate-100 dark:bg-slate-800 shadow-inner">
+                <div className="h-2 w-full bg-orange-900/10 dark:bg-orange-900/20 rounded-full overflow-hidden border border-border dark:border-white/5 shadow-inner">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${Math.min(((mostCommon?.count || 0) / (totalMistakes || 1)) * 100, 100)}%` }}
                     transition={{ duration: 1.5, ease: "circOut", delay: 0.1 }}
-                    className="relative shadow-lg shadow-orange-500/20 flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-orange-500 to-amber-600"
+                    className="h-full bg-gradient-to-r from-orange-500 to-amber-600 relative"
                   >
-                    {/* Hazard Stripes for Negative Metric */}
-                    <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.15)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.15)_50%,rgba(255,255,255,0.15)_75%,transparent_75%,transparent)] bg-[length:10px_10px]" />
+                    <div className="absolute inset-x-0 top-0 h-full w-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
                   </motion.div>
                 </div>
-                <div className="flex justify-between text-[10px] font-bold text-muted-foreground mt-1.5 uppercase tracking-wider">
+                <div className="flex justify-between text-[10px] font-black text-muted-foreground/40 mt-2 uppercase tracking-widest">
                   <span>Frequency</span>
-                  <span>{Math.round(((mostCommon?.count || 0) / (totalMistakes || 1)) * 100)}% of Total</span>
+                  <span className="text-orange-400/60">{Math.round(((mostCommon?.count || 0) / (totalMistakes || 1)) * 100)}% of Total</span>
                 </div>
               </div>
             </div>
           </Card>
 
           {/* Improvement Score Card */}
-          <Card className="glass-card-premium p-6 rounded-3xl relative overflow-hidden group hover:shadow-[0_0_40px_rgba(16,185,129,0.2)] transition-all duration-500 border-border/50 dark:border-white/5">
+          <Card className="glass-card-premium p-6 rounded-3xl relative overflow-hidden group hover:shadow-[0_20px_40px_rgba(16,185,129,0.15)] transition-all duration-500 border-border dark:border-white/5 bg-card dark:bg-[#0a0a0c]">
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="absolute -right-12 -top-12 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl group-hover:bg-emerald-500/20 transition-all duration-500 animate-pulse-slow" />
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/10 dark:via-white/10 to-transparent pointer-events-none" />
 
-            <div className="relative z-10 space-y-4">
+            <div className="relative z-10 space-y-6">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                  <div className="p-2 rounded-lg bg-emerald-500/10 ring-1 ring-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
-                    <Target className="w-5 h-5" />
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)] group-hover:scale-110 transition-transform duration-500">
+                    <Target className="w-5 h-5 animate-pulse" />
                   </div>
-                  <span className="font-bold text-sm uppercase tracking-wider">Improvement</span>
+                  <span className="font-black text-[10px] uppercase tracking-[0.25em] text-muted-foreground/50 group-hover:text-emerald-400 transition-colors">Improvement</span>
                 </div>
-                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 px-2.5 py-0.5 font-bold rounded-lg flex items-center gap-1 shadow-sm relative overflow-hidden">
+                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 px-3 py-1 font-black rounded-full flex items-center gap-1 shadow-inner text-[10px] tracking-widest relative overflow-hidden">
                   <TrendingUp className="w-3 h-3" />
                   +12%
-                  <div className="absolute inset-0 bg-white/20 skew-x-12 -translate-x-full animate-[shimmer_2s_infinite]" />
+                  <div className="absolute inset-0 bg-white/10 -translate-x-full animate-[shimmer_2s_infinite]" />
                 </Badge>
               </div>
 
               <div className="flex items-end justify-between">
-                <h3 className="text-4xl font-black text-foreground dark:text-white tracking-tight drop-shadow-sm">
-                  {100 - (improvement || 0)}%
-                </h3>
-                <span className="text-sm font-medium text-muted-foreground mb-1">
-                  Score
-                </span>
+                <div className="flex flex-col">
+                  <h3 className="text-5xl font-black text-foreground dark:text-white tracking-tighter drop-shadow-2xl">
+                    {100 - (improvement || 0)}%
+                  </h3>
+                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mt-1">Consistency Rating</span>
+                </div>
+                <div className="flex flex-col items-end pb-1.5 opacity-40 group-hover:opacity-80 transition-opacity">
+                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Status</span>
+                  <span className="text-[10px] font-black text-foreground dark:text-white uppercase tracking-widest">Optimizing</span>
+                </div>
               </div>
 
-              <div className="relative pt-2">
-                <div className="overflow-hidden h-3 text-xs flex rounded-full bg-slate-100 dark:bg-slate-800 shadow-inner">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${100 - (improvement || 0)}%` }}
-                    transition={{ duration: 1.5, ease: "circOut", delay: 0.2 }}
-                    className="relative shadow-lg shadow-emerald-500/20 flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-emerald-500 to-teal-500"
-                  >
-                    <div className="absolute inset-0 bg-white/20 skew-x-12 -translate-x-full animate-[shimmer_2s_infinite]" />
-                  </motion.div>
-                </div>
+              <div className="relative h-2.5 w-full bg-emerald-900/10 dark:bg-emerald-900/20 rounded-full overflow-hidden border border-border dark:border-white/5 shadow-inner">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${100 - (improvement || 0)}%` }}
+                  transition={{ duration: 1.5, ease: "circOut", delay: 0.2 }}
+                  className="h-full bg-gradient-to-r from-emerald-600 to-teal-500 relative"
+                >
+                  <div className="absolute inset-x-0 top-0 h-full w-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+                </motion.div>
               </div>
             </div>
           </Card>
@@ -359,7 +356,7 @@ const Mistakes = () => {
           className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12"
         >
           {/* Mistake Distribution Chart */}
-          <Card className="lg:col-span-2 glass-card-premium p-8 rounded-3xl relative overflow-hidden group hover:shadow-[0_0_40px_rgba(139,92,246,0.1)] transition-all duration-500 border-white/5">
+          <Card className="lg:col-span-2 glass-card-premium p-8 rounded-3xl relative overflow-hidden group hover:shadow-[0_0_40px_rgba(139,92,246,0.1)] transition-all duration-500 border-border dark:border-white/5 bg-card dark:bg-[#0a0a0c]">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-6">
@@ -390,7 +387,7 @@ const Mistakes = () => {
           </Card>
 
           {/* Frequency Heatmap */}
-          <Card className="lg:col-span-1 glass-card-premium p-8 rounded-3xl relative overflow-hidden group hover:shadow-[0_0_40px_rgba(59,130,246,0.1)] transition-all duration-500 border-white/5">
+          <Card className="lg:col-span-1 glass-card-premium p-8 rounded-3xl relative overflow-hidden group hover:shadow-[0_0_40px_rgba(59,130,246,0.1)] transition-all duration-500 border-border dark:border-white/5 bg-card dark:bg-[#0a0a0c]">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="relative z-10 flex flex-col items-center justify-center h-full">
               <FrequencyHeatmap data={frequencyData} />
@@ -458,7 +455,7 @@ const Mistakes = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </UserLayout>
   );
 };
 
