@@ -14,6 +14,7 @@ import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import ReportGenerationModal from "@/components/profile/ReportGenerationModal";
 import { Badge } from "@/components/ui/badge";
+import { FeatureGate } from "@/components/auth/FeatureGate";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
@@ -184,7 +185,7 @@ const Profile = () => {
 
     const handleDownloadInvoice = async (transactionId: string, invoiceNumber: string) => {
         try {
-            const response = await api.get(`/api/subscriptions/invoice/${transactionId}`, {
+            const response = await api.get(`/api/subscriptions/transactions/${transactionId}/invoice`, {
                 responseType: 'blob'
             });
             const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -290,9 +291,11 @@ const Profile = () => {
                         <TabsTrigger value="profile" className="rounded-[18px] px-6 py-3 data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white gap-2 transition-all duration-300 text-muted-foreground hover:text-foreground dark:hover:text-white">
                             <User className="w-4 h-4" /> <span className="text-[11px] font-black uppercase tracking-widest">Profile</span>
                         </TabsTrigger>
-                        <TabsTrigger value="reports" className="rounded-[18px] px-6 py-3 data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white gap-2 transition-all duration-300 text-muted-foreground hover:text-foreground dark:hover:text-white">
-                            <FileText className="w-4 h-4" /> <span className="text-[11px] font-black uppercase tracking-widest">Reports</span>
-                        </TabsTrigger>
+                        <FeatureGate tier="pro" showLock={false}>
+                            <TabsTrigger value="reports" className="rounded-[18px] px-6 py-3 data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white gap-2 transition-all duration-300 text-muted-foreground hover:text-foreground dark:hover:text-white" disabled={subscription?.plan_name === 'Free'}>
+                                <FileText className="w-4 h-4" /> <span className="text-[11px] font-black uppercase tracking-widest">Reports</span>
+                            </TabsTrigger>
+                        </FeatureGate>
                         <TabsTrigger value="mt5" className="rounded-[18px] px-6 py-3 data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white gap-2 transition-all duration-300 text-muted-foreground hover:text-foreground dark:hover:text-white">
                             <Zap className="w-4 h-4" /> <span className="text-[11px] font-black uppercase tracking-widest">MT5/MT4</span>
                         </TabsTrigger>
@@ -606,7 +609,7 @@ const Profile = () => {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="glass-card-premium p-6 rounded-[24px] bg-primary/10 border border-primary/20">
                                     <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">Current Plan</p>
-                                    <p className="text-3xl font-black capitalize text-foreground dark:text-white tracking-tight">{subscription?.plan_name || 'Free'}</p>
+                                    <p className="text-3xl font-black capitalize text-foreground dark:text-white tracking-tight">{subscription?.plan_name || (user as any)?.subscription_tier || 'Free'}</p>
                                 </div>
                                 <div className="glass-card-premium p-6 rounded-[24px] bg-emerald-500/10 border border-emerald-500/20">
                                     <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-2">Status</p>
@@ -615,7 +618,7 @@ const Profile = () => {
                                 <div className="glass-card-premium p-6 rounded-[24px] bg-blue-500/10 border border-blue-500/20">
                                     <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mb-2">Renewal Date</p>
                                     <p className="text-3xl font-black text-foreground dark:text-white tracking-tight">
-                                        {subscription?.renewal_date ? new Date(subscription.renewal_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                                        {subscription?.renewal_date ? new Date(subscription.renewal_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : (user as any)?.subscription_expiry ? new Date((user as any).subscription_expiry).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Lifetime'}
                                     </p>
                                 </div>
                             </div>
@@ -670,7 +673,7 @@ const Profile = () => {
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 className="h-9 w-9 p-0 rounded-xl hover:bg-primary/20 hover:text-primary"
-                                                                onClick={() => { }}
+                                                                onClick={() => handleDownloadInvoice(tx.id, tx.invoice_number)}
                                                             >
                                                                 <Download className="w-4 h-4" />
                                                             </Button>
