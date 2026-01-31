@@ -181,7 +181,7 @@ export function Dashboard() {
             value={`${stats?.win_rate?.toFixed(0) || "0"}%`}
             icon={Activity}
             glowColor="primary"
-            valueClassName="text-foreground dark:text-white"
+            valueClassName="text-primary dark:text-white"
             animationDelay="0.4s"
             className="flex flex-col justify-between"
           >

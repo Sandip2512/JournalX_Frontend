@@ -83,7 +83,7 @@ export function StatCard({
 
         <div className="flex flex-col">
           <p className={cn(
-            "text-3xl lg:text-4xl font-black tracking-tighter text-foreground dark:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.1)] dark:drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] transition-colors duration-500",
+            "text-3xl lg:text-4xl font-black tracking-tighter drop-shadow-[0_2px_10px_rgba(0,0,0,0.1)] dark:drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] transition-colors duration-500",
             valueClassName
           )}>
             {value}
