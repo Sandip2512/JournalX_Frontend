@@ -2,19 +2,22 @@ import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Lock } from 'lucide-react';
 import { SubscriptionDialog } from '@/components/subscription/SubscriptionDialog';
+import { cn } from '@/lib/utils';
 
 interface FeatureGateProps {
     children: React.ReactNode;
     tier: 'pro' | 'elite';
     fallback?: React.ReactNode;
     showLock?: boolean; // Whether to show a lock overlay instead of completely hiding
+    className?: string;
 }
 
 export const FeatureGate: React.FC<FeatureGateProps> = ({
     children,
     tier,
     fallback,
-    showLock = true
+    showLock = true,
+    className
 }) => {
     const { user } = useAuth();
     const [showUpgrade, setShowUpgrade] = useState(false);
@@ -33,7 +36,7 @@ export const FeatureGate: React.FC<FeatureGateProps> = ({
 
     if (showLock) {
         return (
-            <div className="relative overflow-hidden rounded-lg group">
+            <div className={cn("relative overflow-hidden rounded-lg group", className)}>
                 <div className="blur-sm select-none pointer-events-none opacity-50">
                     {children}
                 </div>

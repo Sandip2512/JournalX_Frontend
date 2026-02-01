@@ -313,8 +313,8 @@ const Profile = () => {
                     <TabsContent value="profile" className="space-y-10">
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                             {/* AI Report Banner (Pro-Level) */}
-                            <FeatureGate tier="pro">
-                                <div className="lg:col-span-12 glass-card-premium p-10 rounded-[40px] border-primary/10 bg-gradient-to-br from-primary/5 via-[#0c0c0e] to-transparent relative overflow-hidden group min-h-[200px] flex items-center">
+                            <FeatureGate tier="pro" className="lg:col-span-12">
+                                <div className="w-full glass-card-premium p-10 rounded-[40px] border-primary/10 bg-gradient-to-br from-primary/5 via-[#0c0c0e] to-transparent relative overflow-hidden group min-h-[200px] flex items-center">
                                     <div className="absolute inset-0 bg-primary/2 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
                                     <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-colors duration-700" />
 

@@ -22,6 +22,7 @@ interface User {
     favorite_pairs?: string[];
     currency?: string;
     timezone?: string;
+    avatar_url?: string;
 }
 
 interface AuthContextType {
