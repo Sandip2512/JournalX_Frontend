@@ -2,6 +2,7 @@ import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import {
     LayoutDashboard,
+    TrendingUp,
     ArrowRightLeft,
     BarChart3,
     Target,
