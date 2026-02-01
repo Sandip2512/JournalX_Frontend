@@ -199,7 +199,10 @@ export function Header() {
                 variant="ghost"
                 size="icon"
                 onClick={() => {
-                  document.dispatchEvent(new CustomEvent('toggle-command-menu'));
+                  window.dispatchEvent(new CustomEvent('journalx-search-open'));
+                  if ((window as any).__JOURNALX_TOGGLE_SEARCH) {
+                    (window as any).__JOURNALX_TOGGLE_SEARCH();
+                  }
                 }}
                 className="text-header-foreground/80 hover:text-header-foreground hover:bg-header-foreground/10 rounded-full h-9 w-9"
               >

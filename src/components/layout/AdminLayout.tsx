@@ -236,7 +236,11 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                     <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
                         <button
                             onClick={() => {
-                                document.dispatchEvent(new CustomEvent('toggle-command-menu'));
+                                window.dispatchEvent(new CustomEvent('journalx-search-open'));
+                                // Fallback for direct trigger
+                                if ((window as any).__JOURNALX_TOGGLE_SEARCH) {
+                                    (window as any).__JOURNALX_TOGGLE_SEARCH();
+                                }
                             }}
                             className="relative w-full group text-left"
                         >
