@@ -35,28 +35,26 @@ export function CommandMenu() {
     const { user } = useAuth();
 
     React.useEffect(() => {
-        const down = (e: KeyboardEvent) => {
+        const handleOpen = () => {
+            console.log("Command Menu: Open event received");
+            setOpen(true);
+        };
+
+        const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault();
-                setOpen((open) => !open);
+                setOpen((prev) => !prev);
             }
         };
 
-        const handleToggle = () => {
-            console.log("Command Menu: Toggle event received");
-            setOpen((open) => !open);
-        };
-
-        window.addEventListener("keydown", down);
-        window.addEventListener("journalx-search-open", handleToggle);
-
-        // Add a global trigger function as ultimate fallback
-        (window as any).__JOURNALX_TOGGLE_SEARCH = handleToggle;
+        window.addEventListener("keydown", handleKeyDown);
+        window.addEventListener("journalx-search-open", handleOpen);
+        (window as any).__JOURNALX_OPEN_SEARCH = handleOpen;
 
         return () => {
-            window.removeEventListener("keydown", down);
-            window.removeEventListener("journalx-search-open", handleToggle);
-            delete (window as any).__JOURNALX_TOGGLE_SEARCH;
+            window.removeEventListener("keydown", handleKeyDown);
+            window.removeEventListener("journalx-search-open", handleOpen);
+            delete (window as any).__JOURNALX_OPEN_SEARCH;
         };
     }, []);
 

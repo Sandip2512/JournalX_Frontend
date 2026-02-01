@@ -313,28 +313,30 @@ const Profile = () => {
                     <TabsContent value="profile" className="space-y-10">
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                             {/* AI Report Banner (Pro-Level) */}
-                            <div className="lg:col-span-12 glass-card-premium p-10 rounded-[40px] border-primary/10 bg-gradient-to-br from-primary/5 via-[#0c0c0e] to-transparent relative overflow-hidden group min-h-[200px] flex items-center">
-                                <div className="absolute inset-0 bg-primary/2 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
-                                <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-colors duration-700" />
+                            <FeatureGate tier="pro">
+                                <div className="lg:col-span-12 glass-card-premium p-10 rounded-[40px] border-primary/10 bg-gradient-to-br from-primary/5 via-[#0c0c0e] to-transparent relative overflow-hidden group min-h-[200px] flex items-center">
+                                    <div className="absolute inset-0 bg-primary/2 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
+                                    <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-colors duration-700" />
 
-                                <div className="w-full flex flex-col md:flex-row items-center justify-between gap-8 relative z-10 px-4">
-                                    <div className="flex items-center gap-8">
-                                        <div className="w-20 h-20 rounded-[28px] bg-primary/10 flex items-center justify-center border border-primary/20 shadow-[0_0_40px_rgba(11,102,228,0.15)] group-hover:scale-105 transition-transform duration-500">
-                                            <Sparkles className="w-10 h-10 text-primary animate-pulse" />
+                                    <div className="w-full flex flex-col md:flex-row items-center justify-between gap-8 relative z-10 px-4">
+                                        <div className="flex items-center gap-8">
+                                            <div className="w-20 h-20 rounded-[28px] bg-primary/10 flex items-center justify-center border border-primary/20 shadow-[0_0_40px_rgba(11,102,228,0.15)] group-hover:scale-105 transition-transform duration-500">
+                                                <Sparkles className="w-10 h-10 text-primary animate-pulse" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <h3 className="text-3xl font-black text-foreground dark:text-white tracking-tighter">AI Analysis Engine</h3>
+                                                <p className="text-xs text-muted-foreground/50 font-bold uppercase tracking-[0.2em]">Personalized behavioral insights and edge discovery</p>
+                                            </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <h3 className="text-3xl font-black text-foreground dark:text-white tracking-tighter">AI Analysis Engine</h3>
-                                            <p className="text-xs text-muted-foreground/50 font-bold uppercase tracking-[0.2em]">Personalized behavioral insights and edge discovery</p>
-                                        </div>
+                                        <Button
+                                            className="bg-primary hover:bg-primary/90 text-white rounded-2xl px-12 h-14 text-[11px] font-black uppercase tracking-widest shadow-[0_0_30px_rgba(11,102,228,0.3)] transition-all hover:scale-105 active:scale-95 shrink-0"
+                                            onClick={() => setIsReportModalOpen(true)}
+                                        >
+                                            Generate Intelligence Report
+                                        </Button>
                                     </div>
-                                    <Button
-                                        className="bg-primary hover:bg-primary/90 text-white rounded-2xl px-12 h-14 text-[11px] font-black uppercase tracking-widest shadow-[0_0_30px_rgba(11,102,228,0.3)] transition-all hover:scale-105 active:scale-95 shrink-0"
-                                        onClick={() => (subscription?.plan_name?.toLowerCase() === 'free' || (!subscription && user?.subscription_tier?.toLowerCase() === 'free')) ? toast({ title: "Pro Feature", description: "This feature is available for Pro members." }) : setIsReportModalOpen(true)}
-                                    >
-                                        {(subscription?.plan_name?.toLowerCase() === 'free' || (!subscription && user?.subscription_tier?.toLowerCase() === 'free')) ? 'Unlock Full Potential' : 'Generate Intelligence Report'}
-                                    </Button>
                                 </div>
-                            </div>
+                            </FeatureGate>
 
                             {/* Main Performance Bento */}
                             <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-8">

@@ -22,6 +22,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ChatWidget } from "@/components/chat/ChatWidget";
+import { FeatureGate } from "@/components/auth/FeatureGate";
 import { cn } from "@/lib/utils";
 
 interface UserLayoutProps {
@@ -255,21 +256,29 @@ const UserLayout = ({ children, showHeader = true }: UserLayoutProps) => {
                             <span className="text-xs text-muted-foreground font-medium">{format(new Date(), "EEE, MMM d")}</span>
                         </div>
 
-                        {/* Search Bar */}
                         <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
-                            <div className="relative w-full group">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                <input
-                                    type="text"
-                                    placeholder="Search trades, symbols..."
-                                    className="w-full bg-muted dark:bg-[#111114] border border-border dark:border-white/5 rounded-xl py-2.5 pl-10 pr-16 text-sm text-foreground dark:text-white focus:outline-none focus:border-primary/50 transition-all shadow-inner"
-                                />
+                            <button
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (typeof (window as any).__JOURNALX_OPEN_SEARCH === 'function') {
+                                        (window as any).__JOURNALX_OPEN_SEARCH();
+                                    } else {
+                                        window.dispatchEvent(new CustomEvent('journalx-search-open'));
+                                    }
+                                }}
+                                className="relative w-full group text-left"
+                            >
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                <div className="w-full bg-muted dark:bg-[#111114] border border-border dark:border-white/5 rounded-xl py-2.5 pl-10 pr-16 text-sm text-muted-foreground hover:border-primary/50 transition-all shadow-inner">
+                                    Search trades, symbols...
+                                </div>
                                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-muted dark:bg-white/5 border border-border dark:border-white/10 text-[10px] text-muted-foreground font-medium">
                                     <span>Ctrl</span>
                                     <span className="opacity-50">+</span>
                                     <span>K</span>
                                 </div>
-                            </div>
+                            </button>
                         </div>
 
                         <div className="flex items-center gap-4">
@@ -309,7 +318,9 @@ const UserLayout = ({ children, showHeader = true }: UserLayoutProps) => {
                 <div className="p-8 pb-10">
                     {children}
                 </div>
-                <ChatWidget />
+                <FeatureGate tier="pro" showLock={false}>
+                    <ChatWidget />
+                </FeatureGate>
             </main>
         </div>
     );

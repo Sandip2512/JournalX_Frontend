@@ -238,10 +238,10 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                             onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                window.dispatchEvent(new CustomEvent('journalx-search-open'));
-                                // Fallback for direct trigger
-                                if ((window as any).__JOURNALX_TOGGLE_SEARCH) {
-                                    (window as any).__JOURNALX_TOGGLE_SEARCH();
+                                if (typeof (window as any).__JOURNALX_OPEN_SEARCH === 'function') {
+                                    (window as any).__JOURNALX_OPEN_SEARCH();
+                                } else {
+                                    window.dispatchEvent(new CustomEvent('journalx-search-open'));
                                 }
                             }}
                             className="relative w-full group text-left"
