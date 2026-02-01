@@ -153,11 +153,11 @@ const UserLayout = ({ children, showHeader = true }: UserLayoutProps) => {
                             <div className="flex-1 min-w-0 pr-2">
                                 <div className="flex items-center gap-2">
                                     <p className="font-bold text-[13px] text-foreground dark:text-white truncate leading-tight">{user?.first_name} {user?.last_name?.[0]}.</p>
-                                    {(user as any)?.subscription_tier === 'elite' ? (
+                                    {user?.subscription_tier?.toLowerCase() === 'elite' ? (
                                         <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-[4px] bg-gradient-to-r from-amber-200 to-yellow-500 text-[9px] text-black font-black tracking-tighter uppercase leading-none shadow-[0_0_10px_rgba(234,179,8,0.4)]">
                                             ELITE
                                         </span>
-                                    ) : (user as any)?.subscription_tier === 'pro' ? (
+                                    ) : user?.subscription_tier?.toLowerCase() === 'pro' ? (
                                         <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-[4px] bg-gradient-to-r from-blue-400 to-blue-600 text-[9px] text-white font-black tracking-tighter uppercase leading-none shadow-[0_0_10px_rgba(37,99,235,0.4)]">
                                             PRO
                                         </span>

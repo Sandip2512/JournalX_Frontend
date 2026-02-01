@@ -53,8 +53,8 @@ const Mistakes = () => {
     try {
       setLoading(true);
       const [analyticsRes, frequencyRes] = await Promise.all([
-        api.get(`/mistakes/analytics/${user.user_id}?time_filter=${timeFilter}`),
-        api.get(`/mistakes/frequency/${user.user_id}?days=35`),
+        api.get(`/api/mistakes/analytics/${user.user_id}?time_filter=${timeFilter}`),
+        api.get(`/api/mistakes/frequency/${user.user_id}?days=35`),
       ]);
 
       setAnalytics(analyticsRes.data);
@@ -78,13 +78,13 @@ const Mistakes = () => {
   const handleCreateMistake = async (mistake: MistakeCreate) => {
     try {
       if (editMistake) {
-        await api.put(`/mistakes/${editMistake.id}`, mistake);
+        await api.put(`/api/mistakes/${editMistake.id}`, mistake);
         toast({
           title: "Success",
           description: "Mistake updated successfully",
         });
       } else {
-        await api.post("/mistakes/", mistake);
+        await api.post("/api/mistakes/", mistake);
         toast({
           title: "Success",
           description: "Mistake created successfully",
@@ -131,7 +131,7 @@ const Mistakes = () => {
     if (!mistakeToDelete) return;
 
     try {
-      await api.delete(`/mistakes/${mistakeToDelete}`);
+      await api.delete(`/api/mistakes/${mistakeToDelete}`);
       toast({
         title: "Success",
         description: "Mistake deleted successfully",

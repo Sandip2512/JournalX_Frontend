@@ -260,16 +260,16 @@ const Profile = () => {
 
                                 <div className="flex flex-wrap gap-2">
                                     <Badge variant="default" className="bg-primary/20 text-primary border-primary/20 rounded-xl px-3 py-1 text-[10px] font-black uppercase tracking-widest">
-                                        {subscription?.plan_name || 'Free'}
+                                        {subscription?.plan_name || user?.subscription_tier?.toUpperCase() || 'FREE'}
                                     </Badge>
                                     <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 rounded-xl px-3 py-1 text-[10px] font-black uppercase tracking-widest gap-1.5">
                                         <ShieldCheck className="w-3 h-3" /> Verified
                                     </Badge>
                                     <Badge variant="outline" className="text-foreground/60 dark:text-white/60 border-border dark:border-white/10 rounded-xl px-3 py-1 text-[10px] font-black uppercase tracking-widest">
-                                        {stats?.total_trades || 0} Trades
+                                        {stats?.is_free_tier ? "30rd-Day " : ""}{stats?.total_trades || 0} Trades
                                     </Badge>
                                     <Badge variant="outline" className="text-foreground/60 dark:text-white/60 border-border dark:border-white/10 rounded-xl px-3 py-1 text-[10px] font-black uppercase tracking-widest">
-                                        {stats?.win_rate?.toFixed(0) || 0}% Win Rate
+                                        {stats?.is_free_tier ? "30rd-Day " : ""}{stats?.win_rate?.toFixed(0) || 0}% Win Rate
                                     </Badge>
                                 </div>
                             </div>
@@ -292,7 +292,7 @@ const Profile = () => {
                             <User className="w-4 h-4" /> <span className="text-[11px] font-black uppercase tracking-widest">Profile</span>
                         </TabsTrigger>
                         <FeatureGate tier="pro" showLock={false}>
-                            <TabsTrigger value="reports" className="rounded-[18px] px-6 py-3 data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white gap-2 transition-all duration-300 text-muted-foreground hover:text-foreground dark:hover:text-white" disabled={subscription?.plan_name === 'Free'}>
+                            <TabsTrigger value="reports" className="rounded-[18px] px-6 py-3 data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white gap-2 transition-all duration-300 text-muted-foreground hover:text-foreground dark:hover:text-white" disabled={subscription?.plan_name?.toLowerCase() === 'free' || user?.subscription_tier?.toLowerCase() === 'free'}>
                                 <FileText className="w-4 h-4" /> <span className="text-[11px] font-black uppercase tracking-widest">Reports</span>
                             </TabsTrigger>
                         </FeatureGate>
@@ -329,9 +329,9 @@ const Profile = () => {
                                     </div>
                                     <Button
                                         className="bg-primary hover:bg-primary/90 text-white rounded-2xl px-12 h-14 text-[11px] font-black uppercase tracking-widest shadow-[0_0_30px_rgba(11,102,228,0.3)] transition-all hover:scale-105 active:scale-95 shrink-0"
-                                        onClick={() => subscription?.plan_name === 'Free' ? toast({ title: "Pro Feature", description: "This feature is available for Pro members." }) : setIsReportModalOpen(true)}
+                                        onClick={() => (subscription?.plan_name?.toLowerCase() === 'free' || (!subscription && user?.subscription_tier?.toLowerCase() === 'free')) ? toast({ title: "Pro Feature", description: "This feature is available for Pro members." }) : setIsReportModalOpen(true)}
                                     >
-                                        {subscription?.plan_name === 'Free' ? 'Unlock Full Potential' : 'Generate Intelligence Report'}
+                                        {(subscription?.plan_name?.toLowerCase() === 'free' || (!subscription && user?.subscription_tier?.toLowerCase() === 'free')) ? 'Unlock Full Potential' : 'Generate Intelligence Report'}
                                     </Button>
                                 </div>
                             </div>
@@ -358,7 +358,9 @@ const Profile = () => {
                                         </div>
                                         <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                                             <span>Combat Experience</span>
-                                            <span className="text-foreground/60 dark:text-white/60">{stats?.total_trades || 0} Professional Trades</span>
+                                            <span className="text-foreground/60 dark:text-white/60">
+                                                {stats?.is_free_tier ? "Last 30 Days: " : ""}{stats?.total_trades || 0} Professional Trades
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -609,7 +611,7 @@ const Profile = () => {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="glass-card-premium p-6 rounded-[24px] bg-primary/10 border border-primary/20">
                                     <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">Current Plan</p>
-                                    <p className="text-3xl font-black capitalize text-foreground dark:text-white tracking-tight">{subscription?.plan_name || (user as any)?.subscription_tier || 'Free'}</p>
+                                    <p className="text-3xl font-black capitalize text-foreground dark:text-white tracking-tight">{subscription?.plan_name || user?.subscription_tier || 'Free'}</p>
                                 </div>
                                 <div className="glass-card-premium p-6 rounded-[24px] bg-emerald-500/10 border border-emerald-500/20">
                                     <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-2">Status</p>
