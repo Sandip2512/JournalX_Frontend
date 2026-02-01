@@ -852,7 +852,7 @@ const Landing = () => {
                             flexDirection: 'column',
                             boxShadow: 'var(--shadow-md)'
                         }}>
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.4rem', color: 'var(--color-text-primary)' }}>Free</h3>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.4rem', color: 'var(--color-text-primary)' }}>Journaler (Free)</h3>
                             <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', marginBottom: '1rem', lineHeight: '1.4' }}>
                                 Essential tracking for beginners.
                             </p>
@@ -862,22 +862,22 @@ const Landing = () => {
                             </div>
                             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem 0', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                 <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-                                    <span style={{ color: '#3b82f6' }}>✓</span> Manual Single-Leg Entry
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Manual Journaling (30 trades/mo)
                                 </li>
                                 <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-                                    <span style={{ color: '#3b82f6' }}>✓</span> Basic Dashboard (30 Days)
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Basic Dashboard (P/L, Win Rate)
                                 </li>
                                 <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-                                    <span style={{ color: '#3b82f6' }}>✓</span> Traders Diary (Current Month)
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Basic Mistake Logging
                                 </li>
                                 <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-                                    <span style={{ color: '#3b82f6' }}>✓</span> Community Read-Only
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Community (Read-Only)
                                 </li>
                                 <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-                                    <span style={{ color: '#3b82f6' }}>✓</span> Limit: 20 trades/month
+                                    <span style={{ color: '#3b82f6' }}>✓</span> 1 Active Goal
                                 </li>
                             </ul>
-                            <button className="btn btn-secondary" style={{ width: '100%', padding: '0.75rem', marginTop: 'auto', background: 'var(--glass-highlight)', fontSize: '0.85rem' }}>
+                            <button className="btn btn-secondary" onClick={() => setShowAuth(true)} style={{ width: '100%', padding: '0.75rem', marginTop: 'auto', background: 'var(--glass-highlight)', fontSize: '0.85rem' }}>
                                 Get Started
                             </button>
                         </div>
@@ -912,9 +912,9 @@ const Landing = () => {
                             }}>
                                 Most Popular
                             </div>
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.4rem', color: 'var(--color-text-primary)' }}>Pro</h3>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.4rem', color: 'var(--color-text-primary)' }}>Active Trader</h3>
                             <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', marginBottom: '1rem', lineHeight: '1.4' }}>
-                                Advanced insights & growth.
+                                Freedom to trade & connect.
                             </p>
                             <div style={{ marginBottom: '1.5rem' }}>
                                 <span style={{ fontSize: '2.25rem', fontWeight: '800', color: 'var(--color-text-primary)' }}>$5.99</span>
@@ -922,28 +922,25 @@ const Landing = () => {
                             </div>
                             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem 0', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                 <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-                                    <span style={{ color: '#3b82f6' }}>✓</span> Unlimited Multi-Leg Entries
+                                    <span style={{ color: '#3b82f6' }}>✓</span> **Unlimited** Manual Journaling
                                 </li>
                                 <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-                                    <span style={{ color: '#3b82f6' }}>✓</span> Weekly/Monthly/Yearly Goals
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Advanced Analytics (Calendar, Heatmap)
                                 </li>
                                 <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-                                    <span style={{ color: '#3b82f6' }}>✓</span> Full Analytics Dashboard
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Full Community Access (Chat/Post)
                                 </li>
                                 <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-                                    <span style={{ color: '#3b82f6' }}>✓</span> Traders Diary (Full History)
+                                    <span style={{ color: '#3b82f6' }}>✓</span> **JournalX AI Reports** (Monthly)
                                 </li>
                                 <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-                                    <span style={{ color: '#3b82f6' }}>✓</span> Community Sharing
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Unlimited Goals
                                 </li>
                                 <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-                                    <span style={{ color: '#3b82f6' }}>✓</span> Custom Trader Profile
-                                </li>
-                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-                                    <span style={{ color: '#3b82f6' }}>✓</span> Auto-Trades <span style={{ fontSize: '0.6rem', background: 'rgba(234, 179, 8, 0.2)', color: '#eab308', padding: '1px 5px', borderRadius: '10px' }}>Soon</span>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Auto-Sync (MT5) <span style={{ fontSize: '0.6rem', background: 'rgba(234, 179, 8, 0.2)', color: '#eab308', padding: '1px 5px', borderRadius: '10px' }}>Soon</span>
                                 </li>
                             </ul>
-                            <button className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', marginTop: 'auto', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)', fontSize: '0.85rem' }}>
+                            <button className="btn btn-primary" onClick={() => setShowAuth(true)} style={{ width: '100%', padding: '0.75rem', marginTop: 'auto', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)', fontSize: '0.85rem' }}>
                                 Get Started
                             </button>
                         </div>
@@ -958,9 +955,9 @@ const Landing = () => {
                             flexDirection: 'column',
                             boxShadow: 'var(--shadow-md)'
                         }}>
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.4rem', color: 'var(--color-text-primary)' }}>Elite</h3>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.4rem', color: 'var(--color-text-primary)' }}>Professional</h3>
                             <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', marginBottom: '1rem', lineHeight: '1.4' }}>
-                                AI intelligence & mentorship.
+                                Intelligence & status.
                             </p>
                             <div style={{ marginBottom: '1.5rem' }}>
                                 <span style={{ fontSize: '2.25rem', fontWeight: '800', color: 'var(--color-text-primary)' }}>$11.99</span>
@@ -968,28 +965,25 @@ const Landing = () => {
                             </div>
                             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem 0', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                 <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-                                    <span style={{ color: '#3b82f6' }}>✓</span> Everything in Pro
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Everything in Active Trader
                                 </li>
                                 <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-                                    <span style={{ color: '#3b82f6' }}>✓</span> **JournalX AI Reports**
+                                    <span style={{ color: '#3b82f6' }}>✓</span> **AI Trade Coach** (Analyze My Trade)
                                 </li>
                                 <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-                                    <span style={{ color: '#3b82f6' }}>✓</span> 1-on-1 Mentorship <span style={{ fontSize: '0.6rem', background: 'rgba(234, 179, 8, 0.2)', color: '#eab308', padding: '1px 5px', borderRadius: '10px' }}>Soon</span>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Elite Badge on Leaderboard
                                 </li>
                                 <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-                                    <span style={{ color: '#3b82f6' }}>✓</span> Strategy Builder <span style={{ fontSize: '0.6rem', background: 'rgba(234, 179, 8, 0.2)', color: '#eab308', padding: '1px 5px', borderRadius: '10px' }}>Soon</span>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Yearly Tax & Performance PDFs
                                 </li>
                                 <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-                                    <span style={{ color: '#3b82f6' }}>✓</span> Performance Badges
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Access to "Trader Room"
                                 </li>
                                 <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-                                    <span style={{ color: '#3b82f6' }}>✓</span> Early Signals Access
-                                </li>
-                                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-                                    <span style={{ color: '#3b82f6' }}>✓</span> Auto-Trades <span style={{ fontSize: '0.6rem', background: 'rgba(234, 179, 8, 0.2)', color: '#eab308', padding: '1px 5px', borderRadius: '10px' }}>Soon</span>
+                                    <span style={{ color: '#3b82f6' }}>✓</span> Backtesting Engine <span style={{ fontSize: '0.6rem', background: 'rgba(234, 179, 8, 0.2)', color: '#eab308', padding: '1px 5px', borderRadius: '10px' }}>Soon</span>
                                 </li>
                             </ul>
-                            <button className="btn btn-secondary" style={{ width: '100%', padding: '0.75rem', marginTop: 'auto', background: 'var(--glass-highlight)', fontSize: '0.85rem' }}>
+                            <button className="btn btn-secondary" onClick={() => setShowAuth(true)} style={{ width: '100%', padding: '0.75rem', marginTop: 'auto', background: 'var(--glass-highlight)', fontSize: '0.85rem' }}>
                                 Get Started
                             </button>
                         </div>

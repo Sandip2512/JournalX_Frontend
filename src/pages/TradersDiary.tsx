@@ -5,7 +5,7 @@ import api from "@/lib/api";
 import {
     Loader2, ChevronLeft, ChevronRight, TrendingUp, TrendingDown,
     Medal, Trophy, Calendar as CalendarIcon, Wallet,
-    ArrowUpRight, ArrowDownRight, Activity, Zap, Info, Search, Filter
+    ArrowUpRight, ArrowDownRight, Activity, Zap, Info, Search, Filter, Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -18,6 +18,7 @@ import {
 } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { FeatureGate } from "@/components/auth/FeatureGate";
 import { Badge } from "@/components/ui/badge";
 
 type PeriodType = "week" | "month" | "year";
@@ -69,6 +70,16 @@ export default function TradersDiary() {
     }, [user?.user_id, periodType, currentDate]);
 
     const handlePrev = () => {
+        // Free Tier Restriction: Cannot go back past current month
+        if (user?.subscription_tier === 'free' || !user?.subscription_tier) {
+            if (periodType === 'month' && isSameDay(startOfMonth(currentDate), startOfMonth(new Date()))) {
+                return; // Prevent going back
+            }
+            if (periodType === 'week' && isSameDay(startOfWeek(currentDate), startOfWeek(new Date()))) {
+                return; // Prevent going back from current week
+            }
+        }
+
         if (periodType === "week") setCurrentDate(subWeeks(currentDate, 1));
         else if (periodType === "month") setCurrentDate(subMonths(currentDate, 1));
         else setCurrentDate(subYears(currentDate, 1));
@@ -319,16 +330,30 @@ export default function TradersDiary() {
                         <div className="flex flex-wrap items-center gap-3">
                             <Tabs value={periodType} onValueChange={(v) => setPeriodType(v as PeriodType)} className="bg-muted dark:bg-white/5 p-1 rounded-xl border border-border dark:border-white/5">
                                 <TabsList className="bg-transparent h-9 gap-1">
-                                    {["week", "month", "year"].map(t => (
-                                        <TabsTrigger key={t} value={t} className="text-[11px] font-black uppercase tracking-tighter data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white rounded-lg px-4 transition-all">
-                                            {t}
-                                        </TabsTrigger>
-                                    ))}
+                                    <TabsTrigger value="week" className="text-[11px] font-black uppercase tracking-tighter data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white rounded-lg px-4 transition-all">
+                                        week
+                                    </TabsTrigger>
+                                    <TabsTrigger value="month" className="text-[11px] font-black uppercase tracking-tighter data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white rounded-lg px-4 transition-all">
+                                        month
+                                    </TabsTrigger>
+                                    <TabsTrigger value="year" className="text-[11px] font-black uppercase tracking-tighter data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white rounded-lg px-4 transition-all gap-2" disabled={user?.subscription_tier === 'free'}>
+                                        year
+                                        {user?.subscription_tier === 'free' && <Lock className="w-3 h-3 text-muted-foreground" />}
+                                    </TabsTrigger>
                                 </TabsList>
                             </Tabs>
 
                             <div className="flex items-center bg-card dark:bg-[#111114] rounded-xl border border-border dark:border-white/5 p-1 shadow-inner">
-                                <Button variant="ghost" size="icon" onClick={handlePrev} className="h-8 w-8 hover:bg-muted dark:hover:bg-white/5 rounded-lg">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={handlePrev}
+                                    disabled={(user?.subscription_tier === 'free' || !user?.subscription_tier) && (
+                                        (periodType === 'month' && isSameDay(startOfMonth(currentDate), startOfMonth(new Date()))) ||
+                                        (periodType === 'week' && isSameDay(startOfWeek(currentDate), startOfWeek(new Date())))
+                                    )}
+                                    className="h-8 w-8 hover:bg-muted dark:hover:bg-white/5 rounded-lg disabled:opacity-30"
+                                >
                                     <ChevronLeft className="w-4 h-4" />
                                 </Button>
                                 <span className="px-4 text-[11px] font-black uppercase tracking-widest text-primary min-w-[140px] text-center">

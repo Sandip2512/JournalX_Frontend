@@ -12,6 +12,7 @@ import { WinLossDistribution } from "@/components/analytics/WinLossDistribution"
 import { TradeAnalysisTab } from "@/components/analytics/TradeAnalysisTab";
 import { AnalyticsGoalsTab } from "@/components/analytics/AnalyticsGoalsTab";
 import { RecentActivityFeed } from "@/components/dashboard/RecentActivityFeed";
+import { FeatureGate } from "@/components/auth/FeatureGate";
 
 const Analytics = () => {
     const { user } = useAuth();
@@ -115,7 +116,9 @@ const Analytics = () => {
                                 />
                             </div>
                             <div className="lg:col-span-1">
-                                <QuickStats stats={stats} className="h-full" />
+                                <FeatureGate tier="pro">
+                                    <QuickStats stats={stats} className="h-full" />
+                                </FeatureGate>
                             </div>
                         </div>
 
@@ -127,8 +130,12 @@ const Analytics = () => {
                             </div>
                             <div className="space-y-6 flex flex-col">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <DayPerformance data={analyticsData?.intermediate?.day_of_week_performance} />
-                                    <TopSymbols data={analyticsData?.intermediate?.top_symbols} />
+                                    <FeatureGate tier="pro">
+                                        <DayPerformance data={analyticsData?.intermediate?.day_of_week_performance} />
+                                    </FeatureGate>
+                                    <FeatureGate tier="pro">
+                                        <TopSymbols data={analyticsData?.intermediate?.top_symbols} />
+                                    </FeatureGate>
                                 </div>
                                 <div className="flex-1">
                                     <RecentActivityFeed trades={recentTrades} isLoading={loading} />
@@ -138,11 +145,15 @@ const Analytics = () => {
                     </TabsContent>
 
                     <TabsContent value="analysis" className="border-none p-0 outline-none">
-                        <TradeAnalysisTab />
+                        <FeatureGate tier="pro">
+                            <TradeAnalysisTab />
+                        </FeatureGate>
                     </TabsContent>
 
                     <TabsContent value="goals" className="border-none p-0 outline-none">
-                        <AnalyticsGoalsTab stats={analyticsData?.beginner} />
+                        <FeatureGate tier="pro">
+                            <AnalyticsGoalsTab stats={analyticsData?.beginner} />
+                        </FeatureGate>
                     </TabsContent>
 
                     <TabsContent value="history" className="border-none p-0 outline-none">

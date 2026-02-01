@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import api, { leaderboardApi } from "@/lib/api";
 import { LeaderboardEntry, UserRankingResponse } from "@/types/leaderboard-types";
+import { FeatureGate } from "@/components/auth/FeatureGate";
 
 const Community = () => {
     const { user } = useAuth();
@@ -116,48 +117,52 @@ const Community = () => {
                 <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-5 h-full md:h-[600px]">
 
                     {/* 1. THE LOUNGE (The Main Feature) */}
-                    <Link to="/community/lounge" className="md:col-span-2 md:row-span-2 group relative overflow-hidden rounded-[2rem] border border-border dark:border-white/5 bg-card dark:bg-[#0a0a0c] transition-all duration-500 hover:border-primary/30 hover:shadow-[0_0_40px_-15px_rgba(11,102,228,0.3)]">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                    <div className="md:col-span-2 md:row-span-2 relative group rounded-[2rem]">
+                        <FeatureGate tier="pro">
+                            <Link to="/community/lounge" className="block h-full w-full relative overflow-hidden rounded-[2rem] border border-border dark:border-white/5 bg-card dark:bg-[#0a0a0c] transition-all duration-500 hover:border-primary/30 hover:shadow-[0_0_40px_-15px_rgba(11,102,228,0.3)]">
+                                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
 
-                        {/* Interactive Background Shape */}
-                        <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/10 rounded-full blur-[80px] group-hover:scale-150 transition-transform duration-1000" />
+                                {/* Interactive Background Shape */}
+                                <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/10 rounded-full blur-[80px] group-hover:scale-150 transition-transform duration-1000" />
 
-                        <div className="h-full p-8 flex flex-col justify-between relative z-10">
-                            <div className="space-y-6">
-                                <div className="p-4 w-fit rounded-2xl bg-primary shadow-[0_0_20px_rgba(11,102,228,0.4)] transition-transform group-hover:scale-110 duration-500">
-                                    <MessageSquare className="w-8 h-8 text-white" />
-                                </div>
-                                <div className="space-y-2">
-                                    <h3 className="text-3xl font-black text-foreground dark:text-white tracking-tight">The Lounge</h3>
-                                    <p className="text-muted-foreground font-medium leading-relaxed max-w-sm">
-                                        Join our high-frequency discussion hub. Real-time alpha, strategy backtests, and deep psychology dive-ins.
-                                    </p>
-                                </div>
-                            </div>
+                                <div className="h-full p-8 flex flex-col justify-between relative z-10">
+                                    <div className="space-y-6">
+                                        <div className="p-4 w-fit rounded-2xl bg-primary shadow-[0_0_20px_rgba(11,102,228,0.4)] transition-transform group-hover:scale-110 duration-500">
+                                            <MessageSquare className="w-8 h-8 text-white" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h3 className="text-3xl font-black text-foreground dark:text-white tracking-tight">The Lounge</h3>
+                                            <p className="text-muted-foreground font-medium leading-relaxed max-w-sm">
+                                                Join our high-frequency discussion hub. Real-time alpha, strategy backtests, and deep psychology dive-ins.
+                                            </p>
+                                        </div>
+                                    </div>
 
-                            <div className="flex items-center justify-between">
-                                <div className="flex -space-x-3">
-                                    {loading ? (
-                                        [1, 2, 3].map(i => <div key={i} className="w-10 h-10 rounded-full border-2 border-background dark:border-[#0a0a0c] bg-muted dark:bg-white/5 animate-pulse" />)
-                                    ) : (
-                                        <>
-                                            {[1, 2, 3, 4].map(i => (
-                                                <div key={i} className="w-10 h-10 rounded-full border-2 border-background dark:border-[#0a0a0c] bg-muted dark:bg-white/10 flex items-center justify-center text-[10px] font-black text-foreground dark:text-white">
-                                                    {String.fromCharCode(64 + i)}
-                                                </div>
-                                            ))}
-                                            <div className="w-10 h-10 rounded-full border-2 border-background dark:border-[#0a0a0c] bg-primary flex items-center justify-center text-[10px] font-black text-white">
-                                                +{communityCount > 4 ? communityCount - 4 : 82}
-                                            </div>
-                                        </>
-                                    )}
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex -space-x-3">
+                                            {loading ? (
+                                                [1, 2, 3].map(i => <div key={i} className="w-10 h-10 rounded-full border-2 border-background dark:border-[#0a0a0c] bg-muted dark:bg-white/5 animate-pulse" />)
+                                            ) : (
+                                                <>
+                                                    {[1, 2, 3, 4].map(i => (
+                                                        <div key={i} className="w-10 h-10 rounded-full border-2 border-background dark:border-[#0a0a0c] bg-muted dark:bg-white/10 flex items-center justify-center text-[10px] font-black text-foreground dark:text-white">
+                                                            {String.fromCharCode(64 + i)}
+                                                        </div>
+                                                    ))}
+                                                    <div className="w-10 h-10 rounded-full border-2 border-background dark:border-[#0a0a0c] bg-primary flex items-center justify-center text-[10px] font-black text-white">
+                                                        +{communityCount > 4 ? communityCount - 4 : 82}
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-xs group-hover:gap-4 transition-all">
+                                            Enter Lounge <ArrowRight className="w-4 h-4" />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-xs group-hover:gap-4 transition-all">
-                                    Enter Lounge <ArrowRight className="w-4 h-4" />
-                                </div>
-                            </div>
-                        </div>
-                    </Link>
+                            </Link>
+                        </FeatureGate>
+                    </div>
 
                     {/* 2. LEADERBOARD (Vertical Accent - Tall) */}
                     <Link to="/leaderboard" className="md:col-span-1 md:row-span-2 group relative overflow-hidden rounded-[2rem] border border-border dark:border-white/5 bg-gradient-to-b from-card to-background dark:from-[#111114] dark:to-[#0a0a0c] p-6 transition-all duration-500 hover:border-amber-500/30">
@@ -202,39 +207,47 @@ const Community = () => {
                     </Link>
 
                     {/* 3. FRIENDS (Square / Compact) */}
-                    <Link to="/friends" className="md:col-span-1 md:row-span-1 group relative overflow-hidden rounded-[2rem] border border-border dark:border-white/5 bg-card dark:bg-[#111114] p-6 transition-all duration-500 hover:border-purple-500/30">
-                        <div className="flex flex-col h-full justify-between">
-                            <div className="flex items-center justify-between">
-                                <div className="p-3 rounded-xl bg-purple-500/10 text-purple-500 group-hover:scale-110 transition-transform">
-                                    <Users2 className="w-5 h-5" />
+                    <div className="md:col-span-1 md:row-span-1 relative group rounded-[2rem]">
+                        <FeatureGate tier="pro">
+                            <Link to="/friends" className="block h-full w-full relative overflow-hidden rounded-[2rem] border border-border dark:border-white/5 bg-card dark:bg-[#111114] p-6 transition-all duration-500 hover:border-purple-500/30">
+                                <div className="flex flex-col h-full justify-between">
+                                    <div className="flex items-center justify-between">
+                                        <div className="p-3 rounded-xl bg-purple-500/10 text-purple-500 group-hover:scale-110 transition-transform">
+                                            <Users2 className="w-5 h-5" />
+                                        </div>
+                                        <span className="text-[10px] font-black text-purple-500 bg-purple-500/10 px-2 py-0.5 rounded-full animate-pulse-slow">
+                                            {loading ? "..." : onlineCount} Online
+                                        </span>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h3 className="text-lg font-black text-foreground dark:text-white">Social Circle</h3>
+                                        <p className="text-[10px] text-muted-foreground font-medium">Connect & message.</p>
+                                    </div>
                                 </div>
-                                <span className="text-[10px] font-black text-purple-500 bg-purple-500/10 px-2 py-0.5 rounded-full animate-pulse-slow">
-                                    {loading ? "..." : onlineCount} Online
-                                </span>
-                            </div>
-                            <div className="space-y-1">
-                                <h3 className="text-lg font-black text-foreground dark:text-white">Social Circle</h3>
-                                <p className="text-[10px] text-muted-foreground font-medium">Connect & message.</p>
-                            </div>
-                        </div>
-                    </Link>
+                            </Link>
+                        </FeatureGate>
+                    </div>
 
                     {/* 4. TRADER ROOM (Horizontal / Accent) */}
-                    <Link to="/trader-room" className="md:col-span-1 md:row-span-1 group relative overflow-hidden rounded-[2rem] border border-border dark:border-white/5 bg-card dark:bg-[#111114] p-6 transition-all duration-500 hover:border-emerald-500/30">
-                        <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="flex flex-col h-full justify-between">
-                            <div className="flex items-center justify-between">
-                                <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-500 group-hover:translate-x-1 transition-transform">
-                                    <Monitor className="w-5 h-5" />
+                    <div className="md:col-span-1 md:row-span-1 relative group rounded-[2rem]">
+                        <FeatureGate tier="elite">
+                            <Link to="/trader-room" className="block h-full w-full relative overflow-hidden rounded-[2rem] border border-border dark:border-white/5 bg-card dark:bg-[#111114] p-6 transition-all duration-500 hover:border-emerald-500/30">
+                                <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <div className="flex flex-col h-full justify-between">
+                                    <div className="flex items-center justify-between">
+                                        <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-500 group-hover:translate-x-1 transition-transform">
+                                            <Monitor className="w-5 h-5" />
+                                        </div>
+                                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h3 className="text-lg font-black text-foreground dark:text-white">Trade Room</h3>
+                                        <p className="text-[10px] text-muted-foreground font-medium">Live sync rooms.</p>
+                                    </div>
                                 </div>
-                                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
-                            </div>
-                            <div className="space-y-1">
-                                <h3 className="text-lg font-black text-foreground dark:text-white">Trade Room</h3>
-                                <p className="text-[10px] text-muted-foreground font-medium">Live sync rooms.</p>
-                            </div>
-                        </div>
-                    </Link>
+                            </Link>
+                        </FeatureGate>
+                    </div>
 
                 </div>
 

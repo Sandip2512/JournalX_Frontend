@@ -11,6 +11,17 @@ interface User {
     created_at?: string;
     daily_loss_limit?: number;
     max_daily_trades?: number;
+    subscription_tier?: 'free' | 'pro' | 'elite';
+    subscription_expiry?: string;
+    username?: string;
+    mobile_number?: string;
+    max_risk_per_trade?: number;
+    max_losing_streak?: number;
+    risk_reward_ratio?: string;
+    preferred_sessions?: string[];
+    favorite_pairs?: string[];
+    currency?: string;
+    timezone?: string;
 }
 
 interface AuthContextType {
