@@ -66,29 +66,12 @@ export function CommandMenu() {
     }, []);
 
     return (
-        <>
-            {/* DEBUG INDICATOR - REMOVE AFTER FIXING */}
-            <div
-                className="fixed bottom-4 left-4 z-[9999] px-2 py-1 rounded bg-red-600/80 text-white text-[10px] font-mono pointer-events-none"
-                style={{ backdropFilter: 'blur(4px)' }}
-            >
-                CMD_MENU_STATUS: {open ? 'OPEN' : 'CLOSED'}
-            </div>
-
-            <CommandDialog open={open} onOpenChange={setOpen}>
-                <div className="relative z-[9999]">
-                    <CommandInput placeholder="Search pages, trades, or symbols..." />
-                    <CommandList className="max-h-[500px]">
-                        <CommandEmpty>No results found.</CommandEmpty>
-
-                        <CommandGroup heading="Main">
-                            <CommandItem onSelect={() => runCommand(() => navigate("/dashboard"))}>
                                 <LayoutDashboard className="mr-2 h-4 w-4" />
                                 <div className="flex flex-col text-left">
                                     <span className="font-semibold">Dashboard</span>
                                     <span className="text-[10px] text-muted-foreground line-clamp-1">View your trading overview and stats</span>
                                 </div>
-                            </CommandItem>
+                            </CommandItem >
                             <CommandItem onSelect={() => runCommand(() => navigate("/trades"))}>
                                 <ArrowRightLeft className="mr-2 h-4 w-4" />
                                 <div className="flex flex-col text-left">
@@ -103,7 +86,7 @@ export function CommandMenu() {
                                     <span className="text-[10px] text-muted-foreground line-clamp-1">Write and review your trade journal entries</span>
                                 </div>
                             </CommandItem>
-                        </CommandGroup>
+                        </CommandGroup >
 
                         <CommandSeparator />
 
@@ -154,29 +137,31 @@ export function CommandMenu() {
                             </CommandItem>
                         </CommandGroup>
 
-                        {user?.role === "admin" && (
-                            <>
-                                <CommandSeparator />
-                                <CommandGroup heading="Admin">
-                                    <CommandItem onSelect={() => runCommand(() => navigate("/admin"))}>
-                                        <LayoutDashboard className="mr-2 h-4 w-4" />
-                                        <span>Admin Dashboard</span>
-                                    </CommandItem>
-                                    <CommandItem onSelect={() => runCommand(() => navigate("/admin/users"))}>
-                                        <Users className="mr-2 h-4 w-4" />
-                                        <span>User Management</span>
-                                    </CommandItem>
-                                    <CommandItem onSelect={() => runCommand(() => navigate("/admin/trades"))}>
-                                        <TrendingUp className="mr-2 h-4 w-4" />
-                                        <span>Trade Management</span>
-                                    </CommandItem>
-                                    <CommandItem onSelect={() => runCommand(() => navigate("/admin/logs"))}>
-                                        <ShieldAlert className="mr-2 h-4 w-4" />
-                                        <span>System Logs</span>
-                                    </CommandItem>
-                                </CommandGroup>
-                            </>
-                        )}
+    {
+        user?.role === "admin" && (
+            <>
+                <CommandSeparator />
+                <CommandGroup heading="Admin">
+                    <CommandItem onSelect={() => runCommand(() => navigate("/admin"))}>
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        <span>Admin Dashboard</span>
+                    </CommandItem>
+                    <CommandItem onSelect={() => runCommand(() => navigate("/admin/users"))}>
+                        <Users className="mr-2 h-4 w-4" />
+                        <span>User Management</span>
+                    </CommandItem>
+                    <CommandItem onSelect={() => runCommand(() => navigate("/admin/trades"))}>
+                        <TrendingUp className="mr-2 h-4 w-4" />
+                        <span>Trade Management</span>
+                    </CommandItem>
+                    <CommandItem onSelect={() => runCommand(() => navigate("/admin/logs"))}>
+                        <ShieldAlert className="mr-2 h-4 w-4" />
+                        <span>System Logs</span>
+                    </CommandItem>
+                </CommandGroup>
+            </>
+        )
+    }
 
                         <CommandSeparator />
 
@@ -190,10 +175,10 @@ export function CommandMenu() {
                                 <span>Settings</span>
                             </CommandItem>
                         </CommandGroup>
-                    </CommandList>
+                    </CommandList >
 
-                    {/* Search Footer Hints */}
-                    <div className="flex items-center justify-between border-t px-4 py-2 text-[10px] text-muted-foreground bg-muted/30">
+        {/* Search Footer Hints */ }
+        < div className = "flex items-center justify-between border-t px-4 py-2 text-[10px] text-muted-foreground bg-muted/30" >
                         <div className="flex items-center gap-4">
                             <span className="flex items-center gap-1">
                                 <kbd className="rounded border bg-muted px-1.5 font-sans font-medium">↑</kbd>
@@ -209,9 +194,9 @@ export function CommandMenu() {
                             <kbd className="rounded border bg-muted px-1.5 font-sans font-medium">esc</kbd>
                             Close
                         </span>
-                    </div>
-                </div>
-            </CommandDialog>
+                    </div >
+                </div >
+            </CommandDialog >
         </>
     );
 }

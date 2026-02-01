@@ -235,7 +235,9 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                     {/* Search Bar (Matching Reference) */}
                     <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
                         <button
-                            onClick={() => {
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
                                 window.dispatchEvent(new CustomEvent('journalx-search-open'));
                                 // Fallback for direct trigger
                                 if ((window as any).__JOURNALX_TOGGLE_SEARCH) {

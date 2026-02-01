@@ -198,7 +198,9 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   window.dispatchEvent(new CustomEvent('journalx-search-open'));
                   if ((window as any).__JOURNALX_TOGGLE_SEARCH) {
                     (window as any).__JOURNALX_TOGGLE_SEARCH();
