@@ -1,5 +1,5 @@
 import React from "react";
-import { TrendingUp, LayoutDashboard, ArrowRightLeft, BarChart3, AlertTriangle, Trophy, Settings, Plug, User, ChevronDown, Menu, Calendar, Target, ClipboardList, MessageSquare, Clock, Bell } from "lucide-react";
+import { TrendingUp, LayoutDashboard, ArrowRightLeft, BarChart3, AlertTriangle, Trophy, Settings, Plug, User, ChevronDown, Menu, Calendar, Target, ClipboardList, MessageSquare, Clock, Bell, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NavLink } from "@/components/NavLink";
 import { NotificationDropdown } from "./NotificationDropdown";
@@ -195,6 +195,22 @@ export function Header() {
             </nav>
 
             <div className="flex items-center gap-2 ml-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  const event = new KeyboardEvent('keydown', {
+                    key: 'k',
+                    ctrlKey: true,
+                    bubbles: true,
+                    metaKey: true
+                  });
+                  document.dispatchEvent(event);
+                }}
+                className="text-header-foreground/80 hover:text-header-foreground hover:bg-header-foreground/10 rounded-full h-9 w-9"
+              >
+                <Search className="w-5 h-5" />
+              </Button>
               <HeaderClock />
 
               <NotificationDropdown>
