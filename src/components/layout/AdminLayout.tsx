@@ -234,19 +234,29 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
 
                     {/* Search Bar (Matching Reference) */}
                     <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
-                        <div className="relative w-full group">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                            <input
-                                type="text"
-                                placeholder="Search..."
-                                className="w-full bg-[#111114] border border-white/5 rounded-xl py-2.5 pl-10 pr-16 text-sm text-white focus:outline-none focus:border-primary/50 transition-all shadow-inner"
-                            />
+                        <button
+                            onClick={() => {
+                                // Dispatch custom event to open command menu
+                                const event = new KeyboardEvent('keydown', {
+                                    key: 'k',
+                                    ctrlKey: true,
+                                    bubbles: true,
+                                    metaKey: true
+                                });
+                                document.dispatchEvent(event);
+                            }}
+                            className="relative w-full group text-left"
+                        >
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                            <div className="w-full bg-[#111114] border border-white/5 rounded-xl py-2.5 pl-10 pr-16 text-sm text-muted-foreground hover:border-primary/50 transition-all shadow-inner">
+                                Search pages, trades, or symbols...
+                            </div>
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[10px] text-muted-foreground font-medium">
                                 <span>Ctrl</span>
                                 <span className="opacity-50">+</span>
                                 <span>K</span>
                             </div>
-                        </div>
+                        </button>
                     </div>
 
                     <div className="flex items-center gap-4">

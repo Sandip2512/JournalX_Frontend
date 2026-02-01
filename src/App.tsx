@@ -41,6 +41,7 @@ const AdminAnalytics = lazyWithRetry(() => import("./pages/admin/AdminAnalytics"
 const Sales = lazyWithRetry(() => import("./pages/admin/Sales"));
 
 import { ThemeProvider } from "./context/ThemeContext";
+import { CommandMenu } from "./components/CommandMenu";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ const App = () => (
         <Sonner />
         <AuthProvider>
           <BrowserRouter>
+            <CommandMenu />
             <Suspense fallback={<LoadingScreen message="Loading your trading journal..." />}>
               <Routes>
                 <Route path="/login" element={<Login />} />
