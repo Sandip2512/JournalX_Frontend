@@ -44,14 +44,16 @@ export function AnalyticsGoalsTab({ stats }: AnalyticsGoalsTabProps) {
     };
 
     // Map stats to goal types
+    const isFree = user?.subscription_tier === 'free' || !user?.subscription_tier;
+
     const currentProfits = {
         weekly: stats?.weekly_profit || 0,
         monthly: stats?.monthly_profit || 0,
-        yearly: stats?.yearly_profit || stats?.total_pl || 0
+        yearly: isFree ? 0 : (stats?.yearly_profit || stats?.total_pl || 0)
     };
 
-    // Ensure we show at least placeholders for all 3 types
-    const goalTypes: ("weekly" | "monthly" | "yearly")[] = ["weekly", "monthly", "yearly"];
+    // Filter goal types for free users
+    const goalTypes: ("weekly" | "monthly" | "yearly")[] = isFree ? ["weekly", "monthly"] : ["weekly", "monthly", "yearly"];
 
     return (
         <div className="space-y-8 animate-fade-up">

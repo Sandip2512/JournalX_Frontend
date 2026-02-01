@@ -10,6 +10,7 @@ export function PerformanceMetrics({ stats }: PerformanceMetricsProps) {
     const realizedPL = stats?.net_profit || 0;
     const winRate = stats?.win_rate || 0;
     const profitFactor = stats?.profit_factor || 0;
+    const isFree = stats?.is_free_tier;
 
     // expectancy from stats or calc
     const expectancy = stats?.expectancy || (realizedPL / (stats?.total_trades || 1));
@@ -17,9 +18,9 @@ export function PerformanceMetrics({ stats }: PerformanceMetricsProps) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard
-                label="Total P/L"
+                label={isFree ? "30-Day P/L" : "Total P/L"}
                 value={`$${Math.abs(realizedPL).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                subtitle={`From ${stats?.total_trades || 0} closed trades`}
+                subtitle={isFree ? "Last 30 days" : `From ${stats?.total_trades || 0} closed trades`}
                 icon={TrendingUp}
                 glowColor="primary"
                 valueClassName={realizedPL >= 0 ? "text-primary" : "text-red-500"}

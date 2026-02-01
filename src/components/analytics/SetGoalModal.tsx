@@ -58,6 +58,8 @@ export function SetGoalModal({ isOpen, onClose, onSuccess, initialData }: SetGoa
         }
     };
 
+    const isFree = user?.subscription_tier === 'free' || !user?.subscription_tier;
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[425px] bg-[#08080f] border-white/5 text-white rounded-3xl p-0 overflow-hidden">
@@ -84,7 +86,7 @@ export function SetGoalModal({ isOpen, onClose, onSuccess, initialData }: SetGoa
                                 <SelectContent className="bg-[#08080f] border-white/5 text-white rounded-xl">
                                     <SelectItem value="weekly">Weekly</SelectItem>
                                     <SelectItem value="monthly">Monthly</SelectItem>
-                                    <SelectItem value="yearly">Yearly</SelectItem>
+                                    {!isFree && <SelectItem value="yearly">Yearly</SelectItem>}
                                 </SelectContent>
                             </Select>
                         </div>

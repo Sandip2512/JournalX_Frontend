@@ -148,10 +148,10 @@ export function Dashboard() {
         {/* Row 1: Key Performance Metrics (Stat Cards) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
-            label="Total P/L"
+            label={stats?.is_free_tier ? "30rd-Day P/L" : "Total P/L"}
             value={`${realizedPL >= 0 ? "+" : ""}$${Math.abs(realizedPL).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-            subtitle={`${stats?.total_trades || 0} trades`}
-            badge="Total"
+            subtitle={stats?.is_free_tier ? "Analysis of last 30 days" : `${stats?.total_trades || 0} trades`}
+            badge={stats?.is_free_tier ? "Limited" : "Total"}
             badgeClassName="bg-primary/20 text-primary border border-primary/30"
             icon={DollarSign}
             glowColor="primary"

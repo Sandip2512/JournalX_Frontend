@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
 import { useTheme } from "@/context/ThemeContext";
+import { useAuth } from "@/context/AuthContext";
 
 interface PerformanceChartProps {
     analyticsData: {
@@ -19,8 +20,16 @@ interface PerformanceChartProps {
 }
 
 export function PerformanceChart({ analyticsData, className }: PerformanceChartProps & { className?: string }) {
+    const { user } = useAuth();
     const [period, setPeriod] = React.useState<string>("1M");
     const { theme } = useTheme();
+
+    const allowedPeriods = React.useMemo(() => {
+        if (user?.subscription_tier === 'free' || !user?.subscription_tier) {
+            return ["1D", "1W", "1M"];
+        }
+        return ["1D", "1W", "1M", "3M", "ALL"];
+    }, [user?.subscription_tier]);
 
     // Determine if it's dark mode (including system preference)
     const isDark = React.useMemo(() => {
@@ -190,7 +199,7 @@ export function PerformanceChart({ analyticsData, className }: PerformanceChartP
                 </div>
 
                 <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
-                    {["1D", "1W", "1M", "3M", "ALL"].map((p) => (
+                    {allowedPeriods.map((p) => (
                         <button
                             key={p}
                             onClick={() => setPeriod(p)}
