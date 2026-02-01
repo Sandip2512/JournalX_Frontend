@@ -155,15 +155,15 @@ const UserLayout = ({ children, showHeader = true }: UserLayoutProps) => {
                                 <div className="flex items-center gap-2">
                                     <p className="font-bold text-[13px] text-foreground dark:text-white truncate leading-tight">{user?.first_name} {user?.last_name?.[0]}.</p>
                                     {user?.subscription_tier?.toLowerCase() === 'elite' ? (
-                                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-[4px] bg-gradient-to-r from-amber-200 to-yellow-500 text-[9px] text-black font-black tracking-tighter uppercase leading-none shadow-[0_0_10px_rgba(234,179,8,0.4)]">
+                                        <span className="inline-flex items-center justify-center px-3 py-1 rounded-[6px] bg-gradient-to-r from-amber-200 to-yellow-500 text-[9px] text-black font-black tracking-tighter uppercase leading-none shadow-[0_0_10px_rgba(234,179,8,0.4)]">
                                             ELITE
                                         </span>
                                     ) : user?.subscription_tier?.toLowerCase() === 'pro' ? (
-                                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-[4px] bg-gradient-to-r from-blue-400 to-blue-600 text-[9px] text-white font-black tracking-tighter uppercase leading-none shadow-[0_0_10px_rgba(37,99,235,0.4)]">
+                                        <span className="inline-flex items-center justify-center px-3 py-1 rounded-[6px] bg-gradient-to-r from-blue-400 to-blue-600 text-[9px] text-white font-black tracking-tighter uppercase leading-none shadow-[0_0_10px_rgba(37,99,235,0.4)]">
                                             PRO
                                         </span>
                                     ) : (
-                                        <span className="inline-block px-1.5 py-0.5 bg-muted dark:bg-white/10 rounded text-[9px] text-muted-foreground font-black tracking-tighter uppercase leading-none border border-border dark:border-none">
+                                        <span className="inline-block px-3 py-1 bg-muted dark:bg-white/10 rounded-[6px] text-[9px] text-muted-foreground font-black tracking-tighter uppercase leading-none border border-border dark:border-none">
                                             FREE
                                         </span>
                                     )}

@@ -145,7 +145,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                         </div>
                         <div className="flex-1 min-w-0 pr-2">
                             <p className="font-bold text-[13px] text-white truncate leading-tight">{user?.first_name} {user?.last_name?.[0]}.</p>
-                            <span className="inline-block mt-1 px-1.5 py-0.5 bg-white/10 rounded text-[9px] text-muted-foreground font-black tracking-tighter uppercase leading-none">Free</span>
+                            <span className="inline-block mt-1 px-3 py-1 bg-white/10 rounded-[6px] text-[9px] text-muted-foreground font-black tracking-tighter uppercase leading-none">FREE</span>
                         </div>
                         <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-white transition-colors" />
                     </div>
