@@ -70,13 +70,14 @@ export default function TradersDiary() {
     }, [user?.user_id, periodType, currentDate]);
 
     const handlePrev = () => {
-        // Free Tier Restriction: Cannot go back past current month
+        // Free Tier Restriction: Cannot go back past 30 days from today
         if (user?.subscription_tier === 'free' || !user?.subscription_tier) {
-            if (periodType === 'month' && isSameDay(startOfMonth(currentDate), startOfMonth(new Date()))) {
-                return; // Prevent going back
-            }
-            if (periodType === 'week' && isSameDay(startOfWeek(currentDate), startOfWeek(new Date()))) {
-                return; // Prevent going back from current week
+            const thirtyDaysAgo = subWeeks(new Date(), 4); // Roughly 30 days
+            const targetDate = periodType === "week" ? subWeeks(currentDate, 1) :
+                periodType === "month" ? subMonths(currentDate, 1) : subYears(currentDate, 1);
+
+            if (targetDate < startOfDay(thirtyDaysAgo)) {
+                return; // Prevent going back further than 30 days
             }
         }
 
@@ -86,6 +87,12 @@ export default function TradersDiary() {
     };
 
     const handleNext = () => {
+        const nextDate = periodType === "week" ? addWeeks(currentDate, 1) :
+            periodType === "month" ? addMonths(currentDate, 1) : addYears(currentDate, 1);
+
+        // Don't allow going into future
+        if (nextDate > new Date()) return;
+
         if (periodType === "week") setCurrentDate(addWeeks(currentDate, 1));
         else if (periodType === "month") setCurrentDate(addMonths(currentDate, 1));
         else setCurrentDate(addYears(currentDate, 1));
@@ -317,6 +324,22 @@ export default function TradersDiary() {
                 </div>
 
                 <main className="container mx-auto px-4 lg:px-8 py-8 space-y-8 relative z-10">
+                    {/* Free Tier Banner */}
+                    {(user?.subscription_tier === 'free' || !user?.subscription_tier) && (
+                        <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex items-center justify-between animate-fade-in">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-primary/10 rounded-lg">
+                                    <Info className="w-5 h-5 text-primary" />
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-bold text-foreground dark:text-white">Free Plan History Limit</h4>
+                                    <p className="text-xs text-muted-foreground font-medium">You are viewing 30 days of trade history. Upgrade to Pro for unlimited history.</p>
+                                </div>
+                            </div>
+                            <Button size="sm" className="h-8 text-[10px] font-black uppercase tracking-widest px-6" onClick={() => window.location.href = '/plans'}>Upgrade</Button>
+                        </div>
+                    )}
+
                     {/* Header Section */}
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div className="space-y-1">

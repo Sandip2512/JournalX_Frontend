@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import UserLayout from "@/components/layout/UserLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart3, TrendingUp, History, Target } from "lucide-react";
+import { BarChart3, TrendingUp, History, Target, Info } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { PerformanceMetrics } from "@/components/analytics/PerformanceMetrics";
@@ -58,6 +59,22 @@ const Analytics = () => {
     return (
         <UserLayout>
             <div className="space-y-8 animate-fade-up">
+                {/* Free Tier Banner */}
+                {(user?.subscription_tier === 'free' || !user?.subscription_tier) && (
+                    <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                                <Info className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-bold text-foreground dark:text-white">Free Plan Analytics Limit</h4>
+                                <p className="text-xs text-muted-foreground font-medium">Analytics are calculated based on your last 30 days of trading. Upgrade to Pro for full history analysis.</p>
+                            </div>
+                        </div>
+                        <Button size="sm" variant="outline" className="h-8 text-[10px] font-black uppercase tracking-widest px-6" onClick={() => window.location.href = '/plans'}>Upgrade</Button>
+                    </div>
+                )}
+
                 {/* Header Section */}
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                     <div className="space-y-1">
