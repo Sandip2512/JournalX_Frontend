@@ -41,8 +41,14 @@ export function CommandMenu() {
             }
         };
 
+        const handleToggle = () => setOpen((open) => !open);
+
         document.addEventListener("keydown", down);
-        return () => document.removeEventListener("keydown", down);
+        document.addEventListener("toggle-command-menu", handleToggle);
+        return () => {
+            document.removeEventListener("keydown", down);
+            document.removeEventListener("toggle-command-menu", handleToggle);
+        };
     }, []);
 
     const runCommand = React.useCallback((command: () => void) => {

@@ -236,14 +236,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                     <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
                         <button
                             onClick={() => {
-                                // Dispatch custom event to open command menu
-                                const event = new KeyboardEvent('keydown', {
-                                    key: 'k',
-                                    ctrlKey: true,
-                                    bubbles: true,
-                                    metaKey: true
-                                });
-                                document.dispatchEvent(event);
+                                document.dispatchEvent(new CustomEvent('toggle-command-menu'));
                             }}
                             className="relative w-full group text-left"
                         >

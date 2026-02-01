@@ -199,13 +199,7 @@ export function Header() {
                 variant="ghost"
                 size="icon"
                 onClick={() => {
-                  const event = new KeyboardEvent('keydown', {
-                    key: 'k',
-                    ctrlKey: true,
-                    bubbles: true,
-                    metaKey: true
-                  });
-                  document.dispatchEvent(event);
+                  document.dispatchEvent(new CustomEvent('toggle-command-menu'));
                 }}
                 className="text-header-foreground/80 hover:text-header-foreground hover:bg-header-foreground/10 rounded-full h-9 w-9"
               >
