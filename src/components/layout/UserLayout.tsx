@@ -318,9 +318,7 @@ const UserLayout = ({ children, showHeader = true }: UserLayoutProps) => {
                 <div className="p-8 pb-10">
                     {children}
                 </div>
-                <FeatureGate tier="pro" showLock={false}>
-                    <ChatWidget />
-                </FeatureGate>
+                <ChatWidget />
             </main>
         </div>
     );
