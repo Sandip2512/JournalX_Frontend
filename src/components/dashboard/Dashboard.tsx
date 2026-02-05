@@ -144,9 +144,9 @@ export function Dashboard() {
         </div>
       </div>
 
-      <div className="relative z-20 space-y-6">
+      <div className="relative z-20 space-y-4">
         {/* Row 1: Key Performance Metrics (Stat Cards) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             label={stats?.is_free_tier ? "30rd-Day P/L" : "Total P/L"}
             value={`${realizedPL >= 0 ? "+" : ""}$${Math.abs(realizedPL).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
@@ -195,18 +195,18 @@ export function Dashboard() {
         </div>
 
         {/* Row 2: Performance Chart & Monthly Calendar */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2">
             <PerformanceChart
               analyticsData={analyticsData}
-              className="h-[450px]"
+              className="h-[350px]"
             />
           </div>
           <div className="lg:col-span-1">
             <MonthlyCalendar
               data={calendarData}
               trades={recentTrades}
-              className="h-[450px]"
+              className="h-[350px]"
               onViewAll={(date, trades) => {
                 setSelectedDate(date);
                 setDayTrades(trades);
