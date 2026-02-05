@@ -138,12 +138,6 @@ export function CommandMenu() {
                             </div>
                             <span className="font-bold text-[15px]">Broker Connections</span>
                         </CommandItem>
-                        <CommandItem onSelect={() => runCommand(() => navigate("/settings"))} className="mb-1">
-                            <div className="mr-4 h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center group-data-[selected=true]:bg-white/20 transition-colors">
-                                <Settings className="h-5 w-5 text-white" />
-                            </div>
-                            <span className="font-bold text-[15px]">Settings</span>
-                        </CommandItem>
                     </CommandGroup>
 
                     <CommandSeparator className="my-2 bg-white/5" />
