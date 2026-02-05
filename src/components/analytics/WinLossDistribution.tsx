@@ -9,7 +9,7 @@ export function WinLossDistribution({ stats }: { stats: any }) {
     const lossWidth = (loss / total) * 100;
 
     return (
-        <div className="glass-card-premium p-6 rounded-3xl border border-white/5 space-y-6">
+        <div className="glass-card-premium p-6 rounded-3xl border border-white/5 space-y-6 hover:-translate-y-2 transition-all duration-500 hover:border-primary/20 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4),0_0_20px_rgba(11,102,228,0.1)]">
             <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                 <h3 className="text-xs font-bold text-foreground dark:text-white uppercase tracking-wider">Win/Loss Distribution</h3>

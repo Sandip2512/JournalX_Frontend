@@ -7,7 +7,7 @@ export function LongVsShort({ data }: { data: any }) {
     const shortData = data?.short || { trades: 0, pl: 0, winRate: 0 };
 
     return (
-        <div className="glass-card-premium p-6 rounded-3xl border border-white/5 space-y-6">
+        <div className="glass-card-premium p-6 rounded-3xl border border-white/5 space-y-6 hover:-translate-y-2 transition-all duration-500 hover:border-primary/20 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4),0_0_20px_rgba(11,102,228,0.1)]">
             <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-muted-foreground" />
                 <h3 className="text-xs font-bold text-foreground dark:text-white uppercase tracking-wider">Long vs Short</h3>
@@ -74,7 +74,7 @@ export function DayPerformance({ data }: { data: any }) {
     const max = Math.max(...perf.map(Math.abs), 1);
 
     return (
-        <div className="glass-card-premium p-6 rounded-3xl border border-white/5 space-y-6">
+        <div className="glass-card-premium p-6 rounded-3xl border border-white/5 space-y-6 hover:-translate-y-2 transition-all duration-500 hover:border-primary/20 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4),0_0_20px_rgba(11,102,228,0.1)]">
             <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-muted-foreground" />
                 <h3 className="text-xs font-bold text-foreground dark:text-white uppercase tracking-wider">Day Performance</h3>
@@ -107,7 +107,7 @@ export function TopSymbols({ data }: { data: any }) {
     const symbols = data || [];
 
     return (
-        <div className="glass-card-premium p-6 rounded-3xl border border-white/5 space-y-6">
+        <div className="glass-card-premium p-6 rounded-3xl border border-white/5 space-y-6 hover:-translate-y-2 transition-all duration-500 hover:border-primary/20 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4),0_0_20px_rgba(11,102,228,0.1)]">
             <div className="flex items-center gap-2">
                 <BarChart2 className="w-4 h-4 text-muted-foreground" />
                 <h3 className="text-xs font-bold text-foreground dark:text-white uppercase tracking-wider">Top Symbols</h3>

@@ -16,7 +16,7 @@ export function PerformanceMetrics({ stats }: PerformanceMetricsProps) {
     const expectancy = stats?.expectancy || (realizedPL / (stats?.total_trades || 1));
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
                 label={isFree ? "30-Day P/L" : "Total P/L"}
                 value={`$${Math.abs(realizedPL).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}

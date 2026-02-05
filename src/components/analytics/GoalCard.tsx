@@ -24,7 +24,16 @@ export function GoalCard({ type, target, current, onEdit, className }: GoalCardP
     const Icon = config.icon;
 
     return (
-        <div className={cn("glass-card-premium p-6 rounded-3xl border border-border dark:border-white/5 space-y-6 relative overflow-hidden group", className)}>
+        <div className={cn(
+            "glass-card-premium p-6 rounded-3xl border border-white/5 space-y-6 relative overflow-hidden group transition-all duration-500 hover:-translate-y-2",
+            type === "weekly" && "hover:border-blue-500/20 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4),0_0_20px_rgba(59,130,246,0.1)]",
+            type === "monthly" && "hover:border-emerald-500/20 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4),0_0_20px_rgba(16,185,129,0.1)]",
+            type === "yearly" && "hover:border-amber-500/20 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4),0_0_20px_rgba(245,158,11,0.1)]",
+            className
+        )}>
+            {/* 3D Convex Lighting */}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border dark:via-white/10 to-transparent pointer-events-none" />
+            <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-border dark:via-white/5 to-transparent pointer-events-none" />
             <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center gap-3">
                     <div className={cn("p-2 rounded-xl border border-border dark:border-white/5", config.bg, config.color)}>
@@ -69,7 +78,10 @@ export function GoalCard({ type, target, current, onEdit, className }: GoalCardP
             </div>
 
             {/* Decorative background pulse */}
-            <div className={cn("absolute -right-10 -bottom-10 w-32 h-32 blur-[60px] rounded-full opacity-20", config.bg)} />
+            <div className={cn("absolute -right-10 -bottom-10 w-32 h-32 blur-[60px] rounded-full opacity-20 group-hover:scale-125 transition-all duration-1000 animate-pulse-slow", config.bg)} />
+
+            {/* Corner Reflective Shine */}
+            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-foreground/[0.02] dark:from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
         </div>
     );
 }

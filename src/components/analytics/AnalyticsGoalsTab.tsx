@@ -74,7 +74,7 @@ export function AnalyticsGoalsTab({ stats }: AnalyticsGoalsTabProps) {
                 </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {goalTypes.map(type => {
                     const goal = goals.find(g => g.goal_type === type);
                     return (

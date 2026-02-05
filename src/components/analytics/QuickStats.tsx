@@ -34,7 +34,7 @@ export function QuickStats({ stats, className }: QuickStatsProps) {
 
             <div className="grid grid-cols-2 gap-4">
                 {items.map((item, i) => (
-                    <div key={i} className="p-3 rounded-xl bg-muted dark:bg-white/5 border border-border dark:border-white/5 space-y-1">
+                    <div key={i} className="p-3 rounded-xl bg-muted dark:bg-white/5 border border-border dark:border-white/5 space-y-1 hover:-translate-y-1 hover:bg-muted/80 dark:hover:bg-white/10 transition-all duration-300 cursor-default">
                         <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
                         <p className={cn("text-sm font-black", item.color)}>{item.value}</p>
                     </div>
