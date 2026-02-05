@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import UserLayout from "@/components/layout/UserLayout";
-import { Settings as SettingsIcon, User, Bell, Shield, Palette, Save } from "lucide-react";
+import { Settings as SettingsIcon, User, Bell, Shield, Palette, Save, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,7 +29,7 @@ import api from "@/lib/api";
 
 const Settings = () => {
   const { theme, setTheme } = useTheme();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   // Password Change State
   const [isPasswordOpen, setIsPasswordOpen] = useState(false);
@@ -265,9 +265,38 @@ const Settings = () => {
               </div>
             </div>
           </div>
+
+          {/* Account Section */}
+          <div className="glass-card-premium p-6 opacity-0 animate-fade-up" style={{ animationDelay: "0.25s" }}>
+            <div className="flex items-center gap-3 mb-6">
+              <User className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-semibold">Account</h2>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="font-medium text-destructive">Sign Out</p>
+                  <p className="text-sm text-muted-foreground">Sign out of your account on this device</p>
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => {
+                    if (window.confirm("Are you sure you want to log out?")) {
+                      logout();
+                    }
+                  }}
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </main >
-    </UserLayout>
+    </UserLayout >
   );
 };
 
