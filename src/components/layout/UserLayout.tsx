@@ -210,7 +210,7 @@ const UserLayout = ({ children, showHeader = true }: UserLayoutProps) => {
 
                 <div className="p-4 border-t border-sidebar-border space-y-2">
                     <div className={`flex items-center justify-between ${!isSidebarOpen && "lg:flex-col lg:gap-2"}`}>
-                        <ThemeToggle />
+                        {/* ThemeToggle removed */}
                         {isSidebarOpen && <span className="text-xs text-muted-foreground">v1.0.0</span>}
                     </div>
 
