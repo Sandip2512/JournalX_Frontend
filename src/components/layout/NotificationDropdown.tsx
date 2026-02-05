@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Bell, Check, Megaphone, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Bell, Check, Megaphone, Sparkles, ArrowRight } from "lucide-react";
 import {
     Popover,
     PopoverContent,
@@ -18,11 +19,17 @@ interface Notification {
     title: string;
     content: string;
     created_at: string;
-    type: "announcement" | "personal";
+    type: "announcement" | "personal" | "room_invite";
     is_read: boolean;
+    metadata?: {
+        action_url?: string;
+        action_label?: string;
+        inviter_id?: string;
+    };
 }
 
 export const NotificationDropdown = ({ children }: { children: React.ReactNode }) => {
+    const navigate = useNavigate();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
@@ -192,6 +199,24 @@ export const NotificationDropdown = ({ children }: { children: React.ReactNode }
                                                         <p className="text-[11px] text-white/40 leading-tight line-clamp-2">
                                                             {notification.content}
                                                         </p>
+
+                                                        {notification.metadata?.action_url && (
+                                                            <div className="mt-2">
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        navigate(notification.metadata!.action_url!);
+                                                                        dismissNotification(notification.id);
+                                                                    }}
+                                                                    className="w-full h-7 text-[10px] font-bold bg-white/5 hover:bg-emerald-500 hover:text-white rounded-lg transition-all flex items-center justify-between px-2"
+                                                                >
+                                                                    {notification.metadata.action_label || "View"}
+                                                                    <ArrowRight className="w-3 h-3" />
+                                                                </Button>
+                                                            </div>
+                                                        )}
 
                                                         {/* Actions reveal on hover */}
                                                         <div className="flex items-center justify-between mt-1 pt-1 border-t border-white/[0.03]">

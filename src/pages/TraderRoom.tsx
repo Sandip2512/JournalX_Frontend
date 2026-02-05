@@ -1,88 +1,464 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import UserLayout from "@/components/layout/UserLayout";
-import { Monitor, ArrowLeft, Users, MessageSquare, Play } from "lucide-react";
+import { ArrowLeft, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { RoomLobby } from "@/components/trader-room/RoomLobby";
+import { ActiveScreenShare } from "@/components/trader-room/ActiveScreenShare";
+import { RoomControls } from "@/components/trader-room/RoomControls";
+import { ParticipantsStrip } from "@/components/trader-room/ParticipantsStrip";
+import { RoomChat, ChatMessage } from "@/components/trader-room/RoomChat";
+import { Participant } from "@/components/trader-room/ParticipantsStrip";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
+import api from "@/lib/api";
+import Peer from "peerjs";
 
 const TraderRoom = () => {
+    const { user } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const meetingId = searchParams.get("meetingId");
+
+    // -- 1. All State Declarations at the Top --
+    const [roomState, setRoomState] = useState<"lobby" | "active">("lobby");
+    const [isChatOpen, setIsChatOpen] = useState(true);
+    const [isMuted, setIsMuted] = useState(false);
+
+    // Media & Streaming State
+    const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
+    const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
+    const [remoteScreenStream, setRemoteScreenStream] = useState<MediaStream | null>(null);
+    const [remoteCameraStream, setRemoteCameraStream] = useState<MediaStream | null>(null);
+
+    // PeerJS & Connection State
+    const [peer, setPeer] = useState<Peer | null>(null);
+    const [currentScreenCall, setCurrentScreenCall] = useState<any>(null);
+    const [currentCameraCall, setCurrentCameraCall] = useState<any>(null);
+    const [dataConn, setDataConn] = useState<any>(null);
+
+    // Participant & Name State
+    const [participants, setParticipants] = useState<Participant[]>([]);
+    const [otherUser, setOtherUser] = useState<any>(null);
+    const [isHandRaised, setIsHandRaised] = useState(false);
+    const [remoteHandRaised, setRemoteHandRaised] = useState(false);
+
+    // Chat State
+    const [messages, setMessages] = useState<ChatMessage[]>([
+        { id: "1", sender: "System", text: "Secure link established. Waiting for participants...", type: "text", timestamp: new Date(), color: "text-emerald-500" },
+    ]);
+
+    // -- 2. Helper Functions --
+    const setupDataConnection = (conn: any) => {
+        if (!conn) return;
+
+        conn.on('open', () => {
+            console.log('Data connection established');
+            setDataConn(conn);
+        });
+
+        conn.on('data', (data: any) => {
+            if (data.type === 'chat') {
+                const incomingMsg: ChatMessage = {
+                    ...data.message,
+                    timestamp: new Date(data.message.timestamp)
+                };
+                setMessages(prev => [...prev, incomingMsg]);
+                if (!isChatOpen) {
+                    setIsChatOpen(true);
+                    toast.info(`New message from ${incomingMsg.sender}`);
+                }
+            } else if (data.type === 'hand') {
+                setRemoteHandRaised(data.raised);
+                if (data.raised) {
+                    toast.info(`${otherUser?.first_name || 'Friend'} raised their hand ✋`);
+                }
+            } else if (data.type === 'reaction') {
+                // Future: Trigger floating animation
+                toast.info(`${otherUser?.first_name || 'Friend'} sent a reaction`);
+            }
+        });
+
+        conn.on('error', (err: any) => {
+            console.error('Data connection error:', err);
+            setDataConn(null);
+        });
+
+        conn.on('close', () => {
+            setDataConn(null);
+        });
+    };
+
+    const handleToggleHand = () => {
+        const newState = !isHandRaised;
+        setIsHandRaised(newState);
+        if (dataConn && dataConn.open) {
+            dataConn.send({ type: 'hand', raised: newState });
+        }
+    };
+
+    const handleJoin = () => {
+        setRoomState("active");
+        toast.success("Entered Secure Room");
+    };
+
+    // -- 3. Effects --
+
+    // Initialize Peer
+    useEffect(() => {
+        if (!user || roomState !== "active") return;
+
+        const newPeer = new Peer(user.user_id, {
+            host: '0.peerjs.com',
+            port: 443,
+            secure: true
+        });
+
+        newPeer.on('open', (id) => {
+            console.log('Peer connected with ID:', id);
+        });
+
+        newPeer.on('connection', (conn) => {
+            console.log('Incoming data connection...');
+            setupDataConnection(conn);
+        });
+
+        newPeer.on('call', (call) => {
+            const streamType = call.metadata?.type || 'screen';
+            console.log(`Incoming ${streamType} call from peer...`);
+
+            call.answer();
+            call.on('stream', (stream) => {
+                if (streamType === 'camera') {
+                    setRemoteCameraStream(stream);
+                } else {
+                    setRemoteScreenStream(stream);
+                }
+            });
+
+            call.on('close', () => {
+                if (streamType === 'camera') {
+                    setRemoteCameraStream(null);
+                } else {
+                    setRemoteScreenStream(null);
+                }
+            });
+
+            if (streamType === 'camera') {
+                setCurrentCameraCall(call);
+            } else {
+                setCurrentScreenCall(call);
+            }
+        });
+
+        setPeer(newPeer);
+
+        return () => {
+            newPeer.destroy();
+        };
+    }, [user, roomState]);
+
+    // Connect to other user for data when both are ready
+    useEffect(() => {
+        if (peer && otherUser?.user_id && !dataConn) {
+            console.log('Initiating data connection to:', otherUser.user_id);
+            const conn = peer.connect(otherUser.user_id);
+            setupDataConnection(conn);
+        }
+    }, [peer, otherUser, dataConn]);
+
+    useEffect(() => {
+        if (!user) return;
+
+        const myParticipant = {
+            id: user.user_id,
+            name: "You",
+            avatar: user.first_name?.[0] || "U",
+            isMuted: isMuted,
+            color: "bg-primary"
+        };
+
+        if (otherUser) {
+            setParticipants([
+                myParticipant,
+                {
+                    id: otherUser.user_id,
+                    name: otherUser.name,
+                    avatar: otherUser.first_name?.[0] || "?",
+                    isSpeaking: false,
+                    color: "bg-blue-500"
+                }
+            ]);
+        } else {
+            setParticipants([myParticipant]);
+        }
+    }, [user, isMuted, otherUser]);
+
+    useEffect(() => {
+        if (meetingId && user?.user_id) {
+            const fetchMeeting = async () => {
+                try {
+                    const res = await api.get(`/api/friends/meeting/${meetingId}`);
+                    const otherId = res.data.host_id === user.user_id ? res.data.invitee_id : res.data.host_id;
+
+                    if (otherId) {
+                        const userRes = await api.get(`/api/users/${otherId}/info`);
+                        setOtherUser(userRes.data);
+                    }
+                } catch (e) {
+                    console.error("Meeting info fetch failed", e);
+                }
+            };
+            fetchMeeting();
+
+            // Auto-accept/join logic for invitee
+            if (roomState === "lobby") {
+                const accept = async () => {
+                    try {
+                        await api.post(`/api/friends/meeting/${meetingId}/accept`);
+                        handleJoin();
+                    } catch (e) { }
+                };
+                accept();
+            }
+        }
+    }, [meetingId, user?.user_id, roomState]);
+
+    // Cleanup on unmount only
+    useEffect(() => {
+        return () => {
+            if (screenStream) screenStream.getTracks().forEach(t => t.stop());
+            if (videoStream) videoStream.getTracks().forEach(t => t.stop());
+            if (currentScreenCall) currentScreenCall.close();
+            if (currentCameraCall) currentCameraCall.close();
+            if (peer) peer.destroy();
+        };
+    }, []); // Only run on unmount
+
+    const handleToggleScreenShare = async () => {
+        if (screenStream) {
+            screenStream.getTracks().forEach(track => track.stop());
+            setScreenStream(null);
+            currentScreenCall?.close();
+            setCurrentScreenCall(null);
+            toast.info("Screen sharing stopped");
+        } else {
+            try {
+                const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                setScreenStream(stream);
+
+                // Start Peer Call to other user with 'screen' metadata
+                if (peer && otherUser) {
+                    const call = peer.call(otherUser.user_id, stream, { metadata: { type: 'screen' } });
+                    setCurrentScreenCall(call);
+                }
+
+                stream.getVideoTracks()[0].onended = () => {
+                    setScreenStream(null);
+                    currentScreenCall?.close();
+                    setCurrentScreenCall(null);
+                    toast.info("Screen sharing stopped");
+                };
+                toast.success("Screen sharing active");
+            } catch (err) {
+                console.error("Error sharing screen:", err);
+                toast.error("Failed to start screen share");
+            }
+        }
+    };
+
+    const handleToggleVideo = async () => {
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+            setVideoStream(null);
+            currentCameraCall?.close();
+            setCurrentCameraCall(null);
+            toast.info("Camera stopped");
+        } else {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                setVideoStream(stream);
+
+                // Start Peer Call to other user with 'camera' metadata
+                if (peer && otherUser) {
+                    const call = peer.call(otherUser.user_id, stream, { metadata: { type: 'camera' } });
+                    setCurrentCameraCall(call);
+                }
+
+                toast.success("Camera active");
+            } catch (err) {
+                console.error("Error accessing camera:", err);
+                toast.error("Camera access denied");
+            }
+        }
+    };
+
+    const handleToggleMute = () => {
+        setIsMuted(!isMuted);
+        toast.info(isMuted ? "Microphone active" : "Microphone muted");
+    };
+
+
+    const handleLeave = () => {
+        if (window.confirm("Are you sure you want to leave the room?")) {
+            // Stop media components
+            screenStream?.getTracks().forEach(t => t.stop());
+            videoStream?.getTracks().forEach(t => t.stop());
+            setScreenStream(null);
+            setVideoStream(null);
+            setRoomState("lobby");
+        }
+    };
+
+    const handleSendMessage = (text: string) => {
+        const newMessage: ChatMessage = {
+            id: Date.now().toString(),
+            sender: user?.first_name || "You",
+            text,
+            type: "text",
+            timestamp: new Date(),
+            color: "text-primary"
+        };
+        setMessages(prev => [...prev, newMessage]);
+
+        // Sync with peer
+        if (dataConn && dataConn.open) {
+            dataConn.send({ type: 'chat', message: newMessage });
+        }
+    };
+
+    const handleShareStats = async () => {
+        try {
+            const res = await api.get(`/trades/stats/user/${user.user_id}`);
+            const stats = res.data;
+            const statsMessage: ChatMessage = {
+                id: Date.now().toString(),
+                sender: user?.first_name || "You",
+                type: "stats",
+                timestamp: new Date(),
+                color: "text-primary",
+                stats: {
+                    roi: stats.roi || 0,
+                    pnl: stats.net_profit || 0,
+                    symbol: "PORTFOLIO",
+                    direction: (stats.roi || 0) >= 0 ? "LONG" : "SHORT"
+                }
+            };
+            setMessages(prev => [...prev, statsMessage]);
+
+            // Sync with peer
+            if (dataConn && dataConn.open) {
+                dataConn.send({ type: 'chat', message: statsMessage });
+            }
+
+            toast.success("Current Portfolio Stats Shared");
+            if (!isChatOpen) setIsChatOpen(true);
+        } catch (err) {
+            toast.error("Failed to fetch current stats");
+        }
+    };
 
     return (
-        <UserLayout>
-            <div className="max-w-7xl mx-auto px-4 py-8 space-y-12 animate-fade-up">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-4">
+        <UserLayout showHeader={false}>
+            {/* Height adjustment to fit within UserLayout's p-8 (2rem) padding without scrolling */}
+            <div className="h-[calc(100vh-6rem)] w-full bg-[#0a0a0c] flex flex-col relative overflow-hidden rounded-3xl border border-white/5 shadow-2xl">
+
+                {roomState === "lobby" ? (
+                    <>
+                        <div className="absolute top-6 left-6 z-10">
                             <Button
                                 variant="ghost"
-                                size="icon"
                                 onClick={() => navigate("/community")}
-                                className="rounded-xl hover:bg-white/5"
+                                className="text-muted-foreground hover:text-white"
                             >
-                                <ArrowLeft className="w-5 h-5" />
+                                <ArrowLeft className="w-5 h-5 mr-2" />
+                                Exit to Community
                             </Button>
-                            <h1 className="text-4xl font-black text-white tracking-tighter flex items-center gap-3">
-                                <Monitor className="w-8 h-8 text-emerald-500" />
-                                Trader <span className="text-emerald-500 italic">Room</span>
-                            </h1>
                         </div>
-                        <p className="text-muted-foreground font-bold text-[10px] uppercase tracking-[0.2em] ml-14">Collaborative Strategy & Execution</p>
-                    </div>
-                </div>
-
-                {/* Focus Area */}
-                <div className="glass-card-premium p-12 rounded-[2.5rem] border border-white/5 flex flex-col items-center justify-center text-center space-y-8 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent pointer-events-none" />
-
-                    <div className="w-24 h-24 rounded-3xl bg-emerald-500/10 flex items-center justify-center relative group">
-                        <Monitor className="w-12 h-12 text-emerald-500 group-hover:scale-110 transition-transform duration-500" />
-                        <div className="absolute inset-0 bg-emerald-500/20 blur-[40px] rounded-full animate-pulse-slow font-black" />
-                    </div>
-
-                    <div className="space-y-3 relative z-10">
-                        <h2 className="text-3xl font-black text-white">Live Rooms Opening Soon</h2>
-                        <p className="text-muted-foreground max-w-lg mx-auto leading-relaxed">
-                            Join live trading sessions, watch pros execute their plan in real-time,
-                            and participate in synchronized multi-trader analysis rooms.
-                        </p>
-                    </div>
-
-                    <div className="flex flex-wrap gap-4 pt-4 relative z-10">
-                        <Button className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl px-10 py-6 font-black uppercase tracking-widest text-xs gap-3 shadow-[0_0_30px_rgba(16,185,129,0.3)]">
-                            <Play className="w-4 h-4 fill-current" />
-                            Notify Me on Launch
-                        </Button>
-                        <Button variant="ghost" className="rounded-2xl px-8 py-6 font-black uppercase tracking-widest text-xs border border-white/5">
-                            Learn More
-                        </Button>
-                    </div>
-
-                    {/* Feature Preview */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full pt-12 mt-12 border-t border-white/5">
-                        <div className="p-6 space-y-3">
-                            <div className="text-emerald-500 font-bold text-xs uppercase tracking-widest flex items-center gap-2 justify-center">
-                                <Users className="w-4 h-4" />
-                                Multi-Trader Sync
+                        <RoomLobby onJoinRoom={handleJoin} />
+                    </>
+                ) : (
+                    /* Active Room Layout */
+                    <div className="flex-1 flex overflow-hidden">
+                        {/* Main Stage */}
+                        <div className="flex-1 relative flex flex-col bg-black/50 transition-all duration-300">
+                            {/* Top Bar / Participants Overlay */}
+                            <div className="absolute top-4 left-4 z-30">
+                                <ParticipantsStrip participants={participants} />
                             </div>
-                            <p className="text-[11px] text-muted-foreground">Share your screen and charts with up to 100 traders simultaneously.</p>
-                        </div>
-                        <div className="p-6 space-y-3 border-x border-white/5">
-                            <div className="text-emerald-500 font-bold text-xs uppercase tracking-widest flex items-center gap-2 justify-center">
-                                <MessageSquare className="w-4 h-4" />
-                                Low-Latency Comms
+
+                            {/* Center Content: Screen Share */}
+                            <div className="flex-1 p-4 flex items-center justify-center pb-24">
+                                <ActiveScreenShare
+                                    sharerName={otherUser?.first_name || 'Friend'}
+                                    screenStream={screenStream}
+                                    remoteScreenStream={remoteScreenStream}
+                                    cameraStream={videoStream}
+                                    remoteCameraStream={remoteCameraStream}
+                                />
+
+                                {/* Raise Hand Indicators */}
+                                <div className="absolute top-20 right-8 space-y-2 pointer-events-none">
+                                    <AnimatePresence>
+                                        {isHandRaised && (
+                                            <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 20, opacity: 0 }} className="bg-primary text-white p-2 rounded-lg flex items-center gap-2 shadow-lg">
+                                                <Hand className="w-4 h-4" /> <span className="text-xs font-bold">You raised hand</span>
+                                            </motion.div>
+                                        )}
+                                        {remoteHandRaised && (
+                                            <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 20, opacity: 0 }} className="bg-blue-500 text-white p-2 rounded-lg flex items-center gap-2 shadow-lg">
+                                                <Hand className="w-4 h-4" /> <span className="text-xs font-bold">{otherUser?.first_name || 'Colleague'} raised hand</span>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
                             </div>
-                            <p className="text-[11px] text-muted-foreground">Voice and text chat optimized for high-speed trading environments.</p>
                         </div>
-                        <div className="p-6 space-y-3">
-                            <div className="text-emerald-500 font-bold text-xs uppercase tracking-widest flex items-center gap-2 justify-center">
-                                <Monitor className="w-4 h-4" />
-                                Shared Analysis
-                            </div>
-                            <p className="text-[11px] text-muted-foreground">Interactive whiteboards for collaborative technical analysis sessions.</p>
-                        </div>
+
+                        {/* Right Sidebar: Chat (Collapsible) */}
+                        <AnimatePresence>
+                            {isChatOpen && (
+                                <motion.div
+                                    initial={{ width: 0, opacity: 0 }}
+                                    animate={{ width: 384, opacity: 1 }}
+                                    exit={{ width: 0, opacity: 0 }}
+                                    transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+                                    className="border-l border-white/5 bg-[#0a0a0c] flex flex-col shadow-2xl z-20 overflow-hidden pb-20"
+                                >
+                                    <div className="w-96 flex-1 flex flex-col">
+                                        <RoomChat
+                                            messages={messages}
+                                            onSendMessage={handleSendMessage}
+                                            onClose={() => setIsChatOpen(false)}
+                                        />
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Persistent Google Meet Controls */}
+                        <RoomControls
+                            onLeave={handleLeave}
+                            onShareStats={handleShareStats}
+                            isChatOpen={isChatOpen}
+                            onToggleChat={() => setIsChatOpen(!isChatOpen)}
+                            meetingId={meetingId || "Trade Session Sync"}
+
+                            // Media Props
+                            isScreenSharing={!!screenStream}
+                            onToggleScreenShare={handleToggleScreenShare}
+                            isVideoOn={!!videoStream}
+                            onToggleVideo={handleToggleVideo}
+                            isMuted={isMuted}
+                            onToggleMute={handleToggleMute}
+
+                            // Hand/Reaction Props
+                            isHandRaised={isHandRaised}
+                            onToggleHand={handleToggleHand}
+                        />
                     </div>
-                </div>
+                )}
             </div>
         </UserLayout>
     );

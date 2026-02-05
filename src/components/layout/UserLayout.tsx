@@ -6,7 +6,7 @@ import {
     LayoutDashboard, TrendingUp, FileText, Bell,
     Settings, LogOut, Menu, BarChart3, Target,
     ClipboardList, MessageSquare, AlertTriangle,
-    ChevronLeft, ChevronRight, Clock, Search, Plus
+    ChevronLeft, ChevronRight, Clock, Search, Plus, Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -21,7 +21,16 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
 import { ChatWidget } from "@/components/chat/ChatWidget";
+import { NotificationDropdown } from "@/components/layout/NotificationDropdown";
 import { FeatureGate } from "@/components/auth/FeatureGate";
 import { cn } from "@/lib/utils";
 
@@ -206,6 +215,69 @@ const UserLayout = ({ children, showHeader = true }: UserLayoutProps) => {
                             </Link>
                         );
                     })}
+
+                    {/* New Features Button */}
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                onClick={() => window.innerWidth < 1024 && setIsSidebarOpen(false)}
+                                className={cn(
+                                    "w-full justify-start transition-all duration-300 h-11 px-4 relative group overflow-hidden mt-6",
+                                    !isSidebarOpen && "lg:px-0 lg:justify-center",
+                                    "text-amber-500 hover:text-amber-600 hover:bg-amber-500/10 border border-amber-500/20"
+                                )}
+                            >
+                                <div className="absolute inset-0 bg-amber-500/5 animate-pulse" />
+                                <Sparkles className={cn(
+                                    "h-5 w-5 transition-transform duration-300 group-hover:scale-110 animate-pulse",
+                                    isSidebarOpen ? "mr-3" : "lg:mr-0"
+                                )} />
+                                {isSidebarOpen && (
+                                    <span className="font-bold tracking-tight bg-gradient-to-r from-amber-500 to-yellow-500 bg-clip-text text-transparent animate-pulse">
+                                        Coming Soon
+                                    </span>
+                                )}
+                                {isSidebarOpen && (
+                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                                    </span>
+                                )}
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md bg-card border-card-border">
+                            <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2 text-xl">
+                                    <Sparkles className="w-5 h-5 text-amber-500" />
+                                    Coming Soon
+                                </DialogTitle>
+                                <DialogDescription>
+                                    Exciting new features are on the way to supercharge your trading journey.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="space-y-4">
+                                    {[
+                                        { title: "AI Trade Analysis", desc: "Get personalized insights on your trading patterns" },
+                                        { title: "Mobile App", desc: "Trade on the go with our native iOS & Android apps" },
+                                        { title: "Advanced Backtesting", desc: "Test your strategies with historical market data" },
+                                        { title: "Auto Sync Trades", desc: "Connect your broker for automatic sync & chart analysis" }
+                                    ].map((feature, i) => (
+                                        <div key={i} className="flex items-start gap-4 p-3 rounded-xl bg-muted/50 border border-border dark:border-white/5">
+                                            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                                                <Sparkles className="w-4 h-4" />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-semibold text-foreground">{feature.title}</h4>
+                                                <p className="text-sm text-muted-foreground">{feature.desc}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
                 </nav>
 
                 <div className="p-4 border-t border-sidebar-border space-y-2">
@@ -213,6 +285,8 @@ const UserLayout = ({ children, showHeader = true }: UserLayoutProps) => {
                         {/* ThemeToggle removed */}
                         {isSidebarOpen && <span className="text-xs text-muted-foreground">v1.0.0</span>}
                     </div>
+
+
 
                     <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
                         <AlertDialogTrigger asChild>
@@ -295,10 +369,11 @@ const UserLayout = ({ children, showHeader = true }: UserLayoutProps) => {
                                 <span className="text-sm font-mono tracking-wider">{currentTime.toLocaleTimeString()}</span>
                             </div>
 
-                            <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground dark:hover:text-white">
-                                <Bell className="h-5 w-5" />
-                                <span className="absolute top-2 right-2 h-2 w-2 bg-primary rounded-full shadow-[0_0_8px_rgba(11,102,228,0.8)]" />
-                            </Button>
+                            <NotificationDropdown>
+                                <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground dark:hover:text-white">
+                                    <Bell className="h-5 w-5" />
+                                </Button>
+                            </NotificationDropdown>
 
                             <Link to="/profile">
                                 <div className="h-10 w-10 rounded-xl overflow-hidden border border-white/10 shadow-lg cursor-pointer hover:border-primary/50 transition-colors">
@@ -318,7 +393,7 @@ const UserLayout = ({ children, showHeader = true }: UserLayoutProps) => {
                 <div className="p-8 pb-10">
                     {children}
                 </div>
-                <ChatWidget />
+                {!location.pathname.includes("/trader-room") && <ChatWidget />}
             </main>
         </div>
     );

@@ -19,18 +19,23 @@ const Community = () => {
     const [userStats, setUserStats] = useState<any>(null);
     const [userRanking, setUserRanking] = useState<UserRankingResponse | null>(null);
     const [communityCount, setCommunityCount] = useState<number>(0);
+    const [onlineFriendsCount, setOnlineFriendsCount] = useState(0);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [leaderboardRes, membersRes] = await Promise.all([
+                const [leaderboardRes, membersRes, friendsRes] = await Promise.all([
                     leaderboardApi.getLeaderboard("net_profit", 3, "all_time"),
-                    api.get("/api/users/community/members")
+                    api.get("/api/users/community/members"),
+                    api.get("/api/friends")
                 ]);
 
                 setTopTraders(leaderboardRes.data);
                 setCommunityCount(Array.isArray(membersRes.data) ? membersRes.data.length : 0);
+
+                const friends = Array.isArray(friendsRes.data) ? friendsRes.data : [];
+                setOnlineFriendsCount(friends.filter((f: any) => f.is_online).length);
 
                 if (user?.user_id) {
                     const [statsRes, rankingRes] = await Promise.all([
@@ -63,8 +68,8 @@ const Community = () => {
         }).format(value);
     };
 
-    // Calculate a realistic "Online" count based on total members
-    const onlineCount = Math.max(1, Math.floor(communityCount * 0.15) + 3);
+    // Use the real online friend count
+    const onlineCount = onlineFriendsCount;
 
     return (
         <UserLayout>
