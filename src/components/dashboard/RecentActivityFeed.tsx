@@ -52,38 +52,38 @@ export function RecentActivityFeed({ trades, isLoading }: RecentActivityFeedProp
                 </span>
             </div>
 
-            <div className="space-y-1 relative z-10">
+            <div className="space-y-0.5 relative z-10">
                 {trades.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground text-[10px] flex flex-col items-center gap-2 opacity-50">
                         <Activity className="w-8 h-8 text-primary/10" />
                         <p className="font-medium tracking-wide">Awaiting market activity...</p>
                     </div>
                 ) : (
-                    trades.slice(0, 5).map((trade, idx) => {
+                    trades.slice(0, 8).map((trade, idx) => {
                         const isProfit = (trade.profit ?? 0) >= 0;
                         return (
                             <div
                                 key={trade.id || idx}
-                                className="group/row flex items-center justify-between p-2.5 rounded-xl bg-transparent hover:bg-muted/50 dark:hover:bg-white/[0.03] transition-all duration-500 border border-transparent hover:border-border dark:hover:border-white/5 hover:translate-x-1"
+                                className="group/row flex items-center justify-between p-2 rounded-lg bg-transparent hover:bg-muted/50 dark:hover:bg-white/[0.03] transition-all duration-500 border border-transparent hover:border-border dark:hover:border-white/5 hover:translate-x-1"
                             >
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2.5">
                                     <div className={cn(
-                                        "w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br shadow-md transition-transform duration-500 group-hover/row:scale-105",
+                                        "w-7 h-7 rounded-md flex items-center justify-center bg-gradient-to-br shadow-sm transition-transform duration-500 group-hover/row:scale-105",
                                         isProfit
                                             ? "from-emerald-500/20 to-emerald-500/5 text-emerald-400 border border-emerald-500/10"
                                             : "from-red-500/20 to-red-500/5 text-red-400 border border-red-500/10"
                                     )}>
                                         {trade.type === "BUY" ? (
-                                            <ArrowUpRight className="w-4 h-4" />
+                                            <ArrowUpRight className="w-3.5 h-3.5" />
                                         ) : (
-                                            <ArrowDownRight className="w-4 h-4" />
+                                            <ArrowDownRight className="w-3.5 h-3.5" />
                                         )}
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-1.5">
-                                            <span className="font-black text-foreground dark:text-white text-xs tracking-tight group-hover/row:text-primary transition-colors">{trade.symbol}</span>
+                                            <span className="font-bold text-foreground dark:text-white text-[11px] tracking-tight group-hover/row:text-primary transition-colors">{trade.symbol}</span>
                                             <span className={cn(
-                                                "text-[7px] px-1.5 py-0.5 rounded-full border font-black uppercase tracking-widest",
+                                                "text-[6px] px-1 py-0 rounded-full border font-black uppercase tracking-wider",
                                                 trade.type === "BUY"
                                                     ? "bg-blue-500/10 border-blue-500/20 text-blue-400"
                                                     : "bg-orange-500/10 border-orange-500/20 text-orange-400"
@@ -91,8 +91,8 @@ export function RecentActivityFeed({ trades, isLoading }: RecentActivityFeedProp
                                                 {trade.type}
                                             </span>
                                         </div>
-                                        <div className="text-[9px] text-muted-foreground/60 flex items-center gap-1.5 mt-0.5 font-medium">
-                                            <span className="text-primary/60">{trade.volume} Lot</span>
+                                        <div className="text-[8px] text-muted-foreground/60 flex items-center gap-1.5 mt-0.5 font-medium">
+                                            <span className="text-primary/70">{trade.volume} Lot</span>
                                             <div className="w-0.5 h-0.5 rounded-full bg-border dark:bg-white/10" />
                                             <span>{new Date(trade.close_time).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                                         </div>
@@ -101,12 +101,12 @@ export function RecentActivityFeed({ trades, isLoading }: RecentActivityFeedProp
 
                                 <div className="text-right">
                                     <p className={cn(
-                                        "text-xs font-black tabular-nums transition-colors",
+                                        "text-[11px] font-black tabular-nums transition-colors",
                                         (trade.net_profit ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
                                     )}>
                                         {(trade.net_profit ?? 0) >= 0 ? `+${(trade.net_profit ?? 0).toFixed(2)}` : (trade.net_profit ?? 0).toFixed(2)}
                                     </p>
-                                    <div className="text-[8px] font-bold text-muted-foreground/30 uppercase tracking-tighter">
+                                    <div className="text-[7px] font-bold text-muted-foreground/30 uppercase tracking-tighter">
                                         @{trade.close_price}
                                     </div>
                                 </div>

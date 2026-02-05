@@ -227,7 +227,7 @@ export function Dashboard() {
           </div>
 
           <div className="lg:col-span-2">
-            <RecentActivityFeed trades={recentTrades.slice(0, 5)} isLoading={loading} />
+            <RecentActivityFeed trades={recentTrades.slice(0, 10)} isLoading={loading} />
           </div>
 
           <div className="lg:col-span-1 flex flex-col gap-6">
