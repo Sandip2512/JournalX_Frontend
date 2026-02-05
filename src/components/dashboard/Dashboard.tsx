@@ -38,7 +38,7 @@ export function Dashboard() {
           .then(res => setStats(res.data))
           .catch(e => console.error("Stats error", e)),
 
-        api.get(`/users/${user.user_id}/mt5-status`)
+        api.get(`/api/users/${user.user_id}/mt5-status`)
           .then(res => setMt5Status(res.data))
           .catch(e => console.error("MT5 status error", e)),
 
