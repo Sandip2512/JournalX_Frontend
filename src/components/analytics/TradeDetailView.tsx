@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { JournalEntryForm } from "./JournalEntryForm";
 import { TradeQualityScore } from "./TradeQualityScore";
+import { TradeChart } from "./TradeChart";
 
 interface TradeDetailViewProps {
     trade: any;
@@ -100,56 +101,28 @@ export function TradeDetailView({ trade, onUpdate, className }: TradeDetailViewP
                     ))}
                 </div>
 
-                {/* Chart / Replay Placeholder */}
-                <div className="glass-card-premium rounded-3xl border border-border dark:border-white/5 relative overflow-hidden h-[350px]">
+                {/* Chart / Replay Container */}
+                <div className="glass-card-premium rounded-3xl border border-border dark:border-white/5 relative overflow-hidden h-[450px]">
                     <div className="absolute inset-0 bg-gradient-to-b from-[#030711] to-transparent opacity-50" />
-                    <div className="p-6 flex items-center gap-2 border-b border-border dark:border-white/5 relative z-10">
-                        <TrendingUp className="w-4 h-4 text-primary" />
-                        <span className="text-xs font-bold text-foreground dark:text-white uppercase tracking-wider">Trade Simulation</span>
+                    <div className="p-6 flex items-center justify-between border-b border-border dark:border-white/5 relative z-10">
+                        <div className="flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-primary" />
+                            <span className="text-xs font-bold text-foreground dark:text-white uppercase tracking-wider">Market Analysis</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase">Binance Data</span>
+                        </div>
                     </div>
-                    <div className="h-full flex flex-col items-center justify-center space-y-4 relative z-10 -mt-12">
-                        {/* Simulation UI from screenshot */}
-                        <div className="flex items-center gap-8 bg-muted/50 dark:bg-black/40 backdrop-blur-xl p-4 rounded-2xl border border-border dark:border-white/10">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                                    <TrendingUp className="w-4 h-4 text-emerald-500" />
-                                </div>
-                                <div className="space-y-0.5">
-                                    <p className="text-sm font-black text-foreground dark:text-white">{trade.symbol}</p>
-                                    <span className="text-[8px] font-black bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded uppercase">{trade.type}</span>
-                                </div>
-                            </div>
-                            <div className="flex gap-8 border-l border-white/10 pl-8">
-                                <div className="space-y-0.5">
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Entry</p>
-                                    <p className="text-sm font-black text-foreground dark:text-white">${trade.price_open?.toFixed(2)}</p>
-                                </div>
-                                <div className="space-y-0.5">
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Exit</p>
-                                    <p className="text-sm font-black text-foreground dark:text-white">${trade.price_close?.toFixed(2)}</p>
-                                </div>
-                                <div className="space-y-0.5">
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase">P&L</p>
-                                    <p className={cn("text-sm font-black", isWin ? "text-primary" : "text-red-500")}>
-                                        {isWin ? "+" : "-"}${Math.abs(trade.net_profit).toFixed(2)}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div className="flex flex-col items-center justify-center space-y-4 opacity-50">
-                            <div className="w-12 h-12 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center">
-                                <div className="w-1 h-4 bg-white/20 rounded-full mx-0.5" />
-                                <div className="w-1 h-6 bg-white/20 rounded-full mx-0.5" />
-                                <div className="w-1 h-3 bg-white/20 rounded-full mx-0.5" />
-                            </div>
-                            <div className="text-center">
-                                <p className="text-sm font-bold text-foreground dark:text-white">Trade Replay Not Available</p>
-                                <p className="text-[10px] text-muted-foreground max-w-[250px] mt-1 uppercase leading-relaxed font-bold">
-                                    This trade was added manually. Connect a trading account to view trade replay and simulation features.
-                                </p>
-                            </div>
-                        </div>
+                    <div className="p-4 relative z-10">
+                        <TradeChart
+                            symbol={trade.symbol}
+                            openTime={trade.open_time}
+                            closeTime={trade.close_time}
+                            openPrice={trade.price_open}
+                            closePrice={trade.price_close}
+                            type={trade.type}
+                        />
                     </div>
                 </div>
 
