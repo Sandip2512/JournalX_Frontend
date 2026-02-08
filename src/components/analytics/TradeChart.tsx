@@ -29,6 +29,7 @@ export const TradeChart: React.FC<TradeChartProps> = ({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedInterval, setSelectedInterval] = useState<string>("1h");
+    const [candleCount, setCandleCount] = useState<number>(0);
 
     const intervals = [
         { label: "1m", value: "1m" },
@@ -56,8 +57,9 @@ export const TradeChart: React.FC<TradeChartProps> = ({
             setLoading(true);
             setError(null);
             try {
+                const now = Date.now();
                 const start = new Date(openTime).getTime();
-                const end = closeTime ? new Date(closeTime).getTime() : Date.now();
+                const end = closeTime ? new Date(closeTime).getTime() : now;
 
                 // Calculate interval in milliseconds
                 const intervalWeights: Record<string, number> = {
@@ -70,9 +72,10 @@ export const TradeChart: React.FC<TradeChartProps> = ({
                 };
                 const intervalMs = intervalWeights[selectedInterval] || 3600000;
 
-                // Show 100 candles before entry and 20 candles after exit
-                const paddedStart = start - (intervalMs * 100);
-                const paddedEnd = end + (intervalMs * 20);
+                // Ensure we don't request future timestamps that return empty data
+                // If trade is in future, we show context up to 'now'
+                const paddedStart = Math.min(start - (intervalMs * 100), now - (intervalMs * 50));
+                const paddedEnd = Math.min(end + (intervalMs * 20), now);
 
                 const response = await api.get('/api/market-data/klines', {
                     params: {
@@ -122,6 +125,7 @@ export const TradeChart: React.FC<TradeChartProps> = ({
                 });
 
                 candlestickSeries.setData(response.data);
+                setCandleCount(response.data.length);
 
                 // Add Markers for Entry and Exit
                 const markers = [];
@@ -212,6 +216,11 @@ export const TradeChart: React.FC<TradeChartProps> = ({
                 )}
 
                 <div ref={chartContainerRef} className="w-full h-full" />
+                {candleCount > 0 && (
+                    <div className="absolute bottom-4 right-4 z-20 px-2 py-1 bg-black/50 backdrop-blur-md rounded-lg border border-white/5">
+                        <p className="text-[8px] font-black text-white/40 uppercase tracking-widest">{candleCount} Candles Loaded</p>
+                    </div>
+                )}
             </div>
         </div>
     );
