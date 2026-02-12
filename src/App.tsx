@@ -27,6 +27,8 @@ const TradersLounge = lazyWithRetry(() => import("./pages/TradersLounge"));
 const TraderRoom = lazyWithRetry(() => import("./pages/TraderRoom"));
 const Friends = lazyWithRetry(() => import("./pages/Friends"));
 const BrokerConnections = lazyWithRetry(() => import("./pages/BrokerConnections"));
+const EconomicCalendar = lazyWithRetry(() => import("./pages/EconomicCalendar"));
+const Market = lazyWithRetry(() => import("./pages/Market"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 const Login = lazyWithRetry(() => import("./pages/Login"));
 const Register = lazyWithRetry(() => import("./pages/Register"));
@@ -77,6 +79,8 @@ const App = () => (
                   <Route path="/trader-room" element={<TraderRoom />} />
                   <Route path="/friends" element={<Friends />} />
                   <Route path="/broker-connections" element={<BrokerConnections />} />
+                  <Route path="/calendar" element={<EconomicCalendar />} />
+                  <Route path="/market" element={<Market />} />
                 </Route>
 
                 {/* Admin Routes */}

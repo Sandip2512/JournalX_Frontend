@@ -6,7 +6,7 @@ import {
     LayoutDashboard, TrendingUp, FileText, Bell,
     Settings, LogOut, Menu, BarChart3, Target,
     ClipboardList, MessageSquare, AlertTriangle,
-    ChevronLeft, ChevronRight, Clock, Search, Plus, Sparkles
+    ChevronLeft, ChevronRight, Clock, Search, Plus, Sparkles, Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -83,6 +83,7 @@ const UserLayout = ({ children, showHeader = true }: UserLayoutProps) => {
         { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
         { icon: TrendingUp, label: "Trades", path: "/trades" },
         { icon: BarChart3, label: "Analytics", path: "/analytics" },
+        { icon: TrendingUp, label: "Market", path: "/market" },
         { icon: ClipboardList, label: "Trader's Diary", path: "/traders-diary" },
         { icon: MessageSquare, label: "Community", path: "/community" },
         { icon: AlertTriangle, label: "Mistakes", path: "/mistakes" },
@@ -326,7 +327,9 @@ const UserLayout = ({ children, showHeader = true }: UserLayoutProps) => {
                 {showHeader && (
                     <header className="h-20 bg-background/50 backdrop-blur-md border-b border-border/50 sticky top-0 z-30 px-8 flex items-center justify-between">
                         <div className="flex flex-col">
-                            <h2 className="text-xl font-bold text-foreground dark:text-white tracking-tight">Dashboard</h2>
+                            <h2 className="text-xl font-bold text-foreground dark:text-white tracking-tight">
+                                {menuItems.find(item => location.pathname.startsWith(item.path))?.label || "Dashboard"}
+                            </h2>
                             <span className="text-xs text-muted-foreground font-medium">{format(new Date(), "EEE, MMM d")}</span>
                         </div>
 

@@ -33,6 +33,7 @@ const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: ArrowRightLeft, label: "Trades", path: "/trades" },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
+  { icon: TrendingUp, label: "Market", path: "/market" },
   { icon: Target, label: "Goals", path: "/goals" },
   { icon: ClipboardList, label: "Trader's Diary", path: "/traders-diary" },
   { icon: MessageSquare, label: "Community", path: "/community" },
