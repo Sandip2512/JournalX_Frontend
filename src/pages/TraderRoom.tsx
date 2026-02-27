@@ -49,9 +49,16 @@ const TraderRoom = () => {
         { id: "1", sender: "System", text: "Secure link established. Waiting for participants...", type: "text", timestamp: new Date(), color: "text-emerald-500" },
     ]);
 
+    // Reactions Overlay State
+    const [activeReactions, setActiveReactions] = useState<{ id: number, emoji: string }[]>([]);
+    const [remoteMuted, setRemoteMuted] = useState(false);
+
     // Refs for PeerJS listeners (to avoid stale closures)
     const videoStreamRef = React.useRef<MediaStream | null>(null);
     const screenStreamRef = React.useRef<MediaStream | null>(null);
+
+    const [isLocalSpeaking, setIsLocalSpeaking] = useState(false);
+    const [isRemoteSpeaking, setIsRemoteSpeaking] = useState(false);
 
     useEffect(() => { videoStreamRef.current = videoStream; }, [videoStream]);
     useEffect(() => { screenStreamRef.current = screenStream; }, [screenStream]);
@@ -82,8 +89,20 @@ const TraderRoom = () => {
                     toast.info(`${otherUser?.first_name || 'Friend'} raised their hand ✋`);
                 }
             } else if (data.type === 'reaction') {
-                // Future: Trigger floating animation
-                toast.info(`${otherUser?.first_name || 'Friend'} sent a reaction`);
+                const newId = Date.now();
+                setActiveReactions(prev => [...prev, { id: newId, emoji: data.emoji }]);
+                // Auto-cleanup after animation
+                setTimeout(() => {
+                    setActiveReactions(prev => prev.filter(r => r.id !== newId));
+                }, 3000);
+            } else if (data.type === 'mute') {
+                setRemoteMuted(data.isMuted);
+                if (data.isMuted) {
+                    toast.info(`${otherUser?.first_name || 'Friend'} is now muted`);
+                }
+            } else if (data.type === 'screen-ended') {
+                setRemoteScreenStream(null);
+                toast.info(`${otherUser?.first_name || 'Friend'} stopped sharing their screen`);
             }
         });
 
@@ -179,6 +198,7 @@ const TraderRoom = () => {
                 console.error(`[INCOMING] ${streamType} call error:`, err);
                 if (streamType === 'camera') {
                     setRemoteCameraStream(prev => prev === callStream ? null : prev);
+                    setIsRemoteSpeaking(false);
                     setIncomingCameraCall(null);
                 }
             });
@@ -281,6 +301,50 @@ const TraderRoom = () => {
         return () => clearTimeout(retryTimeout);
     }, [peer, otherUser?.user_id, screenStream, outgoingScreenCall]);
 
+    // Audio Analysis Effect for Remote Speaker
+    useEffect(() => {
+        if (!remoteCameraStream || remoteMuted) {
+            setIsRemoteSpeaking(false);
+            return;
+        }
+
+        let audioContext: AudioContext;
+        let analyser: AnalyserNode;
+        let source: MediaStreamAudioSourceNode;
+        let animationFrame: number;
+
+        try {
+            audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            source = audioContext.createMediaStreamSource(remoteCameraStream);
+            source.connect(analyser);
+
+            analyser.fftSize = 256;
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            const checkVolume = () => {
+                analyser.getByteFrequencyData(dataArray);
+                let sum = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    sum += dataArray[i];
+                }
+                const average = sum / bufferLength;
+                setIsRemoteSpeaking(average > 30); // Threshold for "speaking"
+                animationFrame = requestAnimationFrame(checkVolume);
+            };
+
+            checkVolume();
+        } catch (e) {
+            console.error("Audio analysis failed", e);
+        }
+
+        return () => {
+            if (animationFrame) cancelAnimationFrame(animationFrame);
+            if (audioContext) audioContext.close();
+        };
+    }, [remoteCameraStream, remoteMuted]);
+
     useEffect(() => {
         if (!user) return;
 
@@ -294,19 +358,24 @@ const TraderRoom = () => {
 
         if (otherUser) {
             setParticipants([
-                myParticipant,
+                {
+                    ...myParticipant,
+                    isMuted: isMuted,
+                    isSpeaking: false // Local speaking logic can be added similarly
+                },
                 {
                     id: otherUser.user_id,
-                    name: otherUser.name,
+                    name: otherUser.name || `${otherUser.first_name} ${otherUser.last_name}`,
                     avatar: otherUser.first_name?.[0] || "?",
-                    isSpeaking: false,
+                    isSpeaking: isRemoteSpeaking,
+                    isMuted: remoteMuted,
                     color: "bg-blue-500"
                 }
             ]);
         } else {
             setParticipants([myParticipant]);
         }
-    }, [user, isMuted, otherUser]);
+    }, [user, isMuted, otherUser, remoteMuted, isRemoteSpeaking]);
 
     useEffect(() => {
         if (!meetingId || !user?.user_id) return;
@@ -374,6 +443,10 @@ const TraderRoom = () => {
                         prev?.close();
                         return null;
                     });
+                    // Notify peer that our screen share ended
+                    if (dataConn && dataConn.open) {
+                        dataConn.send({ type: 'screen-ended' });
+                    }
                     toast.info("Screen sharing stopped");
                 };
                 toast.success("Screen sharing active");
@@ -408,8 +481,26 @@ const TraderRoom = () => {
     };
 
     const handleToggleMute = () => {
-        setIsMuted(!isMuted);
-        toast.info(isMuted ? "Microphone active" : "Microphone muted");
+        const nextMute = !isMuted;
+        setIsMuted(nextMute);
+        if (dataConn && dataConn.open) {
+            dataConn.send({ type: 'mute', isMuted: nextMute });
+        }
+        toast.info(nextMute ? "Microphone muted" : "Microphone active");
+    };
+
+    const handleSendReaction = (emoji: string) => {
+        const newId = Date.now();
+        setActiveReactions(prev => [...prev, { id: newId, emoji }]);
+
+        if (dataConn && dataConn.open) {
+            dataConn.send({ type: 'reaction', emoji });
+        }
+
+        // Local cleanup
+        setTimeout(() => {
+            setActiveReactions(prev => prev.filter(r => r.id !== newId));
+        }, 3000);
     };
 
 
@@ -589,7 +680,25 @@ const TraderRoom = () => {
                             // Hand/Reaction Props
                             isHandRaised={isHandRaised}
                             onToggleHand={handleToggleHand}
+                            onSendReaction={handleSendReaction}
                         />
+
+                        {/* Floating Reactions Overlay */}
+                        <div className="absolute inset-0 pointer-events-none z-50 flex items-end justify-center pb-32">
+                            <AnimatePresence>
+                                {activeReactions.map((reaction) => (
+                                    <motion.div
+                                        key={reaction.id}
+                                        initial={{ y: 0, opacity: 1, scale: 0.5, x: (Math.random() - 0.5) * 100 }}
+                                        animate={{ y: -400, opacity: 0, scale: 2, rotate: (Math.random() - 0.5) * 45 }}
+                                        transition={{ duration: 2, ease: "easeOut" }}
+                                        className="absolute text-4xl select-none"
+                                    >
+                                        {reaction.emoji}
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </div>
                     </div>
                 )}
             </div>

@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 interface RoomControlsProps {
@@ -22,6 +23,7 @@ interface RoomControlsProps {
     // New Google Meet Style Props
     isHandRaised?: boolean;
     onToggleHand?: () => void;
+    onSendReaction?: (emoji: string) => void;
     onShowInfo?: () => void;
     onShowParticipants?: () => void;
     meetingId?: string;
@@ -40,6 +42,7 @@ export const RoomControls = React.memo(({
     onToggleMute,
     isHandRaised = false,
     onToggleHand,
+    onSendReaction,
     onShowInfo,
     onShowParticipants,
     meetingId = "trade-room-sync"
@@ -114,14 +117,33 @@ export const RoomControls = React.memo(({
 
                     {/* Reactions */}
                     <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                size="icon"
-                                className="rounded-full w-10 h-10 bg-[#3c4043] hover:bg-[#434649] text-white border-none transition-all"
+                        <Popover>
+                            <TooltipTrigger asChild>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        size="icon"
+                                        className="rounded-full w-10 h-10 bg-[#3c4043] hover:bg-[#434649] text-white border-none transition-all"
+                                    >
+                                        <Smile className="w-5 h-5" />
+                                    </Button>
+                                </PopoverTrigger>
+                            </TooltipTrigger>
+                            <PopoverContent
+                                side="top"
+                                align="center"
+                                className="w-fit p-2 bg-[#1e1e24] border-white/10 rounded-full flex gap-1 animate-in fade-in zoom-in slide-in-from-bottom-2 duration-200"
                             >
-                                <Smile className="w-5 h-5" />
-                            </Button>
-                        </TooltipTrigger>
+                                {["💖", "👍", "😂", "😮", "😢", "🔥", "🚀", "👏"].map((emoji) => (
+                                    <button
+                                        key={emoji}
+                                        onClick={() => onSendReaction?.(emoji)}
+                                        className="hover:scale-125 transition-transform p-1.5 focus:outline-none text-xl"
+                                    >
+                                        {emoji}
+                                    </button>
+                                ))}
+                            </PopoverContent>
+                        </Popover>
                         <TooltipContent>Send Reaction</TooltipContent>
                     </Tooltip>
 
