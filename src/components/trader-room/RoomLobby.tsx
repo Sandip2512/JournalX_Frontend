@@ -1,7 +1,17 @@
-import React, { useState } from "react";
-import { Users, Lock, Shield, Plus, ArrowRight, UserPlus, CheckCircle2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Users, Lock, Shield, Plus, ArrowRight, UserPlus, CheckCircle2, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
+import { Input } from "@/components/ui/input";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 import api from "@/lib/api";
@@ -24,6 +34,12 @@ export const RoomLobby = ({ onJoinRoom }: RoomLobbyProps) => {
     const [invited, setInvited] = useState<string[]>([]);
     const [onlineFriends, setOnlineFriends] = useState<Friend[]>([]);
     const [currentMeetingId, setCurrentMeetingId] = useState<string | null>(null);
+
+    // Search State
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
 
     React.useEffect(() => {
         const fetchFriends = async () => {
@@ -55,6 +71,43 @@ export const RoomLobby = ({ onJoinRoom }: RoomLobbyProps) => {
             toast.success("Invitation sent");
         } catch (err) {
             toast.error("Failed to send invitation");
+        }
+    };
+
+    const handleSearch = async (query: string) => {
+        setSearchQuery(query);
+        if (query.length < 2) {
+            setSearchResults([]);
+            return;
+        }
+
+        setIsSearching(true);
+        try {
+            const res = await api.get(`/api/friends/search?query=${query}`);
+            setSearchResults(res.data);
+        } catch (err) {
+            console.error("Search failed", err);
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    const handleSearchInvite = async (user: any) => {
+        try {
+            // 1. If not a friend, send friend request first
+            if (!user.is_friend && !user.has_pending_request) {
+                await api.post("/api/friends/request", { recipient_id: user.user_id });
+                toast.info(`Friend request sent to ${user.first_name}`);
+            }
+
+            // 2. Send room invitation
+            const res = await api.post("/api/friends/invite-room", { recipient_id: user.user_id });
+            setInvited(prev => [...prev, user.user_id]);
+            setCurrentMeetingId(res.data.meeting_id);
+            setIsSearchOpen(false);
+            toast.success(`Invited ${user.first_name} to room`);
+        } catch (err) {
+            toast.error("Failed to invite member");
         }
     };
 
@@ -209,12 +262,70 @@ export const RoomLobby = ({ onJoinRoom }: RoomLobbyProps) => {
                             })
                         )}
 
-                        <div className="p-4 rounded-2xl border border-dashed border-white/10 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-white hover:border-white/20 transition-colors cursor-pointer group">
-                            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <Plus className="w-4 h-4" />
-                            </div>
-                            <span className="text-xs font-medium">Add more friends</span>
-                        </div>
+                        <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+                            <DialogTrigger asChild>
+                                <div className="p-4 rounded-2xl border border-dashed border-white/10 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-white hover:border-white/20 transition-colors cursor-pointer group">
+                                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                        <Plus className="w-4 h-4" />
+                                    </div>
+                                    <span className="text-xs font-medium">Add more friends</span>
+                                </div>
+                            </DialogTrigger>
+                            <DialogContent className="bg-[#0a0a0c] border-white/5 text-white max-w-md">
+                                <DialogHeader>
+                                    <DialogTitle className="text-xl font-black italic">Find Community Members</DialogTitle>
+                                    <DialogDescription className="text-white/50">
+                                        Search by name or username to invite them to your room.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4 pt-4">
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                                        <Input
+                                            autoFocus
+                                            value={searchQuery}
+                                            onChange={(e) => handleSearch(e.target.value)}
+                                            placeholder="Search traders..."
+                                            className="bg-white/5 border-white/10 pl-10 rounded-xl"
+                                        />
+                                        {isSearching && (
+                                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-primary" />
+                                        )}
+                                    </div>
+
+                                    <div className="max-h-[300px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                                        {searchResults.length === 0 ? (
+                                            <p className="text-center py-8 text-white/30 text-xs italic">
+                                                {searchQuery.length < 2 ? "Start typing to find members..." : "No members found."}
+                                            </p>
+                                        ) : (
+                                            searchResults.map((user) => (
+                                                <div key={user.user_id} className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors group">
+                                                    <div className="flex items-center gap-3">
+                                                        <Avatar className="w-10 h-10 border border-white/10">
+                                                            <AvatarFallback className="bg-primary/20 text-primary font-bold">
+                                                                {user.first_name.charAt(0)}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <div>
+                                                            <div className="text-sm font-bold">{user.first_name} {user.last_name}</div>
+                                                            <div className="text-[10px] text-white/40">@{user.username || "trader"}</div>
+                                                        </div>
+                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={() => handleSearchInvite(user)}
+                                                        className="h-8 bg-primary hover:bg-primary/90 text-[10px] font-black uppercase tracking-wider rounded-lg"
+                                                    >
+                                                        Invite
+                                                    </Button>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
                     </div>
                 </motion.div>
             </div>
