@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Users, Lock, Shield, Plus, ArrowRight, UserPlus, CheckCircle2, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,8 @@ import { toast } from "sonner";
 
 interface RoomLobbyProps {
     onJoinRoom: (meetingId?: string) => void;
+    meetingId?: string;
+    onUpdateMeetingId?: (id: string) => void;
 }
 
 interface Friend {
@@ -30,11 +32,12 @@ interface Friend {
     is_online: boolean;
 }
 
-export const RoomLobby = ({ onJoinRoom }: RoomLobbyProps) => {
+export const RoomLobby = ({ onJoinRoom, meetingId, onUpdateMeetingId }: RoomLobbyProps) => {
     const { user: currentUser } = useAuth();
     const [invited, setInvited] = useState<string[]>([]);
     const [onlineFriends, setOnlineFriends] = useState<Friend[]>([]);
-    const [currentMeetingId, setCurrentMeetingId] = useState<string | null>(null);
+    const [currentMeetingId, setCurrentMeetingId] = useState<string | null>(meetingId || null);
+    const meetingIdAnchor = useRef<string | null>(meetingId || null);
 
     // Search State
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -113,9 +116,23 @@ export const RoomLobby = ({ onJoinRoom }: RoomLobbyProps) => {
 
     const handleInvite = async (id: string) => {
         try {
-            const res = await api.post("/api/friends/invite-room", { recipient_id: id });
+            // Synchronously resolve/generate ID before any network calls to prevent fragmentation
+            if (!meetingIdAnchor.current) {
+                const newId = Array.from({ length: 24 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+                meetingIdAnchor.current = newId;
+                setCurrentMeetingId(newId);
+                if (onUpdateMeetingId) onUpdateMeetingId(newId);
+                console.log(`[Mesh] Synchronous anchor set: ${newId}`);
+            }
+
+            const activeMeetingId = meetingIdAnchor.current;
+
+            await api.post("/api/friends/invite-room", {
+                recipient_id: id,
+                meeting_id: activeMeetingId
+            });
+
             setInvited(prev => [...prev, id]);
-            setCurrentMeetingId(res.data.meeting_id);
             toast.success("Invitation sent");
         } catch (err) {
             toast.error("Failed to send invitation");
@@ -148,10 +165,24 @@ export const RoomLobby = ({ onJoinRoom }: RoomLobbyProps) => {
                 toast.info(`Friend request sent to ${user.first_name}`);
             }
 
+            // Synchronously resolve/generate ID before sending invitation
+            if (!meetingIdAnchor.current) {
+                const newId = Array.from({ length: 24 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+                meetingIdAnchor.current = newId;
+                setCurrentMeetingId(newId);
+                if (onUpdateMeetingId) onUpdateMeetingId(newId);
+                console.log(`[Mesh] Synchronous anchor set via search: ${newId}`);
+            }
+
+            const activeMeetingId = meetingIdAnchor.current;
+
             // 2. Send room invitation
-            const res = await api.post("/api/friends/invite-room", { recipient_id: user.user_id });
+            await api.post("/api/friends/invite-room", {
+                recipient_id: user.user_id,
+                meeting_id: activeMeetingId
+            });
+
             setInvited(prev => [...prev, user.user_id]);
-            setCurrentMeetingId(res.data.meeting_id);
             setIsSearchOpen(false);
             toast.success(`Invited ${user.first_name} to room`);
         } catch (err) {
@@ -206,10 +237,10 @@ export const RoomLobby = ({ onJoinRoom }: RoomLobbyProps) => {
 
                     <div className="space-y-3">
                         <Button
-                            onClick={() => onJoinRoom()}
+                            onClick={() => onJoinRoom(currentMeetingId || undefined)}
                             className="w-full h-14 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-lg shadow-[0_0_20px_rgba(16,185,129,0.2)] group"
                         >
-                            Start Private Room
+                            {currentMeetingId ? "Join Active Room" : "Start Private Room"}
                             <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                         </Button>
                         <p className="text-[10px] text-center text-muted-foreground flex items-center justify-center gap-2">

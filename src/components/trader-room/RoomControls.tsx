@@ -13,41 +13,36 @@ interface RoomControlsProps {
     onLeave: () => void;
     onShareStats: () => void;
     onToggleChat: () => void;
-    isChatOpen: boolean;
+    isChatOpen?: boolean;
     isScreenSharing: boolean;
     onToggleScreenShare: () => void;
     isVideoOn: boolean;
     onToggleVideo: () => void;
     isMuted: boolean;
     onToggleMute: () => void;
-    // New Google Meet Style Props
-    isHandRaised?: boolean;
-    onToggleHand?: () => void;
-    onSendReaction?: (emoji: string) => void;
+    isHandRaised: boolean;
+    onToggleHand: () => void;
+    onReaction: (emoji: string) => void;
+    onInvite: () => void;
     onShowInfo?: () => void;
-    onShowParticipants?: () => void;
-    meetingId?: string;
-    isDataConnected?: boolean;
 }
 
 export const RoomControls = React.memo(({
     onLeave,
     onShareStats,
     onToggleChat,
-    isChatOpen,
+    isChatOpen = false,
     isScreenSharing,
     onToggleScreenShare,
     isVideoOn,
     onToggleVideo,
     isMuted,
     onToggleMute,
-    isHandRaised = false,
+    isHandRaised,
     onToggleHand,
-    onSendReaction,
-    onShowInfo,
-    onShowParticipants,
-    meetingId = "trade-room-sync",
-    isDataConnected = false
+    onReaction,
+    onInvite,
+    onShowInfo
 }: RoomControlsProps) => {
 
     return (
@@ -59,15 +54,12 @@ export const RoomControls = React.memo(({
                 </div>
                 <div className="w-px h-4 bg-white/20 hidden md:block" />
                 <div className="text-white/70 text-sm font-medium tracking-tight truncate max-w-[120px]">
-                    {meetingId}
+                    Trade Room
                 </div>
                 <div className="flex items-center gap-1.5 ml-2">
-                    <div className={cn(
-                        "w-2 h-2 rounded-full",
-                        isDataConnected ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" : "bg-amber-500 animate-pulse"
-                    )} />
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
                     <span className="text-[10px] text-white/40 uppercase font-bold tracking-widest hidden lg:block">
-                        {isDataConnected ? "Live" : "Connecting"}
+                        Live Room
                     </span>
                 </div>
             </div>
@@ -109,60 +101,55 @@ export const RoomControls = React.memo(({
                         <TooltipContent>Camera (Ctrl+E)</TooltipContent>
                     </Tooltip>
 
-                    {/* Raise Hand */}
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
                                 size="icon"
                                 onClick={onToggleHand}
-                                disabled={!isDataConnected}
                                 className={cn(
                                     "rounded-full w-10 h-10 transition-all border-none",
-                                    isHandRaised ? "bg-primary text-white" : "bg-[#3c4043] hover:bg-[#434649] text-white",
-                                    !isDataConnected && "opacity-50 cursor-not-allowed"
+                                    isHandRaised ? "bg-primary text-white" : "bg-[#3c4043] hover:bg-[#434649] text-white"
                                 )}
                             >
                                 <Hand className={cn("w-5 h-5", isHandRaised && "animate-bounce")} />
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent>{isDataConnected ? "Raise Hand" : "Connecting..."}</TooltipContent>
+                        <TooltipContent>Raise Hand</TooltipContent>
                     </Tooltip>
 
                     {/* Reactions */}
-                    <Tooltip>
-                        <Popover>
-                            <TooltipTrigger asChild>
-                                <PopoverTrigger asChild disabled={!isDataConnected}>
-                                    <Button
-                                        size="icon"
-                                        disabled={!isDataConnected}
-                                        className={cn(
-                                            "rounded-full w-10 h-10 bg-[#3c4043] hover:bg-[#434649] text-white border-none transition-all",
-                                            !isDataConnected && "opacity-50 cursor-not-allowed"
-                                        )}
-                                    >
-                                        <Smile className="w-5 h-5" />
-                                    </Button>
-                                </PopoverTrigger>
-                            </TooltipTrigger>
-                            <PopoverContent
-                                side="top"
-                                align="center"
-                                className="w-fit p-2 bg-[#1e1e24] border-white/10 rounded-full flex gap-1 animate-in fade-in zoom-in slide-in-from-bottom-2 duration-200"
-                            >
-                                {["💖", "👍", "😂", "😮", "😢", "🔥", "🚀", "👏"].map((emoji) => (
-                                    <button
-                                        key={emoji}
-                                        onClick={() => onSendReaction?.(emoji)}
-                                        className="hover:scale-125 transition-transform p-1.5 focus:outline-none text-xl"
-                                    >
-                                        {emoji}
-                                    </button>
-                                ))}
-                            </PopoverContent>
-                        </Popover>
-                        <TooltipContent>{isDataConnected ? "Send Reaction" : "Connecting..."}</TooltipContent>
-                    </Tooltip>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <Popover>
+                                <TooltipTrigger asChild>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            size="icon"
+                                            className="rounded-full w-10 h-10 bg-[#3c4043] hover:bg-[#434649] text-white border-none transition-all"
+                                        >
+                                            <Smile className="w-5 h-5" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                </TooltipTrigger>
+                                <PopoverContent
+                                    side="top"
+                                    align="center"
+                                    className="w-fit p-2 bg-[#1e1e24] border-white/10 rounded-full flex gap-1 animate-in fade-in zoom-in slide-in-from-bottom-2 duration-200"
+                                >
+                                    {["💖", "👍", "😂", "😮", "😢", "🔥", "🚀", "👏"].map((emoji) => (
+                                        <button
+                                            key={emoji}
+                                            onClick={() => onReaction(emoji)}
+                                            className="hover:scale-125 transition-transform p-1.5 focus:outline-none text-xl"
+                                        >
+                                            {emoji}
+                                        </button>
+                                    ))}
+                                </PopoverContent>
+                            </Popover>
+                            <TooltipContent>Send Reaction</TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
 
                     {/* Present Now (Screen Share) */}
                     <Tooltip>
@@ -187,16 +174,14 @@ export const RoomControls = React.memo(({
                             <Button
                                 size="icon"
                                 onClick={onShareStats}
-                                disabled={!isDataConnected}
                                 className={cn(
-                                    "rounded-full w-10 h-10 bg-[#3c4043] hover:bg-[#434649] text-white border-none transition-all",
-                                    !isDataConnected && "opacity-50 cursor-not-allowed"
+                                    "rounded-full w-10 h-10 bg-[#3c4043] hover:bg-[#434649] text-white border-none transition-all"
                                 )}
                             >
                                 <BarChart2 className="w-5 h-5" />
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent>{isDataConnected ? "Share P&L" : "Connecting..."}</TooltipContent>
+                        <TooltipContent>Share P&L</TooltipContent>
                     </Tooltip>
 
                     {/* Leave Call */}
@@ -220,7 +205,15 @@ export const RoomControls = React.memo(({
                 <Button variant="ghost" size="icon" onClick={onShowInfo} className="text-white/70 hover:text-white rounded-full">
                     <Info className="w-5 h-5" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={onShowParticipants} className="text-white/70 hover:text-white rounded-full">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                        console.log("[RoomControls] Invite button clicked");
+                        onInvite();
+                    }}
+                    className="text-white/70 hover:text-white rounded-full"
+                >
                     <Users className="w-5 h-5" />
                 </Button>
                 <Button
@@ -233,7 +226,6 @@ export const RoomControls = React.memo(({
                     )}
                 >
                     <MessageSquare className="w-5 h-5" />
-                    <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border border-[#0a0a0c]" />
                 </Button>
             </div>
         </div>

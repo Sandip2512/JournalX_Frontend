@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import UserLayout from "@/components/layout/UserLayout";
 import { ArrowLeft, Monitor, Hand } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,18 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
 import Peer from "peerjs";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from "@/components/ui/dialog";
+import { UserPlus, Search } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 
 const TraderRoom = () => {
     const { user } = useAuth();
@@ -23,42 +35,47 @@ const TraderRoom = () => {
 
     // -- 1. All State Declarations at the Top --
     const [roomState, setRoomState] = useState<"lobby" | "active">("lobby");
-    const [isChatOpen, setIsChatOpen] = useState(true);
     const [isMuted, setIsMuted] = useState(false);
 
     // Media & Streaming State
     const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
     const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
-    const [remoteScreenStream, setRemoteScreenStream] = useState<MediaStream | null>(null);
-    const [remoteCameraStream, setRemoteCameraStream] = useState<MediaStream | null>(null);
+
+    // Remote states mapped by userId
+    const [remoteScreenStreams, setRemoteScreenStreams] = useState<Record<string, MediaStream | null>>({});
+    const [remoteCameraStreams, setRemoteCameraStreams] = useState<Record<string, MediaStream | null>>({});
+    const [dataConns, setDataConns] = useState<Record<string, any>>({});
+    const [remoteHandsRaised, setRemoteHandsRaised] = useState<Record<string, boolean>>({});
+    const [remoteMutedStatus, setRemoteMutedStatus] = useState<Record<string, boolean>>({});
+    const [remoteSpeakingStatus, setRemoteSpeakingStatus] = useState<Record<string, boolean>>({});
 
     const [peer, setPeer] = useState<Peer | null>(null);
-    const [outgoingScreenCall, setOutgoingScreenCall] = useState<any>(null);
-    const [incomingScreenCall, setIncomingScreenCall] = useState<any>(null);
-    const [outgoingCameraCall, setOutgoingCameraCall] = useState<any>(null);
-    const [incomingCameraCall, setIncomingCameraCall] = useState<any>(null);
-    const [dataConn, setDataConn] = useState<any>(null);
+    const [outgoingCalls, setOutgoingCalls] = useState<Record<string, any>>({}); // userId-type -> call
+    const [incomingCalls, setIncomingCalls] = useState<Record<string, any>>({}); // userId-type -> call
 
-    // Participant & Name State
-    const [participants, setParticipants] = useState<Participant[]>([]);
-    const [otherUser, setOtherUser] = useState<any>(null);
+    // Participant Info (API-polling derived)
+    const [apiParticipants, setApiParticipants] = useState<any[]>([]);
+    const [remoteUsersInfo, setRemoteUsersInfo] = useState<Record<string, any>>({});
     const [isHandRaised, setIsHandRaised] = useState(false);
-    const [remoteHandRaised, setRemoteHandRaised] = useState(false);
 
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const [chatInput, setChatInput] = useState("");
     const [messages, setMessages] = useState<ChatMessage[]>([
         { id: "1", sender: "System", text: "Secure link established. Waiting for participants...", type: "text", timestamp: new Date(), color: "text-emerald-500" },
     ]);
 
     // Reactions Overlay State
     const [activeReactions, setActiveReactions] = useState<{ id: number, emoji: string }[]>([]);
-    const [remoteMuted, setRemoteMuted] = useState(false);
+    const [isLocalSpeaking, setIsLocalSpeaking] = useState(false);
+
+    // Invite Modal State
+    const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+    const [friends, setFriends] = useState<any[]>([]);
+    const [inviteSearchTerm, setInviteSearchTerm] = useState("");
 
     // Refs for PeerJS listeners (to avoid stale closures)
     const videoStreamRef = React.useRef<MediaStream | null>(null);
     const screenStreamRef = React.useRef<MediaStream | null>(null);
-
-    const [isLocalSpeaking, setIsLocalSpeaking] = useState(false);
-    const [isRemoteSpeaking, setIsRemoteSpeaking] = useState(false);
 
     useEffect(() => { videoStreamRef.current = videoStream; }, [videoStream]);
     useEffect(() => { screenStreamRef.current = screenStream; }, [screenStream]);
@@ -66,44 +83,71 @@ const TraderRoom = () => {
     // Refs for synchronization to avoid stale closures in PeerJS event listeners
     const isMutedRef = React.useRef(isMuted);
     const isHandRaisedRef = React.useRef(isHandRaised);
-    const participantsRef = React.useRef(participants);
+    const remoteUsersInfoRef = React.useRef(remoteUsersInfo);
+    const dataConnsRef = React.useRef<Record<string, any>>(dataConns);
 
     useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
     useEffect(() => { isHandRaisedRef.current = isHandRaised; }, [isHandRaised]);
-    useEffect(() => { participantsRef.current = participants; }, [participants]);
+    useEffect(() => { remoteUsersInfoRef.current = remoteUsersInfo; }, [remoteUsersInfo]);
+    useEffect(() => { dataConnsRef.current = dataConns; }, [dataConns]);
 
     // -- 2. Helper Functions --
     const setupDataConnection = (conn: any) => {
         if (!conn) return;
 
-        // TIE-BREAKER: If both peers connect at the same time, we keep the one initiated by the peer with the lexicographically smaller ID.
-        // This ensures both sides deterministically choose the SAME single connection to keep.
-        const myId = user?.user_id || '';
-        const otherId = conn.peer;
+        const peerId = conn.peer;
+        console.log(`[DataConn] Setting up connection to ${peerId}...`);
 
-        if (dataConn?.open) {
-            if (myId < otherId) {
-                console.log(`[DataConn] I am the primary peer (${myId} < ${otherId}). Keeping my outgoing connection, rejecting incoming from ${otherId}.`);
-                conn.close();
-                return;
-            } else {
-                console.log(`[DataConn] Replacing existing connection with new one from ${otherId} (${myId} > ${otherId}).`);
-                dataConn.close();
+        conn.on('open', async () => {
+            console.log(`[DataConn] Connection OPEN with ${peerId}`);
+            setDataConns(prev => ({ ...prev, [peerId]: conn }));
+
+            // Lazy Discovery: If we don't have their info yet, fetch it immediately
+            if (!remoteUsersInfoRef.current[peerId]) {
+                try {
+                    const res = await api.get(`/api/users/${peerId}/info`);
+                    setRemoteUsersInfo(prev => ({ ...prev, [peerId]: res.data }));
+                } catch (e) {
+                    console.error(`[Mesh] Lazy discovery failed for ${peerId}`, e);
+                }
             }
-        }
 
-        console.log(`[DataConn] Setting up connection to ${conn.peer}...`);
-
-        conn.on('open', () => {
-            console.log(`[DataConn] Connection OPEN with ${conn.peer}`);
-            setDataConn(conn);
-            // Handshake: Sync current state immediately upon connection using REFS
+            // Sync current state immediately
             conn.send({ type: 'hand-sync', raised: isHandRaisedRef.current });
             conn.send({ type: 'mute-sync', isMuted: isMutedRef.current });
+
+            // Gossip: Share your known participant list with the new peer
+            // This ensures B and C find each other through Host A
+            const selfInfo = {
+                user_id: user?.user_id,
+                name: `${user?.first_name || 'Trader'} ${user?.last_name || ''}`.trim(),
+                first_name: user?.first_name || 'Trader',
+                last_name: user?.last_name || '',
+                avatar_url: user?.avatar_url || ''
+            };
+
+            conn.send({
+                type: 'gossip',
+                peers: remoteUsersInfoRef.current,
+                self: selfInfo
+            });
+
+            // Gossip Broadcast: Inform ALL OTHER existing peers about this new joiner immediately
+            // This achieves real-time 3-way discovery
+            Object.values(dataConnsRef.current).forEach(existingConn => {
+                if (existingConn.open && existingConn.peer !== peerId) {
+                    existingConn.send({
+                        type: 'gossip',
+                        peers: { [peerId]: {} }, // Minimal placeholder to trigger lazy info fetch
+                        // Re-send our own info to ensure consistency
+                        self: selfInfo
+                    });
+                }
+            });
         });
 
         conn.on('data', (data: any) => {
-            console.log(`[DataConn] Received:`, data.type);
+            console.log(`[DataConn] Received from ${peerId}:`, data.type);
             if (data.type === 'chat') {
                 const incomingMsg: ChatMessage = {
                     ...data.message,
@@ -115,9 +159,10 @@ const TraderRoom = () => {
                     toast.info(`New message from ${incomingMsg.sender}`);
                 }
             } else if (data.type === 'hand' || data.type === 'hand-sync') {
-                setRemoteHandRaised(data.raised);
+                setRemoteHandsRaised(prev => ({ ...prev, [peerId]: data.raised }));
                 if (data.type === 'hand' && data.raised) {
-                    toast.info(`${participantsRef.current.find(p => p.id === conn.peer)?.name || 'Friend'} raised their hand ✋`);
+                    const name = remoteUsersInfoRef.current[peerId]?.first_name || 'Friend';
+                    toast.info(`${name} raised their hand ✋`);
                 }
             } else if (data.type === 'reaction') {
                 const newId = Date.now();
@@ -126,45 +171,88 @@ const TraderRoom = () => {
                     setActiveReactions(prev => prev.filter(r => r.id !== newId));
                 }, 3000);
             } else if (data.type === 'mute' || data.type === 'mute-sync') {
-                setRemoteMuted(data.isMuted);
+                setRemoteMutedStatus(prev => ({ ...prev, [peerId]: data.isMuted }));
                 if (data.type === 'mute' && data.isMuted) {
-                    const friendName = participantsRef.current.find(p => p.id === conn.peer)?.name || 'Friend';
-                    toast.info(`${friendName} is now muted`);
+                    const name = remoteUsersInfoRef.current[peerId]?.first_name || 'Friend';
+                    toast.info(`${name} is now muted`);
+                }
+            } else if (data.type === 'gossip') {
+                console.log(`[Mesh] Received gossip from ${peerId}. Discovering ${Object.keys(data.peers || {}).length} peers...`);
+                // Add the sender to our info map if missing
+                if (data.self) {
+                    setRemoteUsersInfo(prev => ({ ...prev, [peerId]: data.self }));
+                }
+                // Add all the peers they know
+                if (data.peers) {
+                    setRemoteUsersInfo(prev => ({ ...prev, ...data.peers }));
                 }
             } else if (data.type === 'screen-ended') {
-                setRemoteScreenStream(null);
-                toast.info(`${participantsRef.current.find(p => p.id === conn.peer)?.name || 'Friend'} stopped sharing their screen`);
+                setRemoteScreenStreams(prev => ({ ...prev, [peerId]: null }));
+                const name = remoteUsersInfoRef.current[peerId]?.first_name || 'Friend';
+                toast.info(`${name} stopped sharing their screen`);
             }
         });
 
         conn.on('error', (err: any) => {
-            console.error(`[DataConn] Error (${conn.peer}):`, err);
-            setDataConn(null);
+            console.error(`[DataConn] Error (${peerId}):`, err);
+            setDataConns(prev => {
+                const updated = { ...prev };
+                delete updated[peerId];
+                return updated;
+            });
         });
 
         conn.on('close', () => {
-            console.log(`[DataConn] Closed (${conn.peer})`);
-            setDataConn(null);
+            console.log(`[DataConn] Closed (${peerId})`);
+            setDataConns(prev => {
+                const updated = { ...prev };
+                delete updated[peerId];
+                return updated;
+            });
         });
     };
 
     const handleToggleHand = () => {
         const newState = !isHandRaised;
         setIsHandRaised(newState);
-        if (dataConn && dataConn.open) {
-            dataConn.send({ type: 'hand', raised: newState });
-        } else {
-            console.warn("[DataConn] Cannot send hand raise: connection not open");
-        }
+
+        // Broadcast to all peers
+        Object.values(dataConns).forEach(conn => {
+            if (conn.open) conn.send({ type: 'hand', raised: newState });
+        });
     };
 
-    const handleJoin = (mId?: string) => {
-        if (mId) {
-            setSearchParams({ meetingId: mId });
+    const handleJoin = useCallback((mId?: string) => {
+        let activeId = mId || meetingId;
+        if (!activeId) {
+            // Generate a valid ObjectId-like string for backend compatibility
+            activeId = Array.from({ length: 24 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+            console.log(`[Mesh] Generated new meeting ID: ${activeId}`);
+        }
+
+        if (activeId !== meetingId) {
+            setSearchParams({ meetingId: activeId });
         }
         setRoomState("active");
         toast.success("Entered Secure Room");
-    };
+    }, [meetingId, setSearchParams]);
+
+    const handleSendMessage = useCallback((text: string) => {
+        if (!text.trim() || !user) return;
+
+        const newMsg: ChatMessage = {
+            id: Date.now().toString(),
+            sender: user.first_name || "You",
+            text: text,
+            type: "text",
+            timestamp: new Date(),
+            color: "text-primary"
+        };
+        setMessages(prev => [...prev, newMsg]);
+        Object.values(dataConns).forEach(conn => {
+            if (conn.open) conn.send({ type: 'chat', message: newMsg });
+        });
+    }, [user, dataConns]);
 
     // -- 3. Effects --
 
@@ -183,16 +271,15 @@ const TraderRoom = () => {
         });
 
         newPeer.on('connection', (conn) => {
-            console.log('Incoming data connection...');
+            console.log(`Incoming connection from ${conn.peer}...`);
             setupDataConnection(conn);
         });
 
         newPeer.on('error', (err) => {
             console.error('Core Peer Error:', err);
             if (err.type === 'peer-unavailable') {
-                console.warn('Destination peer not found. Will retry via effect...');
-                setOutgoingCameraCall(null);
-                setOutgoingScreenCall(null);
+                // peer-unavailable is common in mesh when a peer leaves.
+                // Handled individually by closing/clearing specific peer states.
             } else if (err.type === 'disconnected') {
                 toast.error('Peer connection lost. Reconnecting...');
                 newPeer.reconnect();
@@ -202,49 +289,34 @@ const TraderRoom = () => {
         });
 
         newPeer.on('call', (call) => {
+            const peerId = call.peer;
             const streamType = call.metadata?.type || 'screen';
             const localStream = streamType === 'camera' ? videoStreamRef.current : screenStreamRef.current;
-            console.log(`[INCOMING] Answering ${streamType} call (local stream: ${!!localStream})...`);
+            console.log(`[INCOMING] Answering ${streamType} call from ${peerId} (local stream: ${!!localStream})...`);
 
             call.answer(localStream || undefined);
 
-            let callStream: MediaStream | null = null;
-
             call.on('stream', (stream) => {
-                console.log(`[INCOMING] Received ${streamType} stream.`);
-                callStream = stream;
+                console.log(`[INCOMING] Received ${streamType} stream from ${peerId}.`);
                 if (streamType === 'camera') {
-                    setRemoteCameraStream(stream);
+                    setRemoteCameraStreams(prev => ({ ...prev, [peerId]: stream }));
                 } else {
-                    setRemoteScreenStream(stream);
+                    setRemoteScreenStreams(prev => ({ ...prev, [peerId]: stream }));
                 }
             });
 
             call.on('close', () => {
-                console.log(`[INCOMING] ${streamType} call closed.`);
+                console.log(`[INCOMING] ${streamType} call closed from ${peerId}.`);
                 if (streamType === 'camera') {
-                    setRemoteCameraStream(prev => prev === callStream ? null : prev);
-                    setIncomingCameraCall(null);
+                    setRemoteCameraStreams(prev => ({ ...prev, [peerId]: null }));
+                    setIncomingCalls(prev => { const n = { ...prev }; delete n[`${peerId}-camera`]; return n; });
                 } else {
-                    setRemoteScreenStream(prev => prev === callStream ? null : prev);
-                    setIncomingScreenCall(null);
+                    setRemoteScreenStreams(prev => ({ ...prev, [peerId]: null }));
+                    setIncomingCalls(prev => { const n = { ...prev }; delete n[`${peerId}-screen`]; return n; });
                 }
             });
 
-            call.on('error', (err) => {
-                console.error(`[INCOMING] ${streamType} call error:`, err);
-                if (streamType === 'camera') {
-                    setRemoteCameraStream(prev => prev === callStream ? null : prev);
-                    setIsRemoteSpeaking(false);
-                    setIncomingCameraCall(null);
-                }
-            });
-
-            if (streamType === 'camera') {
-                setIncomingCameraCall(call);
-            } else {
-                setIncomingScreenCall(call);
-            }
+            setIncomingCalls(prev => ({ ...prev, [`${peerId}-${streamType}`]: call }));
         });
 
         setPeer(newPeer);
@@ -254,367 +326,477 @@ const TraderRoom = () => {
         };
     }, [user, roomState]);
 
-    // Connect to other user for data when both are ready + AUTO RETRY
+    // Mesh: Connect to all dataConns periodically
     useEffect(() => {
-        let retryInterval: any;
+        if (!peer || roomState !== "active") return;
 
-        const attemptConnection = () => {
-            if (peer && otherUser?.user_id && !dataConn?.open) {
-                console.log('[DataConn] Periodically attempting connection to:', otherUser.user_id);
-                const conn = peer.connect(otherUser.user_id, {
-                    reliable: true
-                });
-                setupDataConnection(conn);
+        const connectToPeers = async () => {
+            // In a mesh, we need to know who ELSE is in the room. 
+            // Currently our info comes from the notifications/meetings table.
+            // We can poll the meeting status to get all accepted participants.
+            if (meetingId) {
+                try {
+                    const res = await api.get(`/api/friends/meeting/${meetingId}`);
+                    // If the meeting status is accepted, we should have a list of remote IDs.
+                    // For now, it's host + invitee. If we want 3+, we'd need a multi-invite logic.
+                    // But we can already handle multiple pairs if they connect to the same meetingId.
+                } catch (e) { }
             }
         };
 
-        // Initial attempt
-        attemptConnection();
+        // This is primarily driven by incoming connections in PeerJS unless we are the "initiator".
+    }, [peer, meetingId]);
 
-        // Background retry loop
-        retryInterval = setInterval(attemptConnection, 10000); // 10s retry
-
-        return () => {
-            if (retryInterval) clearInterval(retryInterval);
-        };
-    }, [peer, otherUser?.user_id, !!dataConn?.open]);
-
-    // Consolidate Auto-initiate Camera call
+    // Connect to other users when they are discovered (mesh auto-connect)
     useEffect(() => {
-        let retryTimeout: any;
+        if (!peer || !user || roomState !== "active") return;
 
-        if (peer && otherUser?.user_id && videoStream && !outgoingCameraCall) {
-            console.log('[OUTGOING] Initiating camera call to:', otherUser.user_id);
-            try {
-                const call = peer.call(otherUser.user_id, videoStream, { metadata: { type: 'camera' } });
-                setOutgoingCameraCall(call);
-
-                let callStream: MediaStream | null = null;
-                call.on('stream', (stream) => {
-                    console.log('[OUTGOING] Received return camera stream');
-                    callStream = stream;
-                    setRemoteCameraStream(stream);
-                });
-
-                call.on('close', () => {
-                    console.log('[OUTGOING] Camera call closed');
-                    setRemoteCameraStream(prev => prev === callStream ? null : prev);
-                    setOutgoingCameraCall(null);
-                });
-
-                call.on('error', (err) => {
-                    console.error("[OUTGOING] Camera call error:", err);
-                    setRemoteCameraStream(prev => prev === callStream ? null : prev);
-                    // Add delay before clearing to prevent rapid loops
-                    retryTimeout = setTimeout(() => setOutgoingCameraCall(null), 3000);
-                });
-            } catch (err) {
-                console.error("Failed to initiate camera call", err);
-                retryTimeout = setTimeout(() => setOutgoingCameraCall(null), 3000);
-            }
-        }
-
-        return () => clearTimeout(retryTimeout);
-    }, [peer, otherUser?.user_id, videoStream, outgoingCameraCall]);
-
-    // Consolidate Auto-initiate Screen call
-    useEffect(() => {
-        let retryTimeout: any;
-
-        if (peer && otherUser?.user_id && screenStream && !outgoingScreenCall) {
-            console.log('[OUTGOING] Initiating screen call to:', otherUser.user_id);
-            try {
-                const call = peer.call(otherUser.user_id, screenStream, { metadata: { type: 'screen' } });
-                setOutgoingScreenCall(call);
-
-                let callStream: MediaStream | null = null;
-                call.on('stream', (stream) => {
-                    console.log('[OUTGOING] Received return screen stream');
-                    callStream = stream;
-                    setRemoteScreenStream(stream);
-                });
-
-                call.on('close', () => {
-                    console.log('[OUTGOING] Screen call closed');
-                    setRemoteScreenStream(prev => prev === callStream ? null : prev);
-                    setOutgoingScreenCall(null);
-                });
-
-                call.on('error', (err) => {
-                    console.error("[OUTGOING] Screen call error:", err);
-                    setRemoteScreenStream(prev => prev === callStream ? null : prev);
-                    retryTimeout = setTimeout(() => setOutgoingScreenCall(null), 3000);
-                });
-            } catch (err) {
-                console.error("Failed to initiate screen call", err);
-                retryTimeout = setTimeout(() => setOutgoingScreenCall(null), 3000);
-            }
-        }
-
-        return () => clearTimeout(retryTimeout);
-    }, [peer, otherUser?.user_id, screenStream, outgoingScreenCall]);
-
-    // Audio Analysis Effect for Remote Speaker
-    useEffect(() => {
-        if (!remoteCameraStream || remoteMuted) {
-            setIsRemoteSpeaking(false);
-            return;
-        }
-
-        let audioContext: AudioContext;
-        let analyser: AnalyserNode;
-        let source: MediaStreamAudioSourceNode;
-        let animationFrame: number;
-
-        try {
-            audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-            analyser = audioContext.createAnalyser();
-            source = audioContext.createMediaStreamSource(remoteCameraStream);
-            source.connect(analyser);
-
-            analyser.fftSize = 256;
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-
-            const checkVolume = () => {
-                analyser.getByteFrequencyData(dataArray);
-                let sum = 0;
-                for (let i = 0; i < bufferLength; i++) {
-                    sum += dataArray[i];
+        const attemptConnections = () => {
+            Object.keys(remoteUsersInfo).forEach(peerId => {
+                const existingConn = dataConns[peerId];
+                // Aggressive Mesh: Initiate connection if none exists or it's closed.
+                // We removed the lexicographical tie-breaker to ensure full connectivity even if discovery is staggered.
+                if (peerId !== user.user_id && (!existingConn || !existingConn.open)) {
+                    console.log(`[Mesh] Attempting connection to ${peerId} (Active: ${!!existingConn})...`);
+                    const conn = peer.connect(peerId, { reliable: true });
+                    setupDataConnection(conn);
                 }
-                const average = sum / bufferLength;
-                setIsRemoteSpeaking(average > 30); // Threshold for "speaking"
-                animationFrame = requestAnimationFrame(checkVolume);
-            };
+            });
+        };
 
-            checkVolume();
-        } catch (e) {
-            console.error("Audio analysis failed", e);
-        }
+        // Run immediately when remoteUsersInfo changes, and also on interval
+        attemptConnections();
+        const interval = setInterval(attemptConnections, 5000);
+        return () => clearInterval(interval);
+    }, [peer, user?.user_id, remoteUsersInfo, dataConns, roomState]);
+
+    // Consolidate Auto-initiate Camera call to all peers (Symmetric Push)
+    useEffect(() => {
+        if (!peer || !videoStream) return;
+
+        Object.keys(dataConns).forEach(peerId => {
+            const callKey = `${peerId}-camera`;
+            // Symmetric Push: Initiation is allowed by ANYONE who has a stream and no active outgoing call.
+            // PeerJS handles the bi-directional stream resolution.
+            if (dataConns[peerId].open && !outgoingCalls[callKey]) {
+                console.log(`[OUTGOING] Initiating camera call to: ${peerId}`);
+                try {
+                    const call = peer.call(peerId, videoStream, { metadata: { type: 'camera' } });
+                    setOutgoingCalls(prev => ({ ...prev, [callKey]: call }));
+
+                    call.on('stream', (stream) => {
+                        console.log(`[OUTGOING] Received return camera stream from ${peerId}`);
+                        setRemoteCameraStreams(prev => ({ ...prev, [peerId]: stream }));
+                    });
+
+                    call.on('close', () => {
+                        console.log(`[OUTGOING] Camera call closed to ${peerId}`);
+                        setRemoteCameraStreams(prev => ({ ...prev, [peerId]: null }));
+                        setOutgoingCalls(prev => { const n = { ...prev }; delete n[callKey]; return n; });
+                    });
+
+                    call.on('error', (err) => {
+                        console.error(`[OUTGOING] Camera call error to ${peerId}:`, err);
+                        setOutgoingCalls(prev => { const n = { ...prev }; delete n[callKey]; return n; });
+                    });
+                } catch (err) {
+                    console.error(`Failed to call ${peerId}`, err);
+                }
+            }
+        });
+    }, [peer, videoStream, dataConns, outgoingCalls]);
+
+    // Consolidate Auto-initiate Screen call to all peers (Symmetric Push)
+    useEffect(() => {
+        if (!peer || !screenStream) return;
+
+        Object.keys(dataConns).forEach(peerId => {
+            const callKey = `${peerId}-screen`;
+            if (dataConns[peerId].open && !outgoingCalls[callKey]) {
+                console.log(`[OUTGOING] Initiating screen call to: ${peerId}`);
+                try {
+                    const call = peer.call(peerId, screenStream, { metadata: { type: 'screen' } });
+                    setOutgoingCalls(prev => ({ ...prev, [callKey]: call }));
+
+                    call.on('stream', (stream) => {
+                        setRemoteScreenStreams(prev => ({ ...prev, [peerId]: stream }));
+                    });
+
+                    call.on('close', () => {
+                        setRemoteScreenStreams(prev => ({ ...prev, [peerId]: null }));
+                        setOutgoingCalls(prev => { const n = { ...prev }; delete n[callKey]; return n; });
+                    });
+                } catch (err) {
+                    console.error(`Failed to call screen ${peerId}`, err);
+                }
+            }
+        });
+    }, [peer, screenStream, dataConns, outgoingCalls]);
+
+    // Audio Analysis Effect for All Remote Speakers
+    useEffect(() => {
+        const audioContexts: Record<string, AudioContext> = {};
+        const animationFrames: Record<string, number> = {};
+
+        Object.entries(remoteCameraStreams).forEach(([peerId, stream]) => {
+            if (!stream || remoteMutedStatus[peerId]) {
+                setRemoteSpeakingStatus(prev => ({ ...prev, [peerId]: false }));
+                return;
+            }
+
+            try {
+                const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+                audioContexts[peerId] = audioContext;
+                const analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+
+                analyser.fftSize = 256;
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+
+                const checkVolume = () => {
+                    analyser.getByteFrequencyData(dataArray);
+                    let sum = 0;
+                    for (let i = 0; i < bufferLength; i++) sum += dataArray[i];
+                    const average = sum / bufferLength;
+                    setRemoteSpeakingStatus(prev => ({ ...prev, [peerId]: average > 30 }));
+                    animationFrames[peerId] = requestAnimationFrame(checkVolume);
+                };
+
+                checkVolume();
+            } catch (e) {
+                console.error(`Audio analysis failed for ${peerId}`, e);
+            }
+        });
 
         return () => {
-            if (animationFrame) cancelAnimationFrame(animationFrame);
-            if (audioContext) audioContext.close();
+            Object.values(animationFrames).forEach(cancelAnimationFrame);
+            Object.values(audioContexts).forEach(ctx => ctx.close());
         };
-    }, [remoteCameraStream, remoteMuted]);
+    }, [remoteCameraStreams, remoteMutedStatus]);
 
-    useEffect(() => {
-        if (!user) return;
+    // Consolidate Participants list (API + Mesh)
+    const traders = useMemo(() => {
+        if (!user) return [];
 
-        const myParticipant = {
+        // Create the final consolidated list of traders (API + Mesh Discovery)
+        const traders: Participant[] = [];
+
+        // 1. Always add ourselves first
+        traders.push({
             id: user.user_id,
             name: "You",
             avatar: user.first_name?.[0] || "U",
             isMuted: isMuted,
             color: "bg-primary"
-        };
+        });
 
-        if (otherUser) {
-            setParticipants([
-                {
-                    ...myParticipant,
-                    isMuted: isMuted,
-                    isSpeaking: false // Local speaking logic can be added similarly
-                },
-                {
-                    id: otherUser.user_id,
-                    name: otherUser.name || `${otherUser.first_name} ${otherUser.last_name}`,
-                    avatar: otherUser.first_name?.[0] || "?",
-                    isSpeaking: isRemoteSpeaking,
-                    isMuted: remoteMuted,
-                    color: "bg-blue-500"
-                }
-            ]);
-        } else {
-            setParticipants([myParticipant]);
-        }
-    }, [user, isMuted, otherUser, remoteMuted, isRemoteSpeaking]);
+        // 2. Add API participants
+        apiParticipants.forEach(p => {
+            if (p.user_id === user.user_id) return;
+            const info = remoteUsersInfo[p.user_id] || p;
+            traders.push({
+                id: p.user_id,
+                name: info?.name || `${info?.first_name} ${info?.last_name}` || "Trader",
+                avatar: info?.first_name?.[0] || "?",
+                isSpeaking: !!remoteSpeakingStatus[p.user_id],
+                isMuted: !!remoteMutedStatus[p.user_id],
+                color: "bg-blue-500"
+            });
+        });
 
+        // 3. Add Mesh-discovered peers who aren't in the API list yet
+        Object.keys(remoteUsersInfo).forEach(peerId => {
+            if (peerId === user.user_id || traders.some(t => t.id === peerId)) return;
+            const info = remoteUsersInfo[peerId];
+            traders.push({
+                id: peerId,
+                name: info?.name || `${info?.first_name} ${info?.last_name}` || "Trader",
+                avatar: info?.first_name?.[0] || "?",
+                isSpeaking: !!remoteSpeakingStatus[peerId],
+                isMuted: !!remoteMutedStatus[peerId],
+                color: "bg-blue-500"
+            });
+        });
+
+        return traders;
+    }, [user, isMuted, apiParticipants, remoteUsersInfo, remoteMutedStatus, remoteSpeakingStatus]);
+
+    // Consolidate allParticipants for rendering
+    const allParticipants = traders;
+
+    // Phase 1: Full Participant Discovery Polling
     useEffect(() => {
         if (!meetingId || !user?.user_id) return;
 
         let isMounted = true;
-        const fetchMeeting = async () => {
+        const fetchParticipants = async () => {
             try {
-                const res = await api.get(`/api/friends/meeting/${meetingId}`);
+                // 1. Fetch Room Status & Unified ID
+                const statusRes = await api.get(`/api/friends/meeting/${meetingId}`);
                 if (!isMounted) return;
 
-                const otherId = res.data.host_id === user.user_id ? res.data.invitee_id : res.data.host_id;
+                const unifiedId = statusRes.data.meeting_id || statusRes.data.id;
+                const status = statusRes.data.status;
 
-                if (otherId) {
-                    const userRes = await api.get(`/api/users/${otherId}/info`);
-                    if (isMounted) setOtherUser(userRes.data);
+                // Sync unified ID to URL if it differs
+                if (unifiedId && meetingId !== unifiedId) {
+                    console.log(`[Mesh] Redirecting to unified ID: ${unifiedId}`);
+                    setSearchParams({ meetingId: unifiedId });
+                    return; // SearchParams update will trigger re-run of this effect
                 }
 
                 // Auto-accept/join logic for invitee
-                if (roomState === "lobby" && res.data.invitee_id === user.user_id && res.data.status === "pending") {
-                    try {
-                        await api.post(`/api/friends/meeting/${meetingId}/accept`);
-                        if (isMounted) handleJoin();
-                    } catch (e) { }
+                if (roomState === "lobby" && statusRes.data.invitee_id === user.user_id && (status === "pending" || status === "accepted")) {
+                    if (status === "pending") {
+                        await api.post(`/api/friends/meeting/${unifiedId}/accept`);
+                    }
+                    console.log("[Mesh] Auto-joining room...");
+                    if (isMounted) handleJoin(unifiedId);
+                }
+
+                // 2. Fetch All Participants in this Room
+                const res = await api.get(`/api/friends/meeting/${unifiedId}/participants`);
+                if (!isMounted) return;
+
+                const participantsList = res.data.participants || [];
+                if (Array.isArray(participantsList)) {
+                    if (isMounted) setApiParticipants(participantsList);
+
+                    setRemoteUsersInfo(prev => {
+                        const infoMap: Record<string, any> = {};
+                        participantsList.forEach((p: any) => {
+                            if (p.user_id !== user.user_id) {
+                                infoMap[p.user_id] = p;
+                            }
+                        });
+
+                        const newInfo = { ...prev, ...infoMap };
+                        return newInfo;
+                    });
                 }
             } catch (e) {
-                console.error("Meeting info fetch failed", e);
+                console.error("Discovery poll failed", e);
             }
         };
 
-        fetchMeeting();
-        return () => { isMounted = false; };
-    }, [meetingId, user?.user_id]); // Removed roomState to prevent re-runs on join
+        fetchParticipants();
+        const interval = setInterval(fetchParticipants, 3000);
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
+    }, [meetingId, user?.user_id, roomState, handleJoin, setSearchParams]);
+
+    // Fetch friends for invitations
+    useEffect(() => {
+        if (!user || !isInviteModalOpen) return;
+
+        const fetchFriends = async () => {
+            try {
+                const res = await api.get('/api/friends');
+                setFriends(res.data);
+            } catch (err) {
+                console.error("Failed to fetch friends", err);
+            }
+        };
+
+        fetchFriends();
+    }, [user, isInviteModalOpen]);
 
     // Cleanup on unmount only
     useEffect(() => {
         return () => {
-            if (screenStream) screenStream.getTracks().forEach(t => t.stop());
-            if (videoStream) videoStream.getTracks().forEach(t => t.stop());
-            if (outgoingScreenCall) outgoingScreenCall.close();
-            if (incomingScreenCall) incomingScreenCall.close();
-            if (outgoingCameraCall) outgoingCameraCall.close();
-            if (incomingCameraCall) incomingCameraCall.close();
-            if (peer) peer.destroy();
-        };
-    }, []); // Only run on unmount
-
-    const handleToggleScreenShare = async () => {
-        if (screenStream) {
-            screenStream.getTracks().forEach(track => track.stop());
-            setScreenStream(null);
-            outgoingScreenCall?.close();
-            setOutgoingScreenCall(null);
-            toast.info("Screen sharing stopped");
-        } else {
-            try {
-                const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-                setScreenStream(stream);
-
-                // No inline call here anymore. The useEffect will pick up the stream change.
-                toast.info("Preparing screen share...");
-
-                stream.getVideoTracks()[0].onended = () => {
-                    setScreenStream(null);
-                    setOutgoingScreenCall(prev => {
-                        prev?.close();
-                        return null;
-                    });
-                    // Notify peer that our screen share ended
-                    if (dataConn && dataConn.open) {
-                        dataConn.send({ type: 'screen-ended' });
-                    }
-                    toast.info("Screen sharing stopped");
-                };
-                toast.success("Screen sharing active");
-            } catch (err) {
-                console.error("Error sharing screen:", err);
-                toast.error("Failed to start screen share");
-            }
-        }
-    };
-
-    const handleToggleVideo = async () => {
-        if (videoStream) {
-            videoStream.getTracks().forEach(track => track.stop());
-            setVideoStream(null);
-            outgoingCameraCall?.close();
-            setOutgoingCameraCall(null);
-            toast.info("Camera stopped");
-        } else {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                setVideoStream(stream);
-
-                // No inline call here. useEffect logic handles this robustly.
-                toast.info("Connecting to peer...");
-
-                toast.success("Camera active");
-            } catch (err) {
-                console.error("Error accessing camera:", err);
-                toast.error("Camera access denied");
-            }
-        }
-    };
-
-    const handleToggleMute = () => {
-        const nextMute = !isMuted;
-        setIsMuted(nextMute);
-        if (dataConn && dataConn.open) {
-            dataConn.send({ type: 'mute', isMuted: nextMute });
-        } else {
-            console.warn("[DataConn] Mute sync skipped: connection not open");
-            toast.warning("Mute not synced yet - still connecting to friend", { duration: 2000 });
-        }
-        toast.info(nextMute ? "Microphone muted" : "Microphone active");
-    };
-
-    const handleSendReaction = (emoji: string) => {
-        const newId = Date.now();
-        setActiveReactions(prev => [...prev, { id: newId, emoji }]);
-
-        if (dataConn && dataConn.open) {
-            dataConn.send({ type: 'reaction', emoji });
-        } else {
-            toast.warning("Connection not ready - syncing message to friend failed", { duration: 2000 });
-        }
-
-        // Local cleanup
-        setTimeout(() => {
-            setActiveReactions(prev => prev.filter(r => r.id !== newId));
-        }, 3000);
-    };
-
-
-    const handleLeave = () => {
-        if (window.confirm("Are you sure you want to leave the room?")) {
-            // Stop media components
-            screenStream?.getTracks().forEach(t => t.stop());
+            // Stop all local tracks
             videoStream?.getTracks().forEach(t => t.stop());
-            setScreenStream(null);
-            setVideoStream(null);
+            screenStream?.getTracks().forEach(t => t.stop());
 
-            // Close Peer connections/calls
-            outgoingScreenCall?.close();
-            incomingScreenCall?.close();
-            outgoingCameraCall?.close();
-            incomingCameraCall?.close();
-            setOutgoingScreenCall(null);
-            setIncomingScreenCall(null);
-            setOutgoingCameraCall(null);
-            setIncomingCameraCall(null);
-
-            dataConn?.close();
-            setDataConn(null);
+            // Close all calls and connections
+            Object.values(outgoingCalls).forEach(call => call.close());
+            Object.values(incomingCalls).forEach(call => call.close());
+            Object.values(dataConns).forEach(conn => conn.close());
 
             if (peer) {
                 peer.destroy();
-                setPeer(null);
             }
+        };
+    }, []); // Only run on unmount
 
-            setRoomState("lobby");
-            toast.info("Session ended");
+    const handleStartScreenShare = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+            setScreenStream(stream);
+
+            // No inline call here anymore. The useEffect will pick up the stream change.
+            toast.info("Preparing screen share...");
+
+            stream.getVideoTracks()[0].onended = () => {
+                handleStopScreenShare();
+            };
+            toast.success("Screen sharing active");
+        } catch (err) {
+            console.error("Error sharing screen:", err);
+            toast.error("Failed to start screen share");
         }
     };
 
-    const handleSendMessage = (text: string) => {
-        const newMessage: ChatMessage = {
-            id: Date.now().toString(),
-            sender: user?.first_name || "You",
-            text,
-            type: "text",
-            timestamp: new Date(),
-            color: "text-primary"
-        };
-        setMessages(prev => [...prev, newMessage]);
+    const handleStopScreenShare = () => {
+        if (screenStream) {
+            screenStream.getTracks().forEach(track => track.stop());
+            setScreenStream(null);
 
-        // Sync with peer
-        if (dataConn && dataConn.open) {
-            dataConn.send({ type: 'chat', message: newMessage });
-        } else {
-            toast.warning("Chat message not synced - connection still establishing", { duration: 2000 });
+            // Broadcast screen ended
+            Object.values(dataConns).forEach(conn => {
+                if (conn.open) conn.send({ type: 'screen-ended' });
+            });
+
+            // Close all outgoing screen calls
+            Object.entries(outgoingCalls).forEach(([key, call]) => {
+                if (key.endsWith('-screen')) {
+                    call.close();
+                    setOutgoingCalls(prev => { const n = { ...prev }; delete n[key]; return n; });
+                }
+            });
+            toast.info("Screen sharing stopped");
+        }
+    };
+
+    const handleStartVideo = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            setVideoStream(stream);
+            setIsMuted(false); // Ensure mic is not muted when starting video
+            toast.success("Camera active");
+        } catch (err) {
+            console.error("Error accessing camera:", err);
+            toast.error("Camera access denied");
+        }
+    };
+
+    const handleStopVideo = () => {
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+            setVideoStream(null);
+            setIsMuted(true); // Mute mic when stopping video
+            // Close all outgoing camera calls
+            Object.entries(outgoingCalls).forEach(([key, call]) => {
+                if (key.endsWith('-camera')) {
+                    call.close();
+                    setOutgoingCalls(prev => { const n = { ...prev }; delete n[key]; return n; });
+                }
+            });
+            toast.info("Camera stopped");
+        }
+    };
+
+    // Reset media calls when local streams change (fixes asymmetric streams)
+    useEffect(() => {
+        if (videoStream) {
+            console.log("[Mesh] Local camera stream acquired, resetting outgoing camera calls...");
+            Object.entries(outgoingCalls).forEach(([key, call]) => {
+                if (key.endsWith('-camera')) {
+                    call.close();
+                    setOutgoingCalls(prev => { const n = { ...prev }; delete n[key]; return n; });
+                }
+            });
+        }
+    }, [!!videoStream]);
+
+    useEffect(() => {
+        if (screenStream) {
+            console.log("[Mesh] Local screen stream acquired, resetting outgoing screen calls...");
+            Object.entries(outgoingCalls).forEach(([key, call]) => {
+                if (key.endsWith('-screen')) {
+                    call.close();
+                    setOutgoingCalls(prev => { const n = { ...prev }; delete n[key]; return n; });
+                }
+            });
+        }
+    }, [!!screenStream]);
+
+    const handleToggleMute = () => {
+        if (!videoStream) {
+            toast.error("Please enable your camera/mic first");
+            return;
+        }
+        const newState = !isMuted;
+        setIsMuted(newState);
+        videoStream.getAudioTracks().forEach(track => {
+            track.enabled = !newState;
+        });
+
+        // Broadcast to all peers
+        Object.values(dataConns).forEach(conn => {
+            if (conn.open) conn.send({ type: 'mute', isMuted: newState });
+        });
+        toast.info(newState ? "Microphone muted" : "Microphone active");
+    };
+
+    const handleReaction = (emoji: string) => {
+        const newId = Date.now();
+        setActiveReactions(prev => [...prev, { id: newId, emoji }]);
+        setTimeout(() => {
+            setActiveReactions(prev => prev.filter(r => r.id !== newId));
+        }, 3000);
+
+        // Broadcast to all peers
+        Object.values(dataConns).forEach(conn => {
+            if (conn.open) conn.send({ type: 'reaction', emoji });
+        });
+    };
+
+    const handleLeave = () => {
+        // Stop all local tracks
+        videoStream?.getTracks().forEach(t => t.stop());
+        screenStream?.getTracks().forEach(t => t.stop());
+
+        // Close all calls and connections
+        Object.values(outgoingCalls).forEach(call => call.close());
+        Object.values(incomingCalls).forEach(call => call.close());
+        Object.values(dataConns).forEach(conn => conn.close());
+
+        if (peer) {
+            peer.destroy();
+        }
+
+        // Reset state
+        setRoomState("lobby");
+        setPeer(null);
+        setVideoStream(null);
+        setScreenStream(null);
+        setRemoteScreenStreams({});
+        setRemoteCameraStreams({});
+        setDataConns({});
+        setOutgoingCalls({});
+        setIncomingCalls({});
+        setRemoteUsersInfo({});
+        setApiParticipants([]);
+        setIsMuted(false);
+        setIsHandRaised(false);
+        setMessages([]);
+
+        // Clean up URL
+        setSearchParams({});
+        toast.info("Session ended");
+    };
+
+    const handleInviteMore = async (targetUserId: string) => {
+        if (!meetingId) return;
+        try {
+            await api.post('/api/friends/invite-room', {
+                recipient_id: targetUserId,
+                meeting_id: meetingId
+            });
+            toast.success("Invitation sent!");
+        } catch (err) {
+            toast.error("Failed to send invitation");
         }
     };
 
     const handleShareStats = async () => {
         try {
-            const res = await api.get(`/trades/stats/user/${user.user_id}`);
+            const res = await api.get(`/trades/stats/user/${user?.user_id}`);
             const stats = res.data;
             const statsMessage: ChatMessage = {
                 id: Date.now().toString(),
@@ -632,11 +814,9 @@ const TraderRoom = () => {
             setMessages(prev => [...prev, statsMessage]);
 
             // Sync with peer
-            if (dataConn && dataConn.open) {
-                dataConn.send({ type: 'chat', message: statsMessage });
-            } else {
-                toast.warning("Stats not synced - connection establishing", { duration: 2000 });
-            }
+            Object.values(dataConns).forEach(conn => {
+                if (conn.open) conn.send({ type: 'chat', message: statsMessage });
+            });
 
             toast.success("Current Portfolio Stats Shared");
             if (!isChatOpen) setIsChatOpen(true);
@@ -662,44 +842,31 @@ const TraderRoom = () => {
                                 Exit to Community
                             </Button>
                         </div>
-                        <RoomLobby onJoinRoom={handleJoin} />
+                        <RoomLobby
+                            onJoinRoom={handleJoin}
+                            meetingId={meetingId || undefined}
+                            onUpdateMeetingId={(id) => setSearchParams({ meetingId: id })}
+                        />
                     </>
                 ) : (
                     /* Active Room Layout */
-                    <div className="flex-1 flex overflow-hidden">
-                        {/* Main Stage */}
-                        <div className="flex-1 relative flex flex-col bg-black/50 transition-all duration-300">
-                            {/* Top Bar / Participants Overlay */}
-                            <div className="absolute top-4 left-4 z-30">
-                                <ParticipantsStrip participants={participants} />
-                            </div>
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                        {/* Top Bar / Participants Overlay */}
+                        <div className="absolute top-4 left-4 z-30">
+                            <ParticipantsStrip participants={allParticipants} />
+                        </div>
 
-                            {/* Center Content: Screen Share */}
-                            <div className="flex-1 p-4 flex items-center justify-center pb-24">
-                                <ActiveScreenShare
-                                    sharerName={otherUser?.first_name || 'Friend'}
-                                    screenStream={screenStream}
-                                    remoteScreenStream={remoteScreenStream}
-                                    cameraStream={videoStream}
-                                    remoteCameraStream={remoteCameraStream}
-                                />
-
-                                {/* Raise Hand Indicators */}
-                                <div className="absolute top-20 right-8 space-y-2 pointer-events-none">
-                                    <AnimatePresence>
-                                        {isHandRaised && (
-                                            <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 20, opacity: 0 }} className="bg-primary text-white p-2 rounded-lg flex items-center gap-2 shadow-lg">
-                                                <Hand className="w-4 h-4" /> <span className="text-xs font-bold">You raised hand</span>
-                                            </motion.div>
-                                        )}
-                                        {remoteHandRaised && (
-                                            <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 20, opacity: 0 }} className="bg-blue-500 text-white p-2 rounded-lg flex items-center gap-2 shadow-lg">
-                                                <Hand className="w-4 h-4" /> <span className="text-xs font-bold">{otherUser?.first_name || 'Colleague'} raised hand</span>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </div>
-                            </div>
+                        {/* Center Content: Main Grid/Stage */}
+                        <div className="flex-1 min-w-0 h-full p-4 overflow-hidden">
+                            {/* We use the first available remote screen stream or the local one for the Stage */}
+                            <ActiveScreenShare
+                                sharerName={allParticipants.find(p => remoteScreenStreams[p.id])?.name || "Trader"}
+                                screenStream={screenStream}
+                                cameraStream={videoStream}
+                                remoteScreenStream={Object.values(remoteScreenStreams).find(s => !!s)}
+                                remoteCameraStreams={remoteCameraStreams}
+                                remoteUsersInfo={remoteUsersInfo}
+                            />
                         </div>
 
                         {/* Right Sidebar: Chat (Collapsible) */}
@@ -725,26 +892,95 @@ const TraderRoom = () => {
 
                         {/* Persistent Google Meet Controls */}
                         <RoomControls
-                            onLeave={handleLeave}
-                            onShareStats={handleShareStats}
-                            isChatOpen={isChatOpen}
-                            onToggleChat={() => setIsChatOpen(!isChatOpen)}
-                            meetingId={meetingId || "Trade Session Sync"}
-
-                            // Media Props
-                            isScreenSharing={!!screenStream}
-                            onToggleScreenShare={handleToggleScreenShare}
-                            isVideoOn={!!videoStream}
-                            onToggleVideo={handleToggleVideo}
                             isMuted={isMuted}
                             onToggleMute={handleToggleMute}
-
-                            // Hand/Reaction Props
+                            isVideoOn={!!videoStream}
+                            onToggleVideo={videoStream ? handleStopVideo : handleStartVideo}
+                            isScreenSharing={!!screenStream}
+                            onToggleScreenShare={screenStream ? handleStopScreenShare : handleStartScreenShare}
                             isHandRaised={isHandRaised}
                             onToggleHand={handleToggleHand}
-                            onSendReaction={handleSendReaction}
-                            isDataConnected={dataConn?.open}
+                            onReaction={handleReaction}
+                            onLeave={handleLeave}
+                            onToggleChat={() => setIsChatOpen(!isChatOpen)}
+                            onShareStats={handleShareStats}
+                            onInvite={() => {
+                                console.log("[TraderRoom] Opening invite modal");
+                                toast.info("Opening Invite List...");
+                                setIsInviteModalOpen(true);
+                            }}
+                            onShowInfo={() => toast.info("Room ID: " + (meetingId || "Unknown"))}
                         />
+
+                        {/* Invitation Dialog */}
+                        <Dialog open={isInviteModalOpen} onOpenChange={setIsInviteModalOpen}>
+                            <DialogContent className="max-w-md bg-[#0f0f13] border-white/10 text-white">
+                                <DialogHeader>
+                                    <DialogTitle className="flex items-center gap-2">
+                                        <UserPlus className="w-5 h-5 text-primary" />
+                                        Invite to Trade Room
+                                    </DialogTitle>
+                                    <DialogDescription className="text-white/50">
+                                        Invite your friends to collaborate in this live session.
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                <div className="space-y-4 py-4">
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-3 w-4 h-4 text-white/30" />
+                                        <Input
+                                            placeholder="Search friends..."
+                                            value={inviteSearchTerm}
+                                            onChange={(e) => setInviteSearchTerm(e.target.value)}
+                                            className="pl-9 bg-white/5 border-white/10 focus:border-primary/50"
+                                        />
+                                    </div>
+
+                                    <ScrollArea className="h-[300px] pr-4">
+                                        <div className="space-y-2">
+                                            {friends
+                                                .filter(f =>
+                                                    f.first_name?.toLowerCase().includes(inviteSearchTerm.toLowerCase()) ||
+                                                    f.last_name?.toLowerCase().includes(inviteSearchTerm.toLowerCase())
+                                                )
+                                                .map((friend) => (
+                                                    <div
+                                                        key={friend.user_id}
+                                                        className="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-colors group"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <Avatar className="w-10 h-10 border border-white/10">
+                                                                <AvatarImage src={friend.avatar_url} />
+                                                                <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                                                                    {friend.first_name?.[0]}{friend.last_name?.[0]}
+                                                                </AvatarFallback>
+                                                            </Avatar>
+                                                            <div>
+                                                                <div className="text-sm font-bold">{friend.first_name} {friend.last_name}</div>
+                                                                <div className="text-[10px] text-emerald-500 font-medium">Online</div>
+                                                            </div>
+                                                        </div>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="secondary"
+                                                            className="h-8 bg-primary/20 text-primary hover:bg-primary hover:text-white transition-all rounded-lg"
+                                                            onClick={() => handleInviteMore(friend.user_id)}
+                                                        >
+                                                            Invite
+                                                        </Button>
+                                                    </div>
+                                                ))}
+
+                                            {friends.length === 0 && (
+                                                <div className="text-center py-10 text-white/30 text-sm">
+                                                    No online friends found.
+                                                </div>
+                                            )}
+                                        </div>
+                                    </ScrollArea>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
 
                         {/* Floating Reactions Overlay */}
                         <div className="absolute inset-0 pointer-events-none z-50 flex items-end justify-center pb-32">
