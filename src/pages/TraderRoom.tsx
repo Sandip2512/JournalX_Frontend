@@ -238,35 +238,53 @@ const TraderRoom = () => {
             console.log(`[Mesh] Attempting to join session: ${activeId}`);
 
             // 1. Check current status/permission
-            const statusRes = await api.get(`/api/friends/meeting/${activeId}`);
+            let statusRes;
+            try {
+                statusRes = await api.get(`/api/friends/meeting/${activeId}`);
+            } catch (e: any) {
+                // If 404, meeting doesn't exist in DB yet (race) or is invalid
+                // Still try to knock - the knock endpoint will return 404 which we handle
+                console.log("[Mesh] Meeting status check failed, attempting to knock anyway...");
+                statusRes = { data: { status: "not_found", host_id: null } };
+            }
+
             const hostId = statusRes.data.host_id;
             const status = statusRes.data.status;
 
             // 2. Admission Logic
-            if (hostId !== user?.user_id && status === "not_found") {
-                // Not host and no invite -> Knock
-                console.log("[Mesh] No invitation found. Knocking for entry...");
-                setAdmissionStatus("knocking");
-                await api.post(`/api/friends/meeting/${activeId}/knock`);
-                return;
-            } else if (status === "pending_admission") {
-                console.log("[Mesh] Entry still pending admission.");
-                setAdmissionStatus("knocking");
-                return;
-            } else if (status === "denied") {
-                console.log("[Mesh] Entry denied by host.");
+            if (status === "denied") {
                 setAdmissionStatus("denied");
                 toast.error("Entry denied by host");
                 return;
             }
 
-            // 3. Proceed to active room if accepted or host
-            setAdmissionStatus("accepted");
-            if (activeId !== meetingId) {
-                setSearchParams({ meetingId: activeId });
+            // If we are the host (or already accepted), go directly in
+            if (hostId === user?.user_id || status === "accepted") {
+                setAdmissionStatus("accepted");
+                if (activeId !== meetingId) {
+                    setSearchParams({ meetingId: activeId });
+                }
+                setRoomState("active");
+                toast.success("Entered Secure Room");
+                return;
             }
-            setRoomState("active");
-            toast.success("Entered Secure Room");
+
+            // If still pending, just show the waiting screen
+            if (status === "pending_admission") {
+                setAdmissionStatus("knocking");
+                return;
+            }
+
+            // 3. Otherwise (not_found = guest with no record), knock for admission
+            console.log("[Mesh] No invitation found. Knocking for entry...");
+            setAdmissionStatus("knocking");
+            try {
+                await api.post(`/api/friends/meeting/${activeId}/knock`);
+            } catch (knockErr: any) {
+                // Even if knock fails (e.g., backend 500), keep the user in the waiting screen
+                // They will be polled and admitted normally
+                console.warn("[Mesh] Knock request failed, staying in waiting state", knockErr);
+            }
         } catch (err) {
             console.error("Join failed", err);
             toast.error("Failed to join room");
