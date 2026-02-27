@@ -76,6 +76,7 @@ const TraderRoom = () => {
     // Admission Flow State
     const [knockingUsers, setKnockingUsers] = useState<any[]>([]);
     const [admissionStatus, setAdmissionStatus] = useState<"none" | "knocking" | "accepted" | "denied">("none");
+    const [meetingLinkVisible, setMeetingLinkVisible] = useState(false);
 
     // Refs for PeerJS listeners (to avoid stale closures)
     const videoStreamRef = React.useRef<MediaStream | null>(null);
@@ -290,6 +291,15 @@ const TraderRoom = () => {
             toast.error("Failed to join room");
         }
     }, [meetingId, setSearchParams, user]);
+
+    // Show meeting link popup when host enters room
+    useEffect(() => {
+        if (roomState === "active" && admissionStatus === "accepted") {
+            setMeetingLinkVisible(true);
+            const t = setTimeout(() => setMeetingLinkVisible(false), 15000);
+            return () => clearTimeout(t);
+        }
+    }, [roomState, admissionStatus]);
 
     const handleSendMessage = useCallback((text: string) => {
         if (!text.trim() || !user) return;
@@ -978,6 +988,42 @@ const TraderRoom = () => {
                                             </motion.div>
                                         ))}
                                     </div>
+                                )}
+                            </AnimatePresence>
+
+                            {/* Google Meet-style "Your meeting's ready" Link Popup */}
+                            <AnimatePresence>
+                                {meetingLinkVisible && meetingId && (
+                                    <motion.div
+                                        initial={{ x: -60, opacity: 0 }}
+                                        animate={{ x: 0, opacity: 1 }}
+                                        exit={{ x: -60, opacity: 0 }}
+                                        className="absolute bottom-28 left-4 z-[60] bg-[#0f0f13] border border-white/10 rounded-2xl shadow-2xl p-5 w-80"
+                                    >
+                                        <div className="flex items-center justify-between mb-3">
+                                            <p className="text-white font-bold text-sm">Your meeting's ready</p>
+                                            <button onClick={() => setMeetingLinkVisible(false)} className="text-muted-foreground hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                                            </button>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground mb-3">Or share this meeting link with others you want in the meeting</p>
+                                        <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/10">
+                                            <span className="text-xs text-emerald-400 flex-1 truncate">{window.location.href}</span>
+                                            <button
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(window.location.href);
+                                                    toast.success("Link copied!");
+                                                }}
+                                                className="text-muted-foreground hover:text-white shrink-0 p-1 rounded hover:bg-white/10 transition-colors"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                                            </button>
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground mt-3 flex items-center gap-1">
+                                            <Shield className="w-3 h-3 text-emerald-500" />
+                                            People who use this meeting link must get your permission before they can join.
+                                        </p>
+                                    </motion.div>
                                 )}
                             </AnimatePresence>
 
