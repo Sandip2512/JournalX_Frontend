@@ -226,7 +226,7 @@ const TraderRoom = () => {
         });
     };
 
-    const handleJoin = useCallback((mId?: string) => {
+    const handleJoin = useCallback(async (mId?: string) => {
         let activeId = mId || meetingId;
         if (!activeId) {
             // Generate a valid ObjectId-like string for backend compatibility
@@ -234,12 +234,44 @@ const TraderRoom = () => {
             console.log(`[Mesh] Generated new meeting ID: ${activeId}`);
         }
 
-        if (activeId !== meetingId) {
-            setSearchParams({ meetingId: activeId });
+        try {
+            console.log(`[Mesh] Attempting to join session: ${activeId}`);
+
+            // 1. Check current status/permission
+            const statusRes = await api.get(`/api/friends/meeting/${activeId}`);
+            const hostId = statusRes.data.host_id;
+            const status = statusRes.data.status;
+
+            // 2. Admission Logic
+            if (hostId !== user?.user_id && status === "not_found") {
+                // Not host and no invite -> Knock
+                console.log("[Mesh] No invitation found. Knocking for entry...");
+                setAdmissionStatus("knocking");
+                await api.post(`/api/friends/meeting/${activeId}/knock`);
+                return;
+            } else if (status === "pending_admission") {
+                console.log("[Mesh] Entry still pending admission.");
+                setAdmissionStatus("knocking");
+                return;
+            } else if (status === "denied") {
+                console.log("[Mesh] Entry denied by host.");
+                setAdmissionStatus("denied");
+                toast.error("Entry denied by host");
+                return;
+            }
+
+            // 3. Proceed to active room if accepted or host
+            setAdmissionStatus("accepted");
+            if (activeId !== meetingId) {
+                setSearchParams({ meetingId: activeId });
+            }
+            setRoomState("active");
+            toast.success("Entered Secure Room");
+        } catch (err) {
+            console.error("Join failed", err);
+            toast.error("Failed to join room");
         }
-        setRoomState("active");
-        toast.success("Entered Secure Room");
-    }, [meetingId, setSearchParams]);
+    }, [meetingId, setSearchParams, user]);
 
     const handleSendMessage = useCallback((text: string) => {
         if (!text.trim() || !user) return;
@@ -726,50 +758,7 @@ const TraderRoom = () => {
         }
     }, [!!screenStream]);
 
-    const handleJoin = async (id?: string) => {
-        const activeMeetingId = id || meetingId;
-        if (!activeMeetingId) {
-            toast.error("No meeting ID provided");
-            return;
-        }
 
-        try {
-            console.log(`[Mesh] Attempting to join session: ${activeMeetingId}`);
-
-            // 1. Check current status/permission
-            const statusRes = await api.get(`/api/friends/meeting/${activeMeetingId}`);
-            const hostId = statusRes.data.host_id;
-            const status = statusRes.data.status;
-
-            // 2. Admission Logic
-            if (hostId !== user?.user_id && status === "not_found") {
-                // Not host and no invite -> Knock
-                console.log("[Mesh] No invitation found. Knocking for entry...");
-                setAdmissionStatus("knocking");
-                await api.post(`/api/friends/meeting/${activeMeetingId}/knock`);
-                return;
-            } else if (status === "pending_admission") {
-                console.log("[Mesh] Entry still pending admission.");
-                setAdmissionStatus("knocking");
-                return;
-            } else if (status === "denied") {
-                console.log("[Mesh] Entry denied by host.");
-                setAdmissionStatus("denied");
-                toast.error("Entry denied by host");
-                return;
-            }
-
-            // 3. Proceed to active room if accepted or host
-            setAdmissionStatus("accepted");
-            setRoomState("active");
-            if (!meetingId) setSearchParams({ meetingId: activeMeetingId });
-            initializePeer();
-            toast.success("Joined Trade Room");
-        } catch (err) {
-            console.error("Join failed", err);
-            toast.error("Failed to join room");
-        }
-    };
 
     const handleRespondToAdmission = async (targetUserId: string, action: "admit" | "deny") => {
         if (!meetingId) return;
