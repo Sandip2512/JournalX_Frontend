@@ -10,6 +10,52 @@ interface ActiveScreenShareProps {
     remoteCameraStream?: MediaStream | null;
 }
 
+const VideoStream = ({ stream, name, isLocal = false }: { stream: MediaStream, name: string, isLocal?: boolean }) => {
+    const videoRef = React.useRef<HTMLVideoElement>(null);
+
+    React.useEffect(() => {
+        const el = videoRef.current;
+        if (!el || !stream) return;
+
+        console.log(`[VideoStream] Setting stream for ${name}. Tracks:`, stream.getTracks().map(t => `${t.kind}:${t.readyState}`).join(', '));
+        el.srcObject = stream;
+
+        const play = () => {
+            el.play().catch(err => {
+                if (err.name !== 'AbortError') console.error(`[VideoStream] Error playing ${name}:`, err);
+            });
+        };
+
+        el.onloadedmetadata = play;
+        play();
+
+        // Listen for track changes
+        const onTrackAdded = () => {
+            console.log(`[VideoStream] Track added/changed for ${name}`);
+            play();
+        };
+        stream.addEventListener('addtrack', onTrackAdded);
+        stream.addEventListener('removetrack', onTrackAdded);
+
+        return () => {
+            el.srcObject = null;
+            el.onloadedmetadata = null;
+            stream.removeEventListener('addtrack', onTrackAdded);
+            stream.removeEventListener('removetrack', onTrackAdded);
+        };
+    }, [stream, name]);
+
+    return (
+        <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className={`w-full h-full object-cover ${isLocal ? 'scale-x-[-1]' : ''}`}
+        />
+    );
+};
+
 export const ActiveScreenShare = React.memo(({
     sharerName,
     screenStream,
@@ -17,18 +63,12 @@ export const ActiveScreenShare = React.memo(({
     remoteScreenStream,
     remoteCameraStream
 }: ActiveScreenShareProps) => {
-    const videoRef = useRef<HTMLVideoElement>(null);
     const [isLocalPiPVisible, setIsLocalPiPVisible] = React.useState(true);
     const [isRemotePiPVisible, setIsRemotePiPVisible] = React.useState(true);
 
     // Stage stream: strictly for screen sharing (local or remote)
     const activeStream = screenStream || remoteScreenStream;
 
-    useEffect(() => {
-        if (videoRef.current && activeStream) {
-            videoRef.current.srcObject = activeStream;
-        }
-    }, [activeStream]);
 
     // Re-show PiPs if new streams start
     useEffect(() => {
@@ -56,12 +96,9 @@ export const ActiveScreenShare = React.memo(({
             {/* Content Area */}
             <div className="flex-1 p-0 flex items-center justify-center relative overflow-hidden bg-black/90">
                 {isShareActive ? (
-                    <video
-                        ref={videoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className="w-full h-full object-contain"
+                    <VideoStream
+                        stream={activeStream!}
+                        name={screenStream ? "Your Screen" : `${sharerName}'s Screen`}
                     />
                 ) : (
                     <div className="w-full h-full relative overflow-hidden">
@@ -79,17 +116,7 @@ export const ActiveScreenShare = React.memo(({
                     {/* Remote Camera PiP */}
                     {remoteCameraStream && isRemotePiPVisible && (
                         <div className="w-48 aspect-video rounded-xl overflow-hidden border-2 border-primary shadow-2xl bg-black group/pip relative">
-                            <video
-                                autoPlay
-                                playsInline
-                                muted
-                                ref={(el) => {
-                                    if (el && remoteCameraStream && el.srcObject !== remoteCameraStream) {
-                                        el.srcObject = remoteCameraStream;
-                                    }
-                                }}
-                                className="w-full h-full object-cover"
-                            />
+                            <VideoStream stream={remoteCameraStream} name={sharerName} />
                             <div className="absolute bottom-2 left-2 bg-black/50 px-2 py-0.5 rounded text-[10px] text-white">
                                 {sharerName}
                             </div>
@@ -105,17 +132,7 @@ export const ActiveScreenShare = React.memo(({
                     {/* Local Camera PiP */}
                     {cameraStream && isLocalPiPVisible && (
                         <div className="w-48 aspect-video rounded-xl overflow-hidden border-2 border-emerald-500/50 shadow-2xl bg-black group/pip relative">
-                            <video
-                                autoPlay
-                                playsInline
-                                muted
-                                ref={(el) => {
-                                    if (el && cameraStream && el.srcObject !== cameraStream) {
-                                        el.srcObject = cameraStream;
-                                    }
-                                }}
-                                className="w-full h-full object-cover scale-x-[-1]"
-                            />
+                            <VideoStream stream={cameraStream} name="You" isLocal={true} />
                             <div className="absolute bottom-2 left-2 bg-black/50 px-2 py-0.5 rounded text-[10px] text-white">
                                 You (Preview)
                             </div>
