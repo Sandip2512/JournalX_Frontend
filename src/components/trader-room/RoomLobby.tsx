@@ -47,7 +47,7 @@ export const RoomLobby = ({ onJoinRoom, meetingId, onUpdateMeetingId }: RoomLobb
 
     // Search State
     const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
+    const [searchQuery, setSearchQuery] = useState(meetingId || "");
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
 
@@ -159,9 +159,14 @@ export const RoomLobby = ({ onJoinRoom, meetingId, onUpdateMeetingId }: RoomLobb
     };
 
     const [laterMeetingId, setLaterMeetingId] = useState<string | null>(null);
-    const handleCreateMeetingForLater = () => {
-        const newId = Array.from({ length: 24 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-        setLaterMeetingId(newId);
+    const handleCreateMeetingForLater = async () => {
+        try {
+            const res = await api.post("/api/friends/meeting/create");
+            const newId = res.data.meeting_id;
+            setLaterMeetingId(newId);
+        } catch (err) {
+            toast.error("Failed to generate meeting link");
+        }
     };
 
     const copyToClipboard = (text: string) => {
