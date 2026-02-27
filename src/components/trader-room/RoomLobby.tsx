@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 
 interface RoomLobbyProps {
-    onJoinRoom: () => void;
+    onJoinRoom: (meetingId?: string) => void;
 }
 
 interface Friend {
@@ -66,7 +66,7 @@ export const RoomLobby = ({ onJoinRoom }: RoomLobbyProps) => {
                 const res = await api.get(`/api/friends/meeting/${currentMeetingId}`);
                 if (res.data.status === "accepted") {
                     toast.success("Friend accepted! Starting room...");
-                    onJoinRoom();
+                    onJoinRoom(currentMeetingId);
                     setCurrentMeetingId(null);
                 }
             } catch (e) { }
@@ -105,7 +105,7 @@ export const RoomLobby = ({ onJoinRoom }: RoomLobbyProps) => {
 
                     <div className="space-y-3">
                         <Button
-                            onClick={onJoinRoom}
+                            onClick={() => onJoinRoom()}
                             className="w-full h-14 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-lg shadow-[0_0_20px_rgba(16,185,129,0.2)] group"
                         >
                             Start Private Room

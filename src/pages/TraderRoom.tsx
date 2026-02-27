@@ -18,7 +18,7 @@ import Peer from "peerjs";
 const TraderRoom = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const meetingId = searchParams.get("meetingId");
 
     // -- 1. All State Declarations at the Top --
@@ -63,15 +63,33 @@ const TraderRoom = () => {
     useEffect(() => { videoStreamRef.current = videoStream; }, [videoStream]);
     useEffect(() => { screenStreamRef.current = screenStream; }, [screenStream]);
 
+    // Refs for synchronization to avoid stale closures in PeerJS event listeners
+    const isMutedRef = React.useRef(isMuted);
+    const isHandRaisedRef = React.useRef(isHandRaised);
+    const participantsRef = React.useRef(participants);
+
+    useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
+    useEffect(() => { isHandRaisedRef.current = isHandRaised; }, [isHandRaised]);
+    useEffect(() => { participantsRef.current = participants; }, [participants]);
+
     // -- 2. Helper Functions --
     const setupDataConnection = (conn: any) => {
         if (!conn) return;
 
-        // If we already have an OPEN connection to THIS peer, don't replace it
-        if (dataConn?.open && dataConn.peer === conn.peer) {
-            console.log(`[DataConn] Already connected to ${conn.peer}, closing redundant connection.`);
-            conn.close();
-            return;
+        // TIE-BREAKER: If both peers connect at the same time, we keep the one initiated by the peer with the lexicographically smaller ID.
+        // This ensures both sides deterministically choose the SAME single connection to keep.
+        const myId = user?.user_id || '';
+        const otherId = conn.peer;
+
+        if (dataConn?.open) {
+            if (myId < otherId) {
+                console.log(`[DataConn] I am the primary peer (${myId} < ${otherId}). Keeping my outgoing connection, rejecting incoming from ${otherId}.`);
+                conn.close();
+                return;
+            } else {
+                console.log(`[DataConn] Replacing existing connection with new one from ${otherId} (${myId} > ${otherId}).`);
+                dataConn.close();
+            }
         }
 
         console.log(`[DataConn] Setting up connection to ${conn.peer}...`);
@@ -79,9 +97,9 @@ const TraderRoom = () => {
         conn.on('open', () => {
             console.log(`[DataConn] Connection OPEN with ${conn.peer}`);
             setDataConn(conn);
-            // Sync current state immediately upon connection
-            conn.send({ type: 'hand-sync', raised: isHandRaised });
-            conn.send({ type: 'mute-sync', isMuted: isMuted });
+            // Handshake: Sync current state immediately upon connection using REFS
+            conn.send({ type: 'hand-sync', raised: isHandRaisedRef.current });
+            conn.send({ type: 'mute-sync', isMuted: isMutedRef.current });
         });
 
         conn.on('data', (data: any) => {
@@ -99,7 +117,7 @@ const TraderRoom = () => {
             } else if (data.type === 'hand' || data.type === 'hand-sync') {
                 setRemoteHandRaised(data.raised);
                 if (data.type === 'hand' && data.raised) {
-                    toast.info(`${otherUser?.first_name || 'Friend'} raised their hand ✋`);
+                    toast.info(`${participantsRef.current.find(p => p.id === conn.peer)?.name || 'Friend'} raised their hand ✋`);
                 }
             } else if (data.type === 'reaction') {
                 const newId = Date.now();
@@ -110,11 +128,12 @@ const TraderRoom = () => {
             } else if (data.type === 'mute' || data.type === 'mute-sync') {
                 setRemoteMuted(data.isMuted);
                 if (data.type === 'mute' && data.isMuted) {
-                    toast.info(`${otherUser?.first_name || 'Friend'} is now muted`);
+                    const friendName = participantsRef.current.find(p => p.id === conn.peer)?.name || 'Friend';
+                    toast.info(`${friendName} is now muted`);
                 }
             } else if (data.type === 'screen-ended') {
                 setRemoteScreenStream(null);
-                toast.info(`${otherUser?.first_name || 'Friend'} stopped sharing their screen`);
+                toast.info(`${participantsRef.current.find(p => p.id === conn.peer)?.name || 'Friend'} stopped sharing their screen`);
             }
         });
 
@@ -139,7 +158,10 @@ const TraderRoom = () => {
         }
     };
 
-    const handleJoin = () => {
+    const handleJoin = (mId?: string) => {
+        if (mId) {
+            setSearchParams({ meetingId: mId });
+        }
         setRoomState("active");
         toast.success("Entered Secure Room");
     };
