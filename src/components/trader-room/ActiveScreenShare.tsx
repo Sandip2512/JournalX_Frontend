@@ -82,8 +82,11 @@ export const ActiveScreenShare = React.memo(({
                             <video
                                 autoPlay
                                 playsInline
+                                muted
                                 ref={(el) => {
-                                    if (el && remoteCameraStream) el.srcObject = remoteCameraStream;
+                                    if (el && remoteCameraStream && el.srcObject !== remoteCameraStream) {
+                                        el.srcObject = remoteCameraStream;
+                                    }
                                 }}
                                 className="w-full h-full object-cover"
                             />
@@ -107,7 +110,9 @@ export const ActiveScreenShare = React.memo(({
                                 playsInline
                                 muted
                                 ref={(el) => {
-                                    if (el && cameraStream) el.srcObject = cameraStream;
+                                    if (el && cameraStream && el.srcObject !== cameraStream) {
+                                        el.srcObject = cameraStream;
+                                    }
                                 }}
                                 className="w-full h-full object-cover scale-x-[-1]"
                             />

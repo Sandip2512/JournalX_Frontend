@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import UserLayout from "@/components/layout/UserLayout";
-import { ArrowLeft, Monitor } from "lucide-react";
+import { ArrowLeft, Monitor, Hand } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { RoomLobby } from "@/components/trader-room/RoomLobby";
@@ -32,10 +32,11 @@ const TraderRoom = () => {
     const [remoteScreenStream, setRemoteScreenStream] = useState<MediaStream | null>(null);
     const [remoteCameraStream, setRemoteCameraStream] = useState<MediaStream | null>(null);
 
-    // PeerJS & Connection State
     const [peer, setPeer] = useState<Peer | null>(null);
-    const [currentScreenCall, setCurrentScreenCall] = useState<any>(null);
-    const [currentCameraCall, setCurrentCameraCall] = useState<any>(null);
+    const [outgoingScreenCall, setOutgoingScreenCall] = useState<any>(null);
+    const [incomingScreenCall, setIncomingScreenCall] = useState<any>(null);
+    const [outgoingCameraCall, setOutgoingCameraCall] = useState<any>(null);
+    const [incomingCameraCall, setIncomingCameraCall] = useState<any>(null);
     const [dataConn, setDataConn] = useState<any>(null);
 
     // Participant & Name State
@@ -44,10 +45,16 @@ const TraderRoom = () => {
     const [isHandRaised, setIsHandRaised] = useState(false);
     const [remoteHandRaised, setRemoteHandRaised] = useState(false);
 
-    // Chat State
     const [messages, setMessages] = useState<ChatMessage[]>([
         { id: "1", sender: "System", text: "Secure link established. Waiting for participants...", type: "text", timestamp: new Date(), color: "text-emerald-500" },
     ]);
+
+    // Refs for PeerJS listeners (to avoid stale closures)
+    const videoStreamRef = React.useRef<MediaStream | null>(null);
+    const screenStreamRef = React.useRef<MediaStream | null>(null);
+
+    useEffect(() => { videoStreamRef.current = videoStream; }, [videoStream]);
+    useEffect(() => { screenStreamRef.current = screenStream; }, [screenStream]);
 
     // -- 2. Helper Functions --
     const setupDataConnection = (conn: any) => {
@@ -124,12 +131,32 @@ const TraderRoom = () => {
             setupDataConnection(conn);
         });
 
+        newPeer.on('error', (err) => {
+            console.error('Core Peer Error:', err);
+            if (err.type === 'peer-unavailable') {
+                console.warn('Destination peer not found. Will retry via effect...');
+                setOutgoingCameraCall(null);
+                setOutgoingScreenCall(null);
+            } else if (err.type === 'disconnected') {
+                toast.error('Peer connection lost. Reconnecting...');
+                newPeer.reconnect();
+            } else {
+                toast.error(`Meeting connection error: ${err.type}`);
+            }
+        });
+
         newPeer.on('call', (call) => {
             const streamType = call.metadata?.type || 'screen';
-            console.log(`Incoming ${streamType} call from peer...`);
+            const localStream = streamType === 'camera' ? videoStreamRef.current : screenStreamRef.current;
+            console.log(`[INCOMING] Answering ${streamType} call (local stream: ${!!localStream})...`);
 
-            call.answer();
+            call.answer(localStream || undefined);
+
+            let callStream: MediaStream | null = null;
+
             call.on('stream', (stream) => {
+                console.log(`[INCOMING] Received ${streamType} stream.`);
+                callStream = stream;
                 if (streamType === 'camera') {
                     setRemoteCameraStream(stream);
                 } else {
@@ -138,17 +165,28 @@ const TraderRoom = () => {
             });
 
             call.on('close', () => {
+                console.log(`[INCOMING] ${streamType} call closed.`);
                 if (streamType === 'camera') {
-                    setRemoteCameraStream(null);
+                    setRemoteCameraStream(prev => prev === callStream ? null : prev);
+                    setIncomingCameraCall(null);
                 } else {
-                    setRemoteScreenStream(null);
+                    setRemoteScreenStream(prev => prev === callStream ? null : prev);
+                    setIncomingScreenCall(null);
+                }
+            });
+
+            call.on('error', (err) => {
+                console.error(`[INCOMING] ${streamType} call error:`, err);
+                if (streamType === 'camera') {
+                    setRemoteCameraStream(prev => prev === callStream ? null : prev);
+                    setIncomingCameraCall(null);
                 }
             });
 
             if (streamType === 'camera') {
-                setCurrentCameraCall(call);
+                setIncomingCameraCall(call);
             } else {
-                setCurrentScreenCall(call);
+                setIncomingScreenCall(call);
             }
         });
 
@@ -167,6 +205,81 @@ const TraderRoom = () => {
             setupDataConnection(conn);
         }
     }, [peer, otherUser, dataConn]);
+
+    // Consolidate Auto-initiate Camera call
+    useEffect(() => {
+        let retryTimeout: any;
+
+        if (peer && otherUser?.user_id && videoStream && !outgoingCameraCall) {
+            console.log('[OUTGOING] Initiating camera call to:', otherUser.user_id);
+            try {
+                const call = peer.call(otherUser.user_id, videoStream, { metadata: { type: 'camera' } });
+                setOutgoingCameraCall(call);
+
+                let callStream: MediaStream | null = null;
+                call.on('stream', (stream) => {
+                    console.log('[OUTGOING] Received return camera stream');
+                    callStream = stream;
+                    setRemoteCameraStream(stream);
+                });
+
+                call.on('close', () => {
+                    console.log('[OUTGOING] Camera call closed');
+                    setRemoteCameraStream(prev => prev === callStream ? null : prev);
+                    setOutgoingCameraCall(null);
+                });
+
+                call.on('error', (err) => {
+                    console.error("[OUTGOING] Camera call error:", err);
+                    setRemoteCameraStream(prev => prev === callStream ? null : prev);
+                    // Add delay before clearing to prevent rapid loops
+                    retryTimeout = setTimeout(() => setOutgoingCameraCall(null), 3000);
+                });
+            } catch (err) {
+                console.error("Failed to initiate camera call", err);
+                retryTimeout = setTimeout(() => setOutgoingCameraCall(null), 3000);
+            }
+        }
+
+        return () => clearTimeout(retryTimeout);
+    }, [peer, otherUser?.user_id, videoStream, outgoingCameraCall]);
+
+    // Consolidate Auto-initiate Screen call
+    useEffect(() => {
+        let retryTimeout: any;
+
+        if (peer && otherUser?.user_id && screenStream && !outgoingScreenCall) {
+            console.log('[OUTGOING] Initiating screen call to:', otherUser.user_id);
+            try {
+                const call = peer.call(otherUser.user_id, screenStream, { metadata: { type: 'screen' } });
+                setOutgoingScreenCall(call);
+
+                let callStream: MediaStream | null = null;
+                call.on('stream', (stream) => {
+                    console.log('[OUTGOING] Received return screen stream');
+                    callStream = stream;
+                    setRemoteScreenStream(stream);
+                });
+
+                call.on('close', () => {
+                    console.log('[OUTGOING] Screen call closed');
+                    setRemoteScreenStream(prev => prev === callStream ? null : prev);
+                    setOutgoingScreenCall(null);
+                });
+
+                call.on('error', (err) => {
+                    console.error("[OUTGOING] Screen call error:", err);
+                    setRemoteScreenStream(prev => prev === callStream ? null : prev);
+                    retryTimeout = setTimeout(() => setOutgoingScreenCall(null), 3000);
+                });
+            } catch (err) {
+                console.error("Failed to initiate screen call", err);
+                retryTimeout = setTimeout(() => setOutgoingScreenCall(null), 3000);
+            }
+        }
+
+        return () => clearTimeout(retryTimeout);
+    }, [peer, otherUser?.user_id, screenStream, outgoingScreenCall]);
 
     useEffect(() => {
         if (!user) return;
@@ -196,42 +309,46 @@ const TraderRoom = () => {
     }, [user, isMuted, otherUser]);
 
     useEffect(() => {
-        if (meetingId && user?.user_id) {
-            const fetchMeeting = async () => {
-                try {
-                    const res = await api.get(`/api/friends/meeting/${meetingId}`);
-                    const otherId = res.data.host_id === user.user_id ? res.data.invitee_id : res.data.host_id;
+        if (!meetingId || !user?.user_id) return;
 
-                    if (otherId) {
-                        const userRes = await api.get(`/api/users/${otherId}/info`);
-                        setOtherUser(userRes.data);
-                    }
-                } catch (e) {
-                    console.error("Meeting info fetch failed", e);
+        let isMounted = true;
+        const fetchMeeting = async () => {
+            try {
+                const res = await api.get(`/api/friends/meeting/${meetingId}`);
+                if (!isMounted) return;
+
+                const otherId = res.data.host_id === user.user_id ? res.data.invitee_id : res.data.host_id;
+
+                if (otherId) {
+                    const userRes = await api.get(`/api/users/${otherId}/info`);
+                    if (isMounted) setOtherUser(userRes.data);
                 }
-            };
-            fetchMeeting();
 
-            // Auto-accept/join logic for invitee
-            if (roomState === "lobby") {
-                const accept = async () => {
+                // Auto-accept/join logic for invitee
+                if (roomState === "lobby" && res.data.invitee_id === user.user_id && res.data.status === "pending") {
                     try {
                         await api.post(`/api/friends/meeting/${meetingId}/accept`);
-                        handleJoin();
+                        if (isMounted) handleJoin();
                     } catch (e) { }
-                };
-                accept();
+                }
+            } catch (e) {
+                console.error("Meeting info fetch failed", e);
             }
-        }
-    }, [meetingId, user?.user_id, roomState]);
+        };
+
+        fetchMeeting();
+        return () => { isMounted = false; };
+    }, [meetingId, user?.user_id]); // Removed roomState to prevent re-runs on join
 
     // Cleanup on unmount only
     useEffect(() => {
         return () => {
             if (screenStream) screenStream.getTracks().forEach(t => t.stop());
             if (videoStream) videoStream.getTracks().forEach(t => t.stop());
-            if (currentScreenCall) currentScreenCall.close();
-            if (currentCameraCall) currentCameraCall.close();
+            if (outgoingScreenCall) outgoingScreenCall.close();
+            if (incomingScreenCall) incomingScreenCall.close();
+            if (outgoingCameraCall) outgoingCameraCall.close();
+            if (incomingCameraCall) incomingCameraCall.close();
             if (peer) peer.destroy();
         };
     }, []); // Only run on unmount
@@ -240,24 +357,23 @@ const TraderRoom = () => {
         if (screenStream) {
             screenStream.getTracks().forEach(track => track.stop());
             setScreenStream(null);
-            currentScreenCall?.close();
-            setCurrentScreenCall(null);
+            outgoingScreenCall?.close();
+            setOutgoingScreenCall(null);
             toast.info("Screen sharing stopped");
         } else {
             try {
                 const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
                 setScreenStream(stream);
 
-                // Start Peer Call to other user with 'screen' metadata
-                if (peer && otherUser) {
-                    const call = peer.call(otherUser.user_id, stream, { metadata: { type: 'screen' } });
-                    setCurrentScreenCall(call);
-                }
+                // No inline call here anymore. The useEffect will pick up the stream change.
+                toast.info("Preparing screen share...");
 
                 stream.getVideoTracks()[0].onended = () => {
                     setScreenStream(null);
-                    currentScreenCall?.close();
-                    setCurrentScreenCall(null);
+                    setOutgoingScreenCall(prev => {
+                        prev?.close();
+                        return null;
+                    });
                     toast.info("Screen sharing stopped");
                 };
                 toast.success("Screen sharing active");
@@ -272,19 +388,16 @@ const TraderRoom = () => {
         if (videoStream) {
             videoStream.getTracks().forEach(track => track.stop());
             setVideoStream(null);
-            currentCameraCall?.close();
-            setCurrentCameraCall(null);
+            outgoingCameraCall?.close();
+            setOutgoingCameraCall(null);
             toast.info("Camera stopped");
         } else {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 setVideoStream(stream);
 
-                // Start Peer Call to other user with 'camera' metadata
-                if (peer && otherUser) {
-                    const call = peer.call(otherUser.user_id, stream, { metadata: { type: 'camera' } });
-                    setCurrentCameraCall(call);
-                }
+                // No inline call here. useEffect logic handles this robustly.
+                toast.info("Connecting to peer...");
 
                 toast.success("Camera active");
             } catch (err) {
@@ -307,7 +420,27 @@ const TraderRoom = () => {
             videoStream?.getTracks().forEach(t => t.stop());
             setScreenStream(null);
             setVideoStream(null);
+
+            // Close Peer connections/calls
+            outgoingScreenCall?.close();
+            incomingScreenCall?.close();
+            outgoingCameraCall?.close();
+            incomingCameraCall?.close();
+            setOutgoingScreenCall(null);
+            setIncomingScreenCall(null);
+            setOutgoingCameraCall(null);
+            setIncomingCameraCall(null);
+
+            dataConn?.close();
+            setDataConn(null);
+
+            if (peer) {
+                peer.destroy();
+                setPeer(null);
+            }
+
             setRoomState("lobby");
+            toast.info("Session ended");
         }
     };
 

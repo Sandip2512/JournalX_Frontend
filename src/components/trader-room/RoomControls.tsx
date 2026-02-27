@@ -46,7 +46,7 @@ export const RoomControls = React.memo(({
 }: RoomControlsProps) => {
 
     return (
-        <div className="h-20 w-full bg-[#0a0a0c] border-t border-white/5 flex items-center justify-between px-8 z-40 fixed bottom-0 left-0 right-0">
+        <div className="h-20 w-full bg-[#0a0a0c] border-t border-white/5 flex items-center justify-between px-8 z-40 absolute bottom-0 left-0 right-0 rounded-b-3xl">
             {/* Left section: Time and Meeting Info */}
             <div className="flex items-center gap-4 min-w-[200px]">
                 <div className="text-white font-medium text-sm hidden md:block">
