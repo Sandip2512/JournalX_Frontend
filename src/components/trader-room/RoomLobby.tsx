@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Users, Lock, Shield, Plus, ArrowRight, UserPlus, CheckCircle2, Search, Loader2 } from "lucide-react";
+import { Users, Lock, Shield, Plus, ArrowRight, UserPlus, CheckCircle2, Search, Loader2, Video, Link, Calendar, ChevronDown, Copy } from "lucide-react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -118,6 +124,7 @@ export const RoomLobby = ({ onJoinRoom, meetingId, onUpdateMeetingId }: RoomLobb
         try {
             // Synchronously resolve/generate ID before any network calls to prevent fragmentation
             if (!meetingIdAnchor.current) {
+                // For instant meetings from friends list, use the old anchor logic
                 const newId = Array.from({ length: 24 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
                 meetingIdAnchor.current = newId;
                 setCurrentMeetingId(newId);
@@ -137,6 +144,29 @@ export const RoomLobby = ({ onJoinRoom, meetingId, onUpdateMeetingId }: RoomLobb
         } catch (err) {
             toast.error("Failed to send invitation");
         }
+    };
+
+    const handleStartInstantMeeting = async () => {
+        try {
+            const res = await api.post("/api/friends/meeting/create");
+            const newId = res.data.meeting_id;
+            meetingIdAnchor.current = newId;
+            setCurrentMeetingId(newId);
+            onJoinRoom(newId);
+        } catch (err) {
+            toast.error("Failed to create meeting");
+        }
+    };
+
+    const [laterMeetingId, setLaterMeetingId] = useState<string | null>(null);
+    const handleCreateMeetingForLater = () => {
+        const newId = Array.from({ length: 24 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+        setLaterMeetingId(newId);
+    };
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        toast.success("Link copied to clipboard!");
     };
 
     const handleSearch = async (query: string) => {
@@ -235,19 +265,101 @@ export const RoomLobby = ({ onJoinRoom, meetingId, onUpdateMeetingId }: RoomLobb
                         </p>
                     </div>
 
-                    <div className="space-y-3">
-                        <Button
-                            onClick={() => onJoinRoom(currentMeetingId || undefined)}
-                            className="w-full h-14 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-lg shadow-[0_0_20px_rgba(16,185,129,0.2)] group"
-                        >
-                            {currentMeetingId ? "Join Active Room" : "Start Private Room"}
-                            <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                        </Button>
+                    <div className="flex gap-3 relative z-10">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    className="flex-1 h-14 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-lg shadow-[0_0_20px_rgba(16,185,129,0.2)] group"
+                                >
+                                    <Video className="w-5 h-5 mr-3" />
+                                    New Meeting
+                                    <ChevronDown className="w-4 h-4 ml-auto" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-64 bg-[#0a0a0c] border-white/10 text-white p-2 rounded-2xl shadow-2xl">
+                                <DropdownMenuItem
+                                    onClick={handleCreateMeetingForLater}
+                                    className="flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:bg-white/5"
+                                >
+                                    <Link className="w-5 h-5 text-emerald-500" />
+                                    <div>
+                                        <p className="font-bold text-sm">Create a meeting for later</p>
+                                        <p className="text-[10px] text-muted-foreground">Get a link you can share</p>
+                                    </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={handleStartInstantMeeting}
+                                    className="flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:bg-white/5"
+                                >
+                                    <Plus className="w-5 h-5 text-emerald-500" />
+                                    <div>
+                                        <p className="font-bold text-sm">Start an instant meeting</p>
+                                        <p className="text-[10px] text-muted-foreground">Join right now</p>
+                                    </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    className="flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:bg-white/5 opacity-50"
+                                >
+                                    <Calendar className="w-5 h-5 text-emerald-500" />
+                                    <div>
+                                        <p className="font-bold text-sm">Schedule for later</p>
+                                        <p className="text-[10px] text-muted-foreground">Coming soon</p>
+                                    </div>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        <div className="flex-[0.8] relative group">
+                            <Input
+                                placeholder="Enter meeting ID"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="h-14 bg-white/5 border-white/10 rounded-xl pl-12 font-medium focus:border-emerald-500/50 transition-all text-white"
+                            />
+                            <Link className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-emerald-500 transition-colors" />
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => searchQuery.length > 5 && onJoinRoom(searchQuery)}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-emerald-500 hover:bg-emerald-500/10 font-bold"
+                            >
+                                Join
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3 pt-6 border-t border-white/5">
                         <p className="text-[10px] text-center text-muted-foreground flex items-center justify-center gap-2">
-                            <Shield className="w-3 h-3" />
-                            End-to-end encrypted voice & data
+                            <Shield className="w-3 h-3 text-emerald-500" />
+                            End-to-end encrypted sessions
                         </p>
                     </div>
+
+                    {/* Later Meeting Link Dialog */}
+                    <AnimatePresence>
+                        {laterMeetingId && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                className="mt-6 p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm font-bold text-white">Here's your meeting link</p>
+                                    <Button variant="ghost" size="icon" onClick={() => setLaterMeetingId(null)} className="h-6 w-6 text-white/50 hover:text-white">
+                                        <Plus className="w-4 h-4 rotate-45" />
+                                    </Button>
+                                </div>
+                                <p className="text-xs text-muted-foreground">Copy this link and send it to people you want to meet with.</p>
+                                <div className="flex items-center gap-2 bg-[#0a0a0c] p-3 rounded-xl border border-white/5">
+                                    <p className="flex-1 text-[10px] font-mono text-emerald-500 truncate">{window.location.origin}/trader-room?meetingId={laterMeetingId}</p>
+                                    <Button size="icon" variant="ghost" onClick={() => copyToClipboard(`${window.location.origin}/trader-room?meetingId=${laterMeetingId}`)} className="h-8 w-8 text-white/30 hover:text-emerald-500">
+                                        <Copy className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </motion.div>
 
                 {/* Right: Friends Online */}

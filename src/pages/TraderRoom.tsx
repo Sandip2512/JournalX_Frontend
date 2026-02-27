@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import UserLayout from "@/components/layout/UserLayout";
-import { ArrowLeft, Monitor, Hand } from "lucide-react";
+import { ArrowLeft, Monitor, Hand, Shield, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { RoomLobby } from "@/components/trader-room/RoomLobby";
@@ -72,6 +72,10 @@ const TraderRoom = () => {
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
     const [friends, setFriends] = useState<any[]>([]);
     const [inviteSearchTerm, setInviteSearchTerm] = useState("");
+
+    // Admission Flow State
+    const [knockingUsers, setKnockingUsers] = useState<any[]>([]);
+    const [admissionStatus, setAdmissionStatus] = useState<"none" | "knocking" | "accepted" | "denied">("none");
 
     // Refs for PeerJS listeners (to avoid stale closures)
     const videoStreamRef = React.useRef<MediaStream | null>(null);
@@ -539,16 +543,23 @@ const TraderRoom = () => {
 
                 const unifiedId = statusRes.data.meeting_id || statusRes.data.id;
                 const status = statusRes.data.status;
+                const incomingKnocks = statusRes.data.knocking_users || [];
 
-                // Sync unified ID to URL if it differs
-                if (unifiedId && meetingId !== unifiedId) {
-                    console.log(`[Mesh] Redirecting to unified ID: ${unifiedId}`);
-                    setSearchParams({ meetingId: unifiedId });
-                    return; // SearchParams update will trigger re-run of this effect
+                // Update knocking list for host
+                if (statusRes.data.host_id === user?.user_id && incomingKnocks.length > 0) {
+                    setKnockingUsers(incomingKnocks);
+                } else {
+                    setKnockingUsers([]);
+                }
+
+                // Auto-join logic for guest (if admitted)
+                if (admissionStatus === "knocking" && status === "accepted") {
+                    console.log("[Mesh] Admission granted! Joining...");
+                    handleJoin(unifiedId);
                 }
 
                 // Auto-accept/join logic for invitee
-                if (roomState === "lobby" && statusRes.data.invitee_id === user.user_id && (status === "pending" || status === "accepted")) {
+                if (roomState === "lobby" && statusRes.data.invitee_id === user.user_id && (status === "pending" || status === "accepted") && admissionStatus === "none") {
                     if (status === "pending") {
                         await api.post(`/api/friends/meeting/${unifiedId}/accept`);
                     }
@@ -587,7 +598,7 @@ const TraderRoom = () => {
             isMounted = false;
             clearInterval(interval);
         };
-    }, [meetingId, user?.user_id, roomState, handleJoin, setSearchParams]);
+    }, [meetingId, user?.user_id, roomState, handleJoin, setSearchParams, admissionStatus]);
 
     // Fetch friends for invitations
     useEffect(() => {
@@ -714,6 +725,65 @@ const TraderRoom = () => {
             });
         }
     }, [!!screenStream]);
+
+    const handleJoin = async (id?: string) => {
+        const activeMeetingId = id || meetingId;
+        if (!activeMeetingId) {
+            toast.error("No meeting ID provided");
+            return;
+        }
+
+        try {
+            console.log(`[Mesh] Attempting to join session: ${activeMeetingId}`);
+
+            // 1. Check current status/permission
+            const statusRes = await api.get(`/api/friends/meeting/${activeMeetingId}`);
+            const hostId = statusRes.data.host_id;
+            const status = statusRes.data.status;
+
+            // 2. Admission Logic
+            if (hostId !== user?.user_id && status === "not_found") {
+                // Not host and no invite -> Knock
+                console.log("[Mesh] No invitation found. Knocking for entry...");
+                setAdmissionStatus("knocking");
+                await api.post(`/api/friends/meeting/${activeMeetingId}/knock`);
+                return;
+            } else if (status === "pending_admission") {
+                console.log("[Mesh] Entry still pending admission.");
+                setAdmissionStatus("knocking");
+                return;
+            } else if (status === "denied") {
+                console.log("[Mesh] Entry denied by host.");
+                setAdmissionStatus("denied");
+                toast.error("Entry denied by host");
+                return;
+            }
+
+            // 3. Proceed to active room if accepted or host
+            setAdmissionStatus("accepted");
+            setRoomState("active");
+            if (!meetingId) setSearchParams({ meetingId: activeMeetingId });
+            initializePeer();
+            toast.success("Joined Trade Room");
+        } catch (err) {
+            console.error("Join failed", err);
+            toast.error("Failed to join room");
+        }
+    };
+
+    const handleRespondToAdmission = async (targetUserId: string, action: "admit" | "deny") => {
+        if (!meetingId) return;
+        try {
+            await api.post(`/api/friends/meeting/${meetingId}/respond`, {
+                user_id: targetUserId,
+                action: action
+            });
+            setKnockingUsers(prev => prev.filter(u => u.user_id !== targetUserId));
+            toast.success(action === "admit" ? "User admitted" : "User denied");
+        } catch (err) {
+            toast.error("Failed to respond to request");
+        }
+    };
 
     const handleToggleMute = () => {
         if (!videoStream) {
@@ -857,7 +927,102 @@ const TraderRoom = () => {
                         </div>
 
                         {/* Center Content: Main Grid/Stage */}
-                        <div className="flex-1 min-w-0 h-full p-4 overflow-hidden">
+                        <div className="flex-1 min-w-0 h-full p-4 overflow-hidden relative">
+                            {/* Admission Requests for Host */}
+                            <AnimatePresence>
+                                {knockingUsers.length > 0 && (
+                                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[60] space-y-2 max-w-sm w-full">
+                                        {knockingUsers.map(knocker => (
+                                            <motion.div
+                                                key={knocker.user_id}
+                                                initial={{ y: -20, opacity: 0 }}
+                                                animate={{ y: 0, opacity: 1 }}
+                                                exit={{ y: -20, opacity: 0 }}
+                                                className="bg-[#0f0f13] border border-white/10 p-4 rounded-2xl shadow-2xl flex items-center justify-between gap-4"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="w-10 h-10 border border-white/10">
+                                                        <AvatarFallback className="bg-emerald-500/20 text-emerald-500 font-bold">
+                                                            {knocker.name?.[0]}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                        <p className="text-sm font-bold text-white">{knocker.name}</p>
+                                                        <p className="text-[10px] text-muted-foreground">Wants to join this call</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => handleRespondToAdmission(knocker.user_id, "deny")}
+                                                        className="h-8 text-xs text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                                                    >
+                                                        Deny
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={() => handleRespondToAdmission(knocker.user_id, "admit")}
+                                                        className="h-8 text-xs bg-emerald-600 hover:bg-emerald-500"
+                                                    >
+                                                        Admit
+                                                    </Button>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                )}
+                            </AnimatePresence>
+
+                            {/* Waiting Room Overlay for Guests */}
+                            {admissionStatus === "knocking" && (
+                                <div className="absolute inset-0 z-[70] bg-[#0a0a0c]/90 backdrop-blur-xl flex flex-col items-center justify-center p-8 text-center space-y-6">
+                                    <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center relative">
+                                        <div className="absolute inset-0 border-2 border-emerald-500/30 rounded-full animate-ping" />
+                                        <Users className="w-8 h-8 text-emerald-500" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <h2 className="text-2xl font-black text-white">Asking to be admitted...</h2>
+                                        <p className="text-muted-foreground max-w-xs mx-auto">
+                                            The host will let you in shortly. Hang tight!
+                                        </p>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                            setAdmissionStatus("none");
+                                            setRoomState("lobby");
+                                        }}
+                                        className="border-white/10 text-white hover:bg-white/5"
+                                    >
+                                        Cancel Request
+                                    </Button>
+                                </div>
+                            )}
+
+                            {admissionStatus === "denied" && (
+                                <div className="absolute inset-0 z-[70] bg-[#0a0a0c]/90 backdrop-blur-xl flex flex-col items-center justify-center p-8 text-center space-y-6">
+                                    <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center">
+                                        <Shield className="w-8 h-8 text-red-500" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <h2 className="text-2xl font-black text-white">Entry Denied</h2>
+                                        <p className="text-muted-foreground">
+                                            The host has declined your request to join this session.
+                                        </p>
+                                    </div>
+                                    <Button
+                                        onClick={() => {
+                                            setAdmissionStatus("none");
+                                            setRoomState("lobby");
+                                        }}
+                                        className="bg-red-600 hover:bg-red-500"
+                                    >
+                                        Back to Lobby
+                                    </Button>
+                                </div>
+                            )}
+
                             {/* We use the first available remote screen stream or the local one for the Stage */}
                             <ActiveScreenShare
                                 sharerName={allParticipants.find(p => remoteScreenStreams[p.id])?.name || "Trader"}
