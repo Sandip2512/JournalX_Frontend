@@ -27,6 +27,7 @@ interface RoomControlsProps {
     onShowInfo?: () => void;
     onShowParticipants?: () => void;
     meetingId?: string;
+    isDataConnected?: boolean;
 }
 
 export const RoomControls = React.memo(({
@@ -45,7 +46,8 @@ export const RoomControls = React.memo(({
     onSendReaction,
     onShowInfo,
     onShowParticipants,
-    meetingId = "trade-room-sync"
+    meetingId = "trade-room-sync",
+    isDataConnected = false
 }: RoomControlsProps) => {
 
     return (
@@ -58,6 +60,15 @@ export const RoomControls = React.memo(({
                 <div className="w-px h-4 bg-white/20 hidden md:block" />
                 <div className="text-white/70 text-sm font-medium tracking-tight truncate max-w-[120px]">
                     {meetingId}
+                </div>
+                <div className="flex items-center gap-1.5 ml-2">
+                    <div className={cn(
+                        "w-2 h-2 rounded-full",
+                        isDataConnected ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" : "bg-amber-500 animate-pulse"
+                    )} />
+                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-widest hidden lg:block">
+                        {isDataConnected ? "Live" : "Connecting"}
+                    </span>
                 </div>
             </div>
 
@@ -104,25 +115,31 @@ export const RoomControls = React.memo(({
                             <Button
                                 size="icon"
                                 onClick={onToggleHand}
+                                disabled={!isDataConnected}
                                 className={cn(
                                     "rounded-full w-10 h-10 transition-all border-none",
-                                    isHandRaised ? "bg-primary text-white" : "bg-[#3c4043] hover:bg-[#434649] text-white"
+                                    isHandRaised ? "bg-primary text-white" : "bg-[#3c4043] hover:bg-[#434649] text-white",
+                                    !isDataConnected && "opacity-50 cursor-not-allowed"
                                 )}
                             >
                                 <Hand className={cn("w-5 h-5", isHandRaised && "animate-bounce")} />
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Raise Hand</TooltipContent>
+                        <TooltipContent>{isDataConnected ? "Raise Hand" : "Connecting..."}</TooltipContent>
                     </Tooltip>
 
                     {/* Reactions */}
                     <Tooltip>
                         <Popover>
                             <TooltipTrigger asChild>
-                                <PopoverTrigger asChild>
+                                <PopoverTrigger asChild disabled={!isDataConnected}>
                                     <Button
                                         size="icon"
-                                        className="rounded-full w-10 h-10 bg-[#3c4043] hover:bg-[#434649] text-white border-none transition-all"
+                                        disabled={!isDataConnected}
+                                        className={cn(
+                                            "rounded-full w-10 h-10 bg-[#3c4043] hover:bg-[#434649] text-white border-none transition-all",
+                                            !isDataConnected && "opacity-50 cursor-not-allowed"
+                                        )}
                                     >
                                         <Smile className="w-5 h-5" />
                                     </Button>
@@ -144,7 +161,7 @@ export const RoomControls = React.memo(({
                                 ))}
                             </PopoverContent>
                         </Popover>
-                        <TooltipContent>Send Reaction</TooltipContent>
+                        <TooltipContent>{isDataConnected ? "Send Reaction" : "Connecting..."}</TooltipContent>
                     </Tooltip>
 
                     {/* Present Now (Screen Share) */}
@@ -170,12 +187,16 @@ export const RoomControls = React.memo(({
                             <Button
                                 size="icon"
                                 onClick={onShareStats}
-                                className="rounded-full w-10 h-10 bg-[#3c4043] hover:bg-[#434649] text-white border-none transition-all"
+                                disabled={!isDataConnected}
+                                className={cn(
+                                    "rounded-full w-10 h-10 bg-[#3c4043] hover:bg-[#434649] text-white border-none transition-all",
+                                    !isDataConnected && "opacity-50 cursor-not-allowed"
+                                )}
                             >
                                 <BarChart2 className="w-5 h-5" />
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Share P&L</TooltipContent>
+                        <TooltipContent>{isDataConnected ? "Share P&L" : "Connecting..."}</TooltipContent>
                     </Tooltip>
 
                     {/* Leave Call */}

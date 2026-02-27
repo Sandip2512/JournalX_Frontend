@@ -67,12 +67,25 @@ const TraderRoom = () => {
     const setupDataConnection = (conn: any) => {
         if (!conn) return;
 
+        // If we already have an OPEN connection to THIS peer, don't replace it
+        if (dataConn?.open && dataConn.peer === conn.peer) {
+            console.log(`[DataConn] Already connected to ${conn.peer}, closing redundant connection.`);
+            conn.close();
+            return;
+        }
+
+        console.log(`[DataConn] Setting up connection to ${conn.peer}...`);
+
         conn.on('open', () => {
-            console.log('Data connection established');
+            console.log(`[DataConn] Connection OPEN with ${conn.peer}`);
             setDataConn(conn);
+            // Sync current state immediately upon connection
+            conn.send({ type: 'hand-sync', raised: isHandRaised });
+            conn.send({ type: 'mute-sync', isMuted: isMuted });
         });
 
         conn.on('data', (data: any) => {
+            console.log(`[DataConn] Received:`, data.type);
             if (data.type === 'chat') {
                 const incomingMsg: ChatMessage = {
                     ...data.message,
@@ -83,21 +96,20 @@ const TraderRoom = () => {
                     setIsChatOpen(true);
                     toast.info(`New message from ${incomingMsg.sender}`);
                 }
-            } else if (data.type === 'hand') {
+            } else if (data.type === 'hand' || data.type === 'hand-sync') {
                 setRemoteHandRaised(data.raised);
-                if (data.raised) {
+                if (data.type === 'hand' && data.raised) {
                     toast.info(`${otherUser?.first_name || 'Friend'} raised their hand ✋`);
                 }
             } else if (data.type === 'reaction') {
                 const newId = Date.now();
                 setActiveReactions(prev => [...prev, { id: newId, emoji: data.emoji }]);
-                // Auto-cleanup after animation
                 setTimeout(() => {
                     setActiveReactions(prev => prev.filter(r => r.id !== newId));
                 }, 3000);
-            } else if (data.type === 'mute') {
+            } else if (data.type === 'mute' || data.type === 'mute-sync') {
                 setRemoteMuted(data.isMuted);
-                if (data.isMuted) {
+                if (data.type === 'mute' && data.isMuted) {
                     toast.info(`${otherUser?.first_name || 'Friend'} is now muted`);
                 }
             } else if (data.type === 'screen-ended') {
@@ -107,11 +119,12 @@ const TraderRoom = () => {
         });
 
         conn.on('error', (err: any) => {
-            console.error('Data connection error:', err);
+            console.error(`[DataConn] Error (${conn.peer}):`, err);
             setDataConn(null);
         });
 
         conn.on('close', () => {
+            console.log(`[DataConn] Closed (${conn.peer})`);
             setDataConn(null);
         });
     };
@@ -121,6 +134,8 @@ const TraderRoom = () => {
         setIsHandRaised(newState);
         if (dataConn && dataConn.open) {
             dataConn.send({ type: 'hand', raised: newState });
+        } else {
+            console.warn("[DataConn] Cannot send hand raise: connection not open");
         }
     };
 
@@ -217,14 +232,30 @@ const TraderRoom = () => {
         };
     }, [user, roomState]);
 
-    // Connect to other user for data when both are ready
+    // Connect to other user for data when both are ready + AUTO RETRY
     useEffect(() => {
-        if (peer && otherUser?.user_id && !dataConn) {
-            console.log('Initiating data connection to:', otherUser.user_id);
-            const conn = peer.connect(otherUser.user_id);
-            setupDataConnection(conn);
-        }
-    }, [peer, otherUser, dataConn]);
+        let retryInterval: any;
+
+        const attemptConnection = () => {
+            if (peer && otherUser?.user_id && !dataConn?.open) {
+                console.log('[DataConn] Periodically attempting connection to:', otherUser.user_id);
+                const conn = peer.connect(otherUser.user_id, {
+                    reliable: true
+                });
+                setupDataConnection(conn);
+            }
+        };
+
+        // Initial attempt
+        attemptConnection();
+
+        // Background retry loop
+        retryInterval = setInterval(attemptConnection, 10000); // 10s retry
+
+        return () => {
+            if (retryInterval) clearInterval(retryInterval);
+        };
+    }, [peer, otherUser?.user_id, !!dataConn?.open]);
 
     // Consolidate Auto-initiate Camera call
     useEffect(() => {
@@ -485,6 +516,9 @@ const TraderRoom = () => {
         setIsMuted(nextMute);
         if (dataConn && dataConn.open) {
             dataConn.send({ type: 'mute', isMuted: nextMute });
+        } else {
+            console.warn("[DataConn] Mute sync skipped: connection not open");
+            toast.warning("Mute not synced yet - still connecting to friend", { duration: 2000 });
         }
         toast.info(nextMute ? "Microphone muted" : "Microphone active");
     };
@@ -495,6 +529,8 @@ const TraderRoom = () => {
 
         if (dataConn && dataConn.open) {
             dataConn.send({ type: 'reaction', emoji });
+        } else {
+            toast.warning("Connection not ready - syncing message to friend failed", { duration: 2000 });
         }
 
         // Local cleanup
@@ -549,6 +585,8 @@ const TraderRoom = () => {
         // Sync with peer
         if (dataConn && dataConn.open) {
             dataConn.send({ type: 'chat', message: newMessage });
+        } else {
+            toast.warning("Chat message not synced - connection still establishing", { duration: 2000 });
         }
     };
 
@@ -574,6 +612,8 @@ const TraderRoom = () => {
             // Sync with peer
             if (dataConn && dataConn.open) {
                 dataConn.send({ type: 'chat', message: statsMessage });
+            } else {
+                toast.warning("Stats not synced - connection establishing", { duration: 2000 });
             }
 
             toast.success("Current Portfolio Stats Shared");
@@ -681,6 +721,7 @@ const TraderRoom = () => {
                             isHandRaised={isHandRaised}
                             onToggleHand={handleToggleHand}
                             onSendReaction={handleSendReaction}
+                            isDataConnected={dataConn?.open}
                         />
 
                         {/* Floating Reactions Overlay */}
