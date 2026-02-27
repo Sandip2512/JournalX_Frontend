@@ -14,7 +14,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
+import { toast } from "sonner";
 
 interface RoomLobbyProps {
     onJoinRoom: (meetingId?: string) => void;
@@ -28,9 +30,8 @@ interface Friend {
     is_online: boolean;
 }
 
-import { toast } from "sonner";
-
 export const RoomLobby = ({ onJoinRoom }: RoomLobbyProps) => {
+    const { user: currentUser } = useAuth();
     const [invited, setInvited] = useState<string[]>([]);
     const [onlineFriends, setOnlineFriends] = useState<Friend[]>([]);
     const [currentMeetingId, setCurrentMeetingId] = useState<string | null>(null);
@@ -41,27 +42,74 @@ export const RoomLobby = ({ onJoinRoom }: RoomLobbyProps) => {
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
 
-    React.useEffect(() => {
-        const fetchFriends = async () => {
+    useEffect(() => {
+        const fetchAllTraders = async () => {
             try {
-                const res = await api.get("/api/friends");
-                const friends = res.data.map((f: any) => ({
-                    friendship_id: f.friendship_id,
-                    user_id: f.user_id,
-                    name: f.name,
-                    is_online: f.is_online,
-                    status: f.is_online ? "Online" : "Away"
-                }));
-                const sorted = friends.sort((a: any, b: any) => Number(b.is_online) - Number(a.is_online));
+                // Fetch both friends and community members for maximum discovery
+                const [friendsRes, membersRes] = await Promise.all([
+                    api.get("/api/friends"),
+                    api.get("/api/users/community/members")
+                ]);
+
+                const friendsData = Array.isArray(friendsRes.data) ? friendsRes.data : [];
+                const membersData = Array.isArray(membersRes.data) ? membersRes.data : [];
+
+                // Create a map of friends for quick lookup
+                const friendIds = new Set(friendsData.map((f: any) => f.user_id));
+
+                const mergedList: Friend[] = [];
+                const seenIds = new Set();
+
+                // 1. Add Friends first
+                friendsData.forEach((f: any) => {
+                    if (f.user_id === currentUser?.user_id) return;
+                    seenIds.add(f.user_id);
+                    mergedList.push({
+                        friendship_id: f.friendship_id,
+                        user_id: f.user_id,
+                        name: f.name || "Anonymous Trader",
+                        is_online: !!f.is_online,
+                        status: f.is_online ? "Online" : "Away"
+                    });
+                });
+
+                // 2. Add online community members who aren't in the friends list yet
+                membersData.forEach((m: any) => {
+                    if (m.user_id === currentUser?.user_id) return;
+                    if (seenIds.has(m.user_id)) return;
+
+                    // Calculate online status for community members (last seen < 5 mins)
+                    let isOnline = false;
+                    if (m.last_seen) {
+                        const lastSeenDate = new Date(m.last_seen);
+                        const fiveMinsAgo = new Date(Date.now() - 5 * 60 * 1000);
+                        isOnline = lastSeenDate > fiveMinsAgo;
+                    }
+
+                    // Only show them in the lobby if they are online (to avoid clutter)
+                    if (isOnline) {
+                        seenIds.add(m.user_id);
+                        mergedList.push({
+                            friendship_id: "", // Not a friend yet
+                            user_id: m.user_id,
+                            name: m.name || "Anonymous Trader",
+                            is_online: true,
+                            status: "Community"
+                        });
+                    }
+                });
+
+                const sorted = mergedList.sort((a, b) => Number(b.is_online) - Number(a.is_online));
                 setOnlineFriends(sorted);
             } catch (error) {
-                console.error("Failed to fetch friends", error);
+                console.error("Failed to fetch traders", error);
             }
         };
-        fetchFriends();
-        const interval = setInterval(fetchFriends, 30000);
+
+        fetchAllTraders();
+        const interval = setInterval(fetchAllTraders, 15000); // Poll every 15s
         return () => clearInterval(interval);
-    }, []);
+    }, [currentUser?.user_id]);
 
     const handleInvite = async (id: string) => {
         try {
@@ -111,7 +159,7 @@ export const RoomLobby = ({ onJoinRoom }: RoomLobbyProps) => {
         }
     };
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (!currentMeetingId) return;
 
         const checkStatus = async () => {
