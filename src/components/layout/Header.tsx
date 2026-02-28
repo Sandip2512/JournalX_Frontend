@@ -1,5 +1,5 @@
 import React from "react";
-import { TrendingUp, LayoutDashboard, ArrowRightLeft, BarChart3, AlertTriangle, Trophy, Settings, Plug, User, ChevronDown, Menu, Calendar, Target, ClipboardList, MessageSquare, Clock, Bell, Search } from "lucide-react";
+import { TrendingUp, LayoutDashboard, ArrowRightLeft, BarChart3, AlertTriangle, Trophy, Settings, Plug, User, ChevronDown, Menu, Calendar, Target, ClipboardList, MessageSquare, Clock, Bell, Search, BrainCircuit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NavLink } from "@/components/NavLink";
 import { NotificationDropdown } from "./NotificationDropdown";
@@ -36,6 +36,7 @@ const navItems = [
   { icon: TrendingUp, label: "Market", path: "/market" },
   { icon: Target, label: "Goals", path: "/goals" },
   { icon: ClipboardList, label: "Trader's Diary", path: "/traders-diary" },
+  { icon: BrainCircuit, label: "AI Report", path: "/ai-report" },
   { icon: MessageSquare, label: "Community", path: "/community" },
   { icon: AlertTriangle, label: "Mistakes", path: "/mistakes" },
 ];

@@ -6,7 +6,7 @@ import {
     LayoutDashboard, TrendingUp, FileText, Bell,
     Settings, LogOut, Menu, BarChart3, Target,
     ClipboardList, MessageSquare, AlertTriangle,
-    ChevronLeft, ChevronRight, Clock, Search, Plus, Sparkles, Calendar
+    ChevronLeft, ChevronRight, Clock, Search, Plus, Sparkles, Calendar, BrainCircuit
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -85,6 +85,7 @@ const UserLayout = ({ children, showHeader = true }: UserLayoutProps) => {
         { icon: BarChart3, label: "Analytics", path: "/analytics" },
         { icon: TrendingUp, label: "Market", path: "/market" },
         { icon: ClipboardList, label: "Trader's Diary", path: "/traders-diary" },
+        { icon: BrainCircuit, label: "AI Report", path: "/ai-report" },
         { icon: MessageSquare, label: "Community", path: "/community" },
         { icon: AlertTriangle, label: "Mistakes", path: "/mistakes" },
     ];
@@ -216,6 +217,7 @@ const UserLayout = ({ children, showHeader = true }: UserLayoutProps) => {
                             </Link>
                         );
                     })}
+
 
                     {/* New Features Button */}
                     <Dialog>

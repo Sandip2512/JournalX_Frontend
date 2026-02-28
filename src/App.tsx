@@ -22,6 +22,7 @@ const Profile = lazyWithRetry(() => import("./pages/Profile"));
 const Goals = lazyWithRetry(() => import("./pages/Goals"));
 const DisciplineDiary = lazyWithRetry(() => import("./pages/DisciplineDiary"));
 const TradersDiary = lazyWithRetry(() => import("./pages/TradersDiary"));
+const AiReport = lazyWithRetry(() => import("./pages/AiReport"));
 const Community = lazyWithRetry(() => import("./pages/Community"));
 const TradersLounge = lazyWithRetry(() => import("./pages/TradersLounge"));
 const TraderRoom = lazyWithRetry(() => import("./pages/TraderRoom"));
@@ -74,6 +75,7 @@ const App = () => (
                   <Route path="/goals" element={<Goals />} />
                   <Route path="/discipline-diary" element={<DisciplineDiary />} />
                   <Route path="/traders-diary" element={<TradersDiary />} />
+                  <Route path="/ai-report" element={<AiReport />} />
                   <Route path="/community" element={<Community />} />
                   <Route path="/community/lounge" element={<TradersLounge />} />
                   <Route path="/trader-room" element={<TraderRoom />} />
